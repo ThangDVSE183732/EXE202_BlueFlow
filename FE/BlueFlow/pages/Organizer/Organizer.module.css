@@ -1,0 +1,8 @@
+.organizerPage {
+  height: calc(100vh - 5rem);
+  min-height: 100vh;
+  overflow-y: auto;
+  background-size: cover;
+  background-position: center;
+  background-color: white;
+}
