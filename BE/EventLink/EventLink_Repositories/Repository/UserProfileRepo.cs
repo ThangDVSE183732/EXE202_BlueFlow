@@ -2,7 +2,6 @@
 using EventLink_Repositories.Interface;
 using EventLink_Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using SHBTrading.Repositories.DinhTH.Basic;
 using System;
 using System.Collections.Generic;
 using System.Linq;

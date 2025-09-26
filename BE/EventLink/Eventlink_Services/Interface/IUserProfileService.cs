@@ -1,5 +1,4 @@
-﻿using EventLink_Repositories.Interface;
-using EventLink_Repositories.Models;
+﻿using EventLink_Repositories.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,9 +11,9 @@ namespace Eventlink_Services.Interface
     {
         Task<UserProfile> GetByUserIdAsync(Guid userId);
         Task<bool> UserProfileExistsAsync(Guid userId);
-        Task<int> CreateAsync(UserProfile userProfile);
-        Task<int> UpdateAsync(UserProfile userProfile);
-        Task<bool> RemoveAsync(UserProfile userProfile);
+        Task CreateAsync(UserProfile userProfile);
+        void Update(UserProfile userProfile);
+        void Remove(UserProfile userProfile);
         Task<List<UserProfile>> GetAllUserProfilesAsync();
     }
 }

@@ -34,19 +34,7 @@ namespace Eventlink_Services.Service
         {
             return await _sponsorPackageRepo.SearchSponsorPackage(packageName, packageType, minBudget, maxBudget, isActive);
         }
-        public async Task<int> CreateAsync(SponsorPackage sponsorPackage)
-        {
-            return await _sponsorPackageRepo.CreateAsync(sponsorPackage);
-        }
-        public async Task<int> UpdateAsync(SponsorPackage sponsorPackage)
-        {
-            return await _sponsorPackageRepo.UpdateAsync(sponsorPackage);
-        }
-        public async Task<bool> RemoveAsync(SponsorPackage sponsorPackage)
-        {
-            return await _sponsorPackageRepo.RemoveAsync(sponsorPackage);
-        }
-
+        
         public async Task<List<SponsorPackage>> GetActiveSponsorPackagesAsync()
         {
             return await _sponsorPackageRepo.GetActiveSponsorPackagesAsync();
@@ -70,6 +58,21 @@ namespace Eventlink_Services.Service
         public async Task<List<SponsorPackage>> GetSponsorPackageByPreferredEventTypesAsync(string eventType)
         {
             return await _sponsorPackageRepo.GetSponsorPackageByPreferredEventTypesAsync(eventType);
+        }
+
+        public void Update(SponsorPackage request)
+        {
+            _sponsorPackageRepo.Update(request);
+        }
+
+        public void Remove(SponsorPackage sponsorPackage)
+        {
+            _sponsorPackageRepo.Remove(sponsorPackage);
+        }
+
+        public async Task CreateAsync(SponsorPackage request)
+        {
+            await _sponsorPackageRepo.AddAsync(request);
         }
     }
 }

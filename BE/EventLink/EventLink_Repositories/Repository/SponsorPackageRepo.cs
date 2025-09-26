@@ -2,7 +2,6 @@
 using EventLink_Repositories.Interface;
 using EventLink_Repositories.Models;
 using Microsoft.EntityFrameworkCore;
-using SHBTrading.Repositories.DinhTH.Basic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +13,7 @@ namespace EventLink_Repositories.Repository
     public class SponsorPackageRepo : GenericRepository<SponsorPackage>, ISponsorPackageRepo
     {
         private readonly EventLinkDBContext _context;
-        public SponsorPackageRepo(EventLinkDBContext context)
+        public SponsorPackageRepo(EventLinkDBContext context) : base(context)
         {
             _context = context;
         }

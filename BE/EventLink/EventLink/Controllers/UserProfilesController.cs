@@ -48,13 +48,11 @@ namespace EventLink.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutUserProfile(Guid id, UserProfile userProfile)
         {
-            if (id != userProfile.Id)
+            var existingProfile = await _userProfileService.GetByUserIdAsync(id);
+            if (existingProfile == null)
             {
-                return BadRequest();
+                return NotFound();
             }
-
-            await _userProfileService.UpdateAsync(userProfile);
-
             return NoContent();
         }
 
@@ -78,7 +76,7 @@ namespace EventLink.Controllers
                 return NotFound();
             }
 
-            await _userProfileService.RemoveAsync(userProfile);
+            _userProfileService.Remove(userProfile);
 
             return NoContent();
         }

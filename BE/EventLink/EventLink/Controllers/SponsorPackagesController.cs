@@ -3,6 +3,10 @@ using EventLink_Repositories.Models;
 using Eventlink_Services.Interface;
 using Eventlink_Services.Response;
 using static Eventlink_Services.Request.SponsorPackageRequest;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
+using System;
 
 namespace EventLink.Controllers
 {
@@ -246,7 +250,7 @@ namespace EventLink.Controllers
             sponsorPackage.IsActive = sponsorPackage.IsActive;
             sponsorPackage.UpdatedAt = DateTime.UtcNow;
 
-            await _sponsorPackageService.UpdateAsync(sponsorPackage);
+            _sponsorPackageService.Update(sponsorPackage);
 
             return Ok(new
             {
@@ -327,7 +331,7 @@ namespace EventLink.Controllers
                 return NotFound();
             }
 
-            await _sponsorPackageService.RemoveAsync(sponsorPackage);
+            _sponsorPackageService.Update(sponsorPackage);
 
             return Ok(new
             {

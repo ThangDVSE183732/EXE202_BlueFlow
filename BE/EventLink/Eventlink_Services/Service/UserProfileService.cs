@@ -16,13 +16,9 @@ namespace Eventlink_Services.Service
         {
             _userProfileRepository = userProfileRepository;
         }
-        public async Task<int> CreateAsync(UserProfile userProfile)
+        public async Task CreateAsync(UserProfile userProfile)
         {
-            return await _userProfileRepository.CreateAsync(userProfile);
-        }
-        public async Task<bool> RemoveAsync(UserProfile userProfile)
-        {
-            return await _userProfileRepository.RemoveAsync(userProfile);
+            await _userProfileRepository.AddAsync(userProfile);
         }
 
         public async Task<List<UserProfile>> GetAllUserProfilesAsync()
@@ -35,9 +31,14 @@ namespace Eventlink_Services.Service
             return await _userProfileRepository.GetByUserIdAsync(userId);
         }
 
-        public async Task<int> UpdateAsync(UserProfile userProfile)
+        public void Remove(UserProfile userProfile)
         {
-            return await _userProfileRepository.UpdateAsync(userProfile);
+            _userProfileRepository.Remove(userProfile);
+        }
+
+        public void Update(UserProfile userProfile)
+        {
+            _userProfileRepository.Update(userProfile);
         }
 
         public async Task<bool> UserProfileExistsAsync(Guid userId)

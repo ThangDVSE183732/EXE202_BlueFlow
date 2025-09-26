@@ -1,5 +1,4 @@
-﻿using EventLink_Repositories.Basic;
-using EventLink_Repositories.Models;
+﻿using EventLink_Repositories.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;

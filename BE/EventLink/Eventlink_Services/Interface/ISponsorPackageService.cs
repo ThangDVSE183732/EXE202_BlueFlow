@@ -20,8 +20,8 @@ namespace Eventlink_Services.Interface
         Task<List<SponsorPackage>> GetSponsorPackageByTypeAsync(string packageType);
         Task<List<SponsorPackage>> GetSponsorPackageByTargetAudienceAsync(string targetAudience);
         Task<List<SponsorPackage>> GetSponsorPackageByPreferredEventTypesAsync(string eventType);
-        Task<int> CreateAsync(SponsorPackage request);
-        Task<int> UpdateAsync(SponsorPackage request);
-        Task<bool> RemoveAsync(SponsorPackage sponsorPackage);
+        Task CreateAsync(SponsorPackage request);
+        void Update(SponsorPackage request);
+        void Remove(SponsorPackage sponsorPackage);
     }
 }
