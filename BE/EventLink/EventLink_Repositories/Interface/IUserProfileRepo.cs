@@ -1,0 +1,17 @@
+﻿using EventLink_Repositories.Basic;
+using EventLink_Repositories.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace EventLink_Repositories.Interface
+{
+    public interface IUserProfileRepo : IGenericRepository<UserProfile>
+    {
+        Task<List<UserProfile>> GetAllUserProfilesAsync();
+        Task<UserProfile> GetByUserIdAsync(Guid userId);
+        Task<bool> UserProfileExistsAsync(Guid userId);
+    }
+}

@@ -7,11 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Interface\" />
     <Folder Include="Ultility\" />
-    <Folder Include="Service\" />
-    <Folder Include="Response\" />
-    <Folder Include="Request\" />
   </ItemGroup>
 
   <ItemGroup>
