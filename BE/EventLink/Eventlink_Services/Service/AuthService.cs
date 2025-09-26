@@ -29,20 +29,22 @@ namespace EventLink_Services.Services.Implementations
         {
             try
             {
+                // Validate role
                 if (!await _userRepository.IsValidRoleAsync(request.Role))
                 {
                     return ApiResponse<AuthResponse>.ErrorResult("Invalid role. Must be Organizer, Supplier, or Sponsor");
                 }
 
+                // Check if email already exists
                 if (await _userRepository.EmailExistsAsync(request.Email))
                 {
                     return ApiResponse<AuthResponse>.ErrorResult("Email already exists");
                 }
 
+                // Create new user
                 var user = new User
                 {
                     Email = request.Email.ToLower().Trim(),
-                    // Use the full namespace for BCrypt
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                     FullName = request.FullName.Trim(),
                     Role = request.Role,
@@ -51,6 +53,7 @@ namespace EventLink_Services.Services.Implementations
 
                 var createdUser = await _userRepository.CreateUserAsync(user);
 
+                // Generate JWT tokens
                 var token = _jwtService.GenerateToken(createdUser);
                 var refreshToken = _jwtService.GenerateRefreshToken();
 
@@ -77,6 +80,7 @@ namespace EventLink_Services.Services.Implementations
         {
             try
             {
+                // Find user by email
                 var user = await _userRepository.GetActiveUserByEmailAsync(request.Email);
 
                 if (user == null)
@@ -85,16 +89,18 @@ namespace EventLink_Services.Services.Implementations
                     return ApiResponse<AuthResponse>.ErrorResult("Invalid email or password");
                 }
 
-                // Use the full namespace for BCrypt
+                // Verify password
                 if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
                 {
                     _logger.LogWarning("Invalid password attempt for user: {Email}", request.Email);
                     return ApiResponse<AuthResponse>.ErrorResult("Invalid email or password");
                 }
 
+                // Update last login
                 user.LastLoginAt = DateTime.UtcNow;
                 await _userRepository.UpdateUserAsync(user);
 
+                // Generate JWT tokens
                 var token = _jwtService.GenerateToken(user);
                 var refreshToken = _jwtService.GenerateRefreshToken();
 
@@ -129,6 +135,7 @@ namespace EventLink_Services.Services.Implementations
                 }
 
                 var userDto = MapToUserDto(user);
+
                 return ApiResponse<UserDto>.SuccessResult(userDto, "User retrieved successfully");
             }
             catch (Exception ex)
@@ -171,12 +178,12 @@ namespace EventLink_Services.Services.Implementations
             return new UserDto
             {
                 Id = user.Id,
-                Email = user.Email ?? string.Empty,
-                FullName = user.FullName ?? string.Empty,
-                Role = user.Role ?? string.Empty,
+                Email = user.Email,
+                FullName = user.FullName,
+                Role = user.Role,
                 PhoneNumber = user.PhoneNumber,
                 AvatarUrl = user.AvatarUrl,
-                EmailVerified = user.EmailVerified ?? false,
+                EmailVerified = user.EmailVerified ?? false, // Handle nullable bool
                 CreatedAt = user.CreatedAt,
                 LastLoginAt = user.LastLoginAt
             };
