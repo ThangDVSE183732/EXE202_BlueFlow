@@ -8,6 +8,7 @@ using Eventlink_Services.Response;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using static Eventlink_Services.Request.MailForm;
+using static System.Net.WebRequestMethods;
 
 namespace EventLink_Services.Services.Implementations
 {
@@ -37,11 +38,13 @@ namespace EventLink_Services.Services.Implementations
         {
             try
             {
+                // Validate role
                 if (!await _userRepository.IsValidRoleAsync(request.Role))
                 {
                     return ApiResponse<string>.ErrorResult("Invalid role. Must be Organizer, Supplier, or Sponsor");
                 }
 
+                // Check if email already exists
                 if (await _userRepository.EmailExistsAsync(request.Email))
                 {
                     return ApiResponse<string>.ErrorResult("Email already exists");
@@ -68,7 +71,7 @@ namespace EventLink_Services.Services.Implementations
         {
             try
             {
-                // 1. Check OTP
+                // 1. Kiểm tra OTP
                 if (!VerifyOtp(request.Email, request.Otp))
                 {
                     return ApiResponse<AuthResponse>.ErrorResult("Invalid or expired OTP");
@@ -84,7 +87,7 @@ namespace EventLink_Services.Services.Implementations
                 // 3. Tạo user
                 var user = new User
                 {
-                    Email = registerRequest.Email.Trim().ToLower(),
+                    Email = registerRequest.Email.ToLower().Trim(),
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerRequest.Password),
                     FullName = registerRequest.FullName.Trim(),
                     Role = registerRequest.Role,
@@ -93,7 +96,7 @@ namespace EventLink_Services.Services.Implementations
 
                 var createdUser = await _userRepository.CreateUserAsync(user);
 
-                // 4. Tạo JWT
+                // 4. Sinh token
                 var token = _jwtService.GenerateToken(createdUser);
                 var refreshToken = _jwtService.GenerateRefreshToken();
 
@@ -118,43 +121,70 @@ namespace EventLink_Services.Services.Implementations
 
         public async Task<ApiResponse<string>> LoginAsync(LoginRequest request)
         {
-            var user = await _userRepository.GetActiveUserByEmailAsync(request.Email);
-            if (user == null)
+            try
             {
-                _logger.LogWarning("Login attempt with non-existent email: {Email}", request.Email);
-                return ApiResponse<string>.ErrorResult("Invalid email or password");
-            }
-            await SendOtpEmailAsync(request.Email);
-            return ApiResponse<string>.SuccessResult(null, "OTP sent to your email. Please verify.");
-        }
+                // Find user by email
+                var user = await _userRepository.GetActiveUserByEmailAsync(request.Email);
 
+                if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+                {
+                    _logger.LogWarning("Invalid login attempt for email: {Email}", request.Email);
+                    return ApiResponse<string>.ErrorResult("Invalid email or password");
+                }
+
+                // Gửi OTP qua email
+                await SendOtpEmailAsync(request.Email);
+
+                return ApiResponse<string>.SuccessResult(null, "OTP sent to your email. Please verify.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Login OTP request failed for email: {Email}", request.Email);
+                return ApiResponse<string>.ErrorResult($"Login failed: {ex.Message}");
+            }
+        }
         public async Task<ApiResponse<AuthResponse>> VerifyOtpAsync(VerifyOtpRequest request)
         {
-            var user = await _userRepository.GetActiveUserByEmailAsync(request.Email);
-            if (user == null)
+            try
             {
-                _logger.LogWarning("OTP verification attempt with non-existent email: {Email}", request.Email);
-                return ApiResponse<AuthResponse>.ErrorResult("Invalid email or OTP");
+                // Tìm user
+                var user = await _userRepository.GetActiveUserByEmailAsync(request.Email);
+                if (user == null)
+                {
+                    return ApiResponse<AuthResponse>.ErrorResult("User not found");
+                }
+
+                // Kiểm tra OTP
+                if (!VerifyOtp(request.Email, request.Otp))
+                {
+                    return ApiResponse<AuthResponse>.ErrorResult("Invalid or expired OTP");
+                }
+
+                // Update last login
+                user.LastLoginAt = DateTime.UtcNow;
+                await _userRepository.UpdateUserAsync(user);
+
+                // Generate JWT
+                var token = _jwtService.GenerateToken(user);
+                var refreshToken = _jwtService.GenerateRefreshToken();
+
+                var authResponse = new AuthResponse
+                {
+                    Token = token,
+                    RefreshToken = refreshToken,
+                    Expires = DateTime.UtcNow.AddHours(24),
+                    User = MapToUserDto(user)
+                };
+
+                _logger.LogInformation("User logged in successfully after OTP: {Email}", user.Email);
+
+                return ApiResponse<AuthResponse>.SuccessResult(authResponse, "Login successful");
             }
-            if (!VerifyOtp(request.Email, request.Otp))
+            catch (Exception ex)
             {
-                _logger.LogWarning("Invalid OTP attempt for user: {Email}", request.Email);
-                return ApiResponse<AuthResponse>.ErrorResult("Invalid email or OTP");
+                _logger.LogError(ex, "Verify OTP failed for email: {Email}", request.Email);
+                return ApiResponse<AuthResponse>.ErrorResult($"Login failed: {ex.Message}");
             }
-            user.LastLoginAt = DateTime.UtcNow;
-            await _userRepository.UpdateUserAsync(user);
-            var token = _jwtService.GenerateToken(user);
-            var refreshToken = _jwtService.GenerateRefreshToken();
-            var authResponse = new AuthResponse
-            {
-                Token = token,
-                RefreshToken = refreshToken,
-                Expires = DateTime.UtcNow.AddHours(24),
-                User = MapToUserDto(user)
-            };
-            _logger.LogInformation("User logged in successfully via OTP: {Email}", user.Email);
-            _memoryCache.Remove(request.Email.Trim().ToLowerInvariant());
-            return ApiResponse<AuthResponse>.SuccessResult(authResponse, "Login successful");
         }
 
         public async Task<ApiResponse<UserDto>> GetCurrentUserAsync(Guid userId)
@@ -169,6 +199,7 @@ namespace EventLink_Services.Services.Implementations
                 }
 
                 var userDto = MapToUserDto(user);
+
                 return ApiResponse<UserDto>.SuccessResult(userDto, "User retrieved successfully");
             }
             catch (Exception ex)
@@ -211,12 +242,12 @@ namespace EventLink_Services.Services.Implementations
             return new UserDto
             {
                 Id = user.Id,
-                Email = user.Email ?? string.Empty,
-                FullName = user.FullName ?? string.Empty,
-                Role = user.Role ?? string.Empty,
+                Email = user.Email,
+                FullName = user.FullName,
+                Role = user.Role,
                 PhoneNumber = user.PhoneNumber,
                 AvatarUrl = user.AvatarUrl,
-                EmailVerified = user.EmailVerified ?? false,
+                EmailVerified = user.EmailVerified ?? false, // Handle nullable bool
                 CreatedAt = user.CreatedAt,
                 LastLoginAt = user.LastLoginAt
             };

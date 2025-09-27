@@ -6,10 +6,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using static Eventlink_Services.Request.MailForm;
 
-namespace EventLink.Controllers
+namespace EventLink_API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -24,11 +25,6 @@ namespace EventLink.Controllers
             _logger = logger;
         }
 
-        /// <summary>
-        /// Register a new user
-        /// </summary>
-        /// <param name="request">Registration information</param>
-        /// <returns>Authentication response with JWT token</returns>
         [HttpPost("register")]
         public async Task<ActionResult<ApiResponse<string>>> Register([FromBody] RegisterRequest request)
         {
@@ -78,11 +74,6 @@ namespace EventLink.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// Login user
-        /// </summary>
-        /// <param name="request">Login credentials</param>
-        /// <returns>Authentication response with JWT token</returns>
         [HttpPost("login")]
         public async Task<ActionResult<ApiResponse<AuthResponse>>> Login([FromBody] LoginRequest request)
         {
@@ -126,12 +117,52 @@ namespace EventLink.Controllers
         }
 
         /// <summary>
-        /// Get current authenticated user information
+        /// Get current user info from JWT claims (Fast - No DB query)
         /// </summary>
-        /// <returns>Current user information</returns>
         [HttpGet("me")]
         [Authorize]
-        public async Task<ActionResult<ApiResponse<UserDto>>> GetCurrentUser()
+        public ActionResult<ApiResponse<UserDto>> GetCurrentUser()
+        {
+            try
+            {
+                // Lấy thông tin từ JWT claims thay vì query database
+                var userIdClaim = User.FindFirst("UserId")?.Value;
+                var email = User.FindFirst(ClaimTypes.Email)?.Value;
+                var fullName = User.FindFirst(ClaimTypes.Name)?.Value;
+                var role = User.FindFirst("Role")?.Value;
+                var emailVerified = User.FindFirst("EmailVerified")?.Value;
+
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out Guid userId))
+                {
+                    return Unauthorized(ApiResponse<UserDto>.ErrorResult("Invalid token"));
+                }
+
+                var userDto = new UserDto
+                {
+                    Id = userId,
+                    Email = email ?? string.Empty,
+                    FullName = fullName ?? string.Empty,
+                    Role = role ?? string.Empty,
+                    EmailVerified = bool.TryParse(emailVerified, out bool isVerified) && isVerified,
+                    // Claims không chứa: PhoneNumber, AvatarUrl, CreatedAt, LastLoginAt
+                    // Dùng /profile endpoint nếu cần thông tin đầy đủ
+                };
+
+                return Ok(ApiResponse<UserDto>.SuccessResult(userDto, "User retrieved from token"));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve current user from claims");
+                return StatusCode(500, ApiResponse<UserDto>.ErrorResult("Failed to retrieve user information"));
+            }
+        }
+
+        /// <summary>
+        /// Get complete user profile (with database query for full info)
+        /// </summary>
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<UserDto>>> GetUserProfile()
         {
             var userIdClaim = User.FindFirst("UserId")?.Value;
 
@@ -150,10 +181,6 @@ namespace EventLink.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// Logout current user
-        /// </summary>
-        /// <returns>Logout confirmation</returns>
         [HttpPost("logout")]
         [Authorize]
         public async Task<ActionResult<ApiResponse<string>>> Logout()
@@ -170,11 +197,6 @@ namespace EventLink.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// Check if email exists (for registration form validation)
-        /// </summary>
-        /// <param name="email">Email to check</param>
-        /// <returns>Boolean indicating if email exists</returns>
         [HttpGet("check-email")]
         public async Task<ActionResult<ApiResponse<bool>>> CheckEmailExists([FromQuery] string email)
         {
