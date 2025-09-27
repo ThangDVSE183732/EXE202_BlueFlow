@@ -10,8 +10,6 @@ namespace Eventlink_Services.Request
     {
         public class CreateUserProfileRequest
         {
-            public Guid Id { get; set; }
-
             public Guid UserId { get; set; }
 
             public string Bio { get; set; }
@@ -42,19 +40,11 @@ namespace Eventlink_Services.Request
 
             public decimal? AverageRating { get; set; }
 
-            public bool? IsVerified { get; set; }
-
             public string VerificationDocuments { get; set; }
-
-            public DateTime? CreatedAt { get; set; }
-
-            public DateTime? UpdatedAt { get; set; }
         }
 
         public class UpdateUserProfileRequest
         {
-            public Guid Id { get; set; }
-
             public Guid UserId { get; set; }
 
             public string Bio { get; set; }
@@ -85,13 +75,8 @@ namespace Eventlink_Services.Request
 
             public decimal? AverageRating { get; set; }
 
-            public bool? IsVerified { get; set; }
-
             public string VerificationDocuments { get; set; }
 
-            public DateTime? CreatedAt { get; set; }
-
-            public DateTime? UpdatedAt { get; set; }
         }
     }
 }

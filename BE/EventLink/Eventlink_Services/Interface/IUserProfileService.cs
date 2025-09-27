@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Eventlink_Services.Request.UserProfileRequest;
 
 namespace Eventlink_Services.Interface
 {
@@ -11,9 +12,9 @@ namespace Eventlink_Services.Interface
     {
         Task<UserProfile> GetByUserIdAsync(Guid userId);
         Task<bool> UserProfileExistsAsync(Guid userId);
-        Task CreateAsync(UserProfile userProfile);
-        void Update(UserProfile userProfile);
-        void Remove(UserProfile userProfile);
+        Task CreateAsync(CreateUserProfileRequest request);
+        Task Update(Guid id, UpdateUserProfileRequest request);
+        Task Remove(UserProfile userProfile);
         Task<List<UserProfile>> GetAllUserProfilesAsync();
     }
 }

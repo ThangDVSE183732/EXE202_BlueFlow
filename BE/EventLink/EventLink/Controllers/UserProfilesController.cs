@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using EventLink_Repositories.DBContext;
+using EventLink_Repositories.Models;
+using Eventlink_Services.Interface;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using EventLink_Repositories.DBContext;
-using EventLink_Repositories.Models;
-using Eventlink_Services.Interface;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using static Eventlink_Services.Request.UserProfileRequest;
 
 namespace EventLink.Controllers
 {
@@ -46,24 +47,37 @@ namespace EventLink.Controllers
         // PUT: api/UserProfiles/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutUserProfile(Guid id, UserProfile userProfile)
+        public async Task<IActionResult> PutUserProfile(Guid id, UpdateUserProfileRequest request)
         {
-            var existingProfile = await _userProfileService.GetByUserIdAsync(id);
-            if (existingProfile == null)
+            if (!ModelState.IsValid)
             {
-                return NotFound();
+                return BadRequest(ModelState);
             }
-            return NoContent();
+            await _userProfileService.Update(id, request);
+            return Ok(new {
+                success = true,
+                message = "User profile updated successfully"
+            });
         }
 
         // POST: api/UserProfiles
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<UserProfile>> PostUserProfile(UserProfile userProfile)
+        public async Task<ActionResult<UserProfile>> PostUserProfile(CreateUserProfileRequest request)
         {
-            await _userProfileService.CreateAsync(userProfile);
+            if(!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-            return CreatedAtAction("GetUserProfile", new { id = userProfile.Id }, userProfile);
+            await _userProfileService.CreateAsync(request);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Sponsor packages retrieved successfully",
+                data = request
+            });
         }
 
         // DELETE: api/UserProfiles/5
@@ -75,10 +89,13 @@ namespace EventLink.Controllers
             {
                 return NotFound();
             }
-
-            _userProfileService.Remove(userProfile);
-
-            return NoContent();
+            await _userProfileService.Remove(userProfile);
+            return Ok(new
+            {
+                success = true,
+                message = "User profile deleted successfully",
+                data = userProfile
+            });
         }
 
         private bool UserProfileExists(Guid id)

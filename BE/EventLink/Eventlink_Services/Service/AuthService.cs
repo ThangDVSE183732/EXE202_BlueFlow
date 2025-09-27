@@ -47,10 +47,8 @@ namespace EventLink_Services.Services.Implementations
                     return ApiResponse<string>.ErrorResult("Email already exists");
                 }
 
-                // Gửi OTP và lưu vào cache
                 await SendOtpEmailAsync(request.Email);
 
-                // Tạm thời lưu thông tin user vào cache (chờ verify)
                 var key = $"register:{request.Email.Trim().ToLowerInvariant()}";
                 _memoryCache.Set(key, request, TimeSpan.FromMinutes(5));
 
