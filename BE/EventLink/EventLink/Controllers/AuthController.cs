@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using static Eventlink_Services.Request.MailForm;
 
 namespace EventLink.Controllers
 {
@@ -29,7 +30,33 @@ namespace EventLink.Controllers
         /// <param name="request">Registration information</param>
         /// <returns>Authentication response with JWT token</returns>
         [HttpPost("register")]
-        public async Task<ActionResult<ApiResponse<AuthResponse>>> Register([FromBody] RegisterRequest request)
+        public async Task<ActionResult<ApiResponse<string>>> Register([FromBody] RegisterRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .SelectMany(x => x.Value.Errors)
+                    .Select(x => x.ErrorMessage)
+                    .ToList();
+
+                return BadRequest(ApiResponse<string>.ErrorResult("Validation failed", errors));
+            }
+
+            var result = await _authService.RegisterAsync(request);
+
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Step 2: Verify OTP - Khi nhập đúng OTP thì mới tạo user
+        /// </summary>
+        [HttpPost("verify-otp-register")]
+        public async Task<ActionResult<ApiResponse<AuthResponse>>> VerifyRegisterOtp([FromBody] VerifyOtpRequest request)
         {
             if (!ModelState.IsValid)
             {
@@ -41,7 +68,7 @@ namespace EventLink.Controllers
                 return BadRequest(ApiResponse<AuthResponse>.ErrorResult("Validation failed", errors));
             }
 
-            var result = await _authService.RegisterAsync(request);
+            var result = await _authService.VerifyRegistrationOtpAsync(request);
 
             if (!result.Success)
             {
@@ -68,7 +95,7 @@ namespace EventLink.Controllers
 
                 return BadRequest(ApiResponse<AuthResponse>.ErrorResult("Validation failed", errors));
             }
-
+            
             var result = await _authService.LoginAsync(request);
 
             if (!result.Success)
@@ -76,6 +103,25 @@ namespace EventLink.Controllers
                 return BadRequest(result);
             }
 
+            return Ok(result);
+        }
+
+        [HttpPost("verify-otp-login")]
+        public async Task<ActionResult<ApiResponse<AuthResponse>>> VerifyLoginOtp([FromBody] VerifyOtpRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .SelectMany(x => x.Value.Errors)
+                    .Select(x => x.ErrorMessage)
+                    .ToList();
+                return BadRequest(ApiResponse<AuthResponse>.ErrorResult("Validation failed", errors));
+            }
+            var result = await _authService.VerifyOtpAsync(request);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
             return Ok(result);
         }
 

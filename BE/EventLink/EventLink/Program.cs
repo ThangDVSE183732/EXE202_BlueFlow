@@ -7,6 +7,7 @@ using EventLink_Services.Services.Implementations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -81,6 +82,8 @@ builder.Services.AddScoped<ISponsorPackageService, SponsorPackageService>();
 
 builder.Services.AddScoped<IUserProfileRepo, UserProfileRepo>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
+
+builder.Services.AddMemoryCache();
 
 // CORS Configuration
 builder.Services.AddCors(options =>
