@@ -12,7 +12,7 @@ namespace Eventlink_Services.Interface
     {
         Task<UserProfile> GetByUserIdAsync(Guid userId);
         Task<bool> UserProfileExistsAsync(Guid userId);
-        Task CreateAsync(CreateUserProfileRequest request);
+        Task CreateAsync(Guid userId, CreateUserProfileRequest request);
         Task Update(Guid id, UpdateUserProfileRequest request);
         Task Remove(UserProfile userProfile);
         Task<List<UserProfile>> GetAllUserProfilesAsync();

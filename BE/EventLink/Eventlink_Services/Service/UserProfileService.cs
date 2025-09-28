@@ -19,11 +19,11 @@ namespace Eventlink_Services.Service
             _userProfileRepository = userProfileRepository;
         }
 
-        public async Task CreateAsync(CreateUserProfileRequest request)
+        public async Task CreateAsync(Guid userId, CreateUserProfileRequest request)
         {
             await _userProfileRepository.AddAsync(new UserProfile
             {
-                UserId = request.UserId,
+                UserId = userId,
                 Bio = request.Bio,
                 CompanyName = request.CompanyName,
                 Website = request.Website,

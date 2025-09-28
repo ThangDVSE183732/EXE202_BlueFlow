@@ -10,8 +10,6 @@ namespace Eventlink_Services.Request
     {
         public class CreateUserProfileRequest
         {
-            public Guid UserId { get; set; }
-
             public string Bio { get; set; }
 
             public string CompanyName { get; set; }
@@ -45,8 +43,6 @@ namespace Eventlink_Services.Request
 
         public class UpdateUserProfileRequest
         {
-            public Guid UserId { get; set; }
-
             public string Bio { get; set; }
 
             public string CompanyName { get; set; }

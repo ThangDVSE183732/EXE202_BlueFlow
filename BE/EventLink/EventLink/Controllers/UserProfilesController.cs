@@ -70,7 +70,11 @@ namespace EventLink.Controllers
                 return BadRequest(ModelState);
             }
 
-            await _userProfileService.CreateAsync(request);
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out Guid userId))
+                return Unauthorized();
+
+            await _userProfileService.CreateAsync(userId, request);
 
             return Ok(new
             {
