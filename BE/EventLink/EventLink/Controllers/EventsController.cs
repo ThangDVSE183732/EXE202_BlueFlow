@@ -80,7 +80,33 @@ namespace EventLink.Controllers
             {
                 return BadRequest(ModelState);
             }
-            await _eventService.Create(request);
+            var userIdClaim = User.FindFirst("userId").Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out Guid userId))
+            {
+                return Unauthorized(new
+                {
+                    success = false,
+                    message = "User not authenticated"
+                });
+            }
+            if(request.EndDate < request.EventDate)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "End date cannot be earlier than start date"
+                });
+            }
+
+            if(request.EventDate < DateTime.UtcNow)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Event date cannot be in the past"
+                });
+            }
+            await _eventService.Create(userId, request);
             return Ok(new
             {
                 success = true,

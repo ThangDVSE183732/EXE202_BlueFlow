@@ -20,8 +20,8 @@ namespace Eventlink_Services.Interface
         Task<List<EventResponse>> GetEventsByLocationAsync(string location);
         Task<List<EventResponse>> GetEventsByTypeAsync(string eventType);
         Task<List<EventResponse>> SearchEvents(string name, string location, DateTime? startDate, DateTime? endDate, string eventType);
-        Task Create(CreateEventRequest request);
-        void Update(Guid id, UpdateEventRequest request);
+        Task Create(Guid userId, CreateEventRequest request);
+        Task Update(Guid id, UpdateEventRequest request);
         void Remove(Event @event);
     }
 }

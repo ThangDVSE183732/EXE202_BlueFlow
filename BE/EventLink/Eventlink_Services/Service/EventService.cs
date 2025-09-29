@@ -19,11 +19,12 @@ namespace Eventlink_Services.Service
             _eventRepository = eventRepository;
         }
 
-        public async Task Create(CreateEventRequest request)
+        public async Task Create(Guid userId, CreateEventRequest request)
         {
             await _eventRepository.AddAsync(new Event
             {
                 Id = Guid.NewGuid(),
+                OrganizerId = userId,
                 Title = request.Title,
                 Description = request.Description,
                 Location = request.Location,
@@ -185,9 +186,20 @@ namespace Eventlink_Services.Service
             }).ToList();
         }
 
-        public void Update(Guid id, UpdateEventRequest request)
+        public async Task Update(Guid id, UpdateEventRequest request)
         {
-            _eventRepository.Update(request);
+            var existingEvent = await _eventRepository.GetEventByIdAsync(id);
+            if (existingEvent != null)
+            {
+                existingEvent.Title = request.Title;
+                existingEvent.Description = request.Description;
+                existingEvent.Location = request.Location;
+                existingEvent.EventDate = request.EventDate;
+                existingEvent.EndDate = request.EndDate;
+                existingEvent.EventType = request.EventType;
+                existingEvent.UpdatedAt = DateTime.UtcNow;
+                _eventRepository.Update(existingEvent);
+            }
         }
     }
 }
