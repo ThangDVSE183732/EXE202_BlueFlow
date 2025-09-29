@@ -83,6 +83,9 @@ builder.Services.AddScoped<ISponsorPackageService, SponsorPackageService>();
 builder.Services.AddScoped<IUserProfileRepo, UserProfileRepo>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IEventService, EventService>();
+
 builder.Services.AddMemoryCache();
 
 // CORS Configuration

@@ -1,6 +1,7 @@
 ﻿using EventLink_Repositories.DBContext;
 using EventLink_Repositories.Models;
 using Eventlink_Services.Interface;
+using Eventlink_Services.Response;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -25,14 +26,14 @@ namespace EventLink.Controllers
 
         // GET: api/UserProfiles
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserProfile>>> GetUserProfiles()
+        public async Task<ActionResult<IEnumerable<UserProfileResponse>>> GetUserProfiles()
         {
             return await _userProfileService.GetAllUserProfilesAsync();
         }
 
         // GET: api/UserProfiles/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<UserProfile>> GetUserProfile(Guid id)
+        public async Task<ActionResult<UserProfileResponse>> GetUserProfile(Guid id)
         {
             var userProfile = await _userProfileService.GetByUserIdAsync(id);
 
@@ -63,7 +64,7 @@ namespace EventLink.Controllers
         // POST: api/UserProfiles
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<UserProfile>> PostUserProfile(CreateUserProfileRequest request)
+        public async Task<ActionResult<UserProfileResponse>> PostUserProfile(CreateUserProfileRequest request)
         {
             if(!ModelState.IsValid)
             {
@@ -88,7 +89,7 @@ namespace EventLink.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUserProfile(Guid id)
         {
-            var userProfile = await _userProfileService.GetByUserIdAsync(id);
+            var userProfile = await _userProfileService.GetByUserId(id);
             if (userProfile == null)
             {
                 return NotFound();

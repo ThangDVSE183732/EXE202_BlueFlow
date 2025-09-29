@@ -2,6 +2,7 @@
 using EventLink_Repositories.Models;
 using Eventlink_Services.Interface;
 using Eventlink_Services.Request;
+using Eventlink_Services.Response;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,12 +45,64 @@ namespace Eventlink_Services.Service
             });
         }
 
-        public async Task<List<UserProfile>> GetAllUserProfilesAsync()
+        public async Task<List<UserProfileResponse>> GetAllUserProfilesAsync()
         {
-            return await _userProfileRepository.GetAllUserProfilesAsync();
+            var profiles = await _userProfileRepository.GetAllUserProfilesAsync();
+            var response = profiles.Select(p => new UserProfileResponse
+            {
+                Id = p.Id,
+                UserId = p.UserId,
+                Bio = p.Bio,
+                CompanyName = p.CompanyName,
+                Website = p.Website,
+                Location = p.Location,
+                ProfileImageUrl = p.ProfileImageUrl,
+                CoverImageUrl = p.CoverImageUrl,
+                LinkedInUrl = p.LinkedInUrl,
+                FacebookUrl = p.FacebookUrl,
+                PortfolioImages = p.PortfolioImages,
+                WorkSamples = p.WorkSamples,
+                Certifications = p.Certifications,
+                YearsOfExperience = p.YearsOfExperience,
+                TotalProjectsCompleted = p.TotalProjectsCompleted,
+                AverageRating = p.AverageRating,
+                VerificationDocuments = p.VerificationDocuments,
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt
+            }).ToList();
+            return response;
         }
 
-        public async Task<UserProfile> GetByUserIdAsync(Guid userId)
+        public async Task<UserProfileResponse> GetByUserIdAsync(Guid userId)
+        {
+            var userProfile = await _userProfileRepository.GetByUserIdAsync(userId);
+            if (userProfile == null) return null;
+            var response = new UserProfileResponse
+            {
+                Id = userProfile.Id,
+                UserId = userProfile.UserId,
+                Bio = userProfile.Bio,
+                CompanyName = userProfile.CompanyName,
+                Website = userProfile.Website,
+                Location = userProfile.Location,
+                ProfileImageUrl = userProfile.ProfileImageUrl,
+                CoverImageUrl = userProfile.CoverImageUrl,
+                LinkedInUrl = userProfile.LinkedInUrl,
+                FacebookUrl = userProfile.FacebookUrl,
+                PortfolioImages = userProfile.PortfolioImages,
+                WorkSamples = userProfile.WorkSamples,
+                Certifications = userProfile.Certifications,
+                YearsOfExperience = userProfile.YearsOfExperience,
+                TotalProjectsCompleted = userProfile.TotalProjectsCompleted,
+                AverageRating = userProfile.AverageRating,
+                VerificationDocuments = userProfile.VerificationDocuments,
+                CreatedAt = userProfile.CreatedAt,
+                UpdatedAt = userProfile.UpdatedAt
+            };
+            return response;
+        }
+
+        public async Task<UserProfile> GetByUserId(Guid userId)
         {
             return await _userProfileRepository.GetByUserIdAsync(userId);
         }
