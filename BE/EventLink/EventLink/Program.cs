@@ -86,6 +86,9 @@ builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IEventService, EventService>();
 
+builder.Services.AddScoped<IEventProposalRepository, EventProposalRepository>();
+builder.Services.AddScoped<IEventProposalService, EventProposalService>();
+
 builder.Services.AddMemoryCache();
 
 // CORS Configuration
@@ -94,7 +97,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", builder =>
     {
         builder
-            .WithOrigins("http://localhost:3000", "https://localhost:3000") // Next.js default ports
+            .WithOrigins("http://localhost:3000", "https://localhost:3000", "http://localhost:5173", "https://localhost:5173") // Next.js default ports
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials();
