@@ -40,6 +40,7 @@ namespace Eventlink_Services.Service
                 TotalProjectsCompleted = request.TotalProjectsCompleted,
                 AverageRating = request.AverageRating,
                 VerificationDocuments = request.VerificationDocuments,
+                IsVerified = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             });

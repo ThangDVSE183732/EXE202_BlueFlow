@@ -25,32 +25,32 @@ namespace Eventlink_Services.Interface
 
         public async Task<List<Event>> GetAllEventsAsync()
         {
-            return await _context.Events.ToListAsync();
+            return await _context.Events.Include(e => e.EventProposals).ToListAsync();
         }
 
         public async Task<Event> GetEventByIdAsync(Guid id)
         {
-            return await _context.Events.FirstOrDefaultAsync(e => e.Id == id);
+            return await _context.Events.Include(e => e.EventProposals).FirstOrDefaultAsync(e => e.Id == id);
         }
 
         public Task<List<Event>> GetEventsByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
-            throw new NotImplementedException();
+            return _context.Events.Where(e => e.EventDate >= startDate && e.EventDate <= endDate).Include(e => e.EventProposals).ToListAsync();
         }
 
         public Task<List<Event>> GetEventsByLocationAsync(string location)
         {
-            return _context.Events.Where(e => e.Location.Contains(location)).ToListAsync();
+            return _context.Events.Where(e => e.Location.Contains(location)).Include(e => e.EventProposals).ToListAsync();
         }
 
         public async Task<List<Event>> GetEventsByOrganizerIdAsync(Guid organizerId)
         {
-            return await _context.Events.Where(e => e.OrganizerId == organizerId).ToListAsync();
+            return await _context.Events.Where(e => e.OrganizerId == organizerId).Include(e => e.EventProposals).ToListAsync();
         }
 
         public async Task<List<Event>> GetEventsByTypeAsync(string eventType)
         {
-            return await _context.Events.Where(e => e.EventType == eventType).ToListAsync();
+            return await _context.Events.Where(e => e.EventType == eventType).Include(e => e.EventProposals).ToListAsync();
         }
 
         public Task<List<Event>> SearchEvents(string title, string location, DateTime? startDate, DateTime? endDate, string eventType)

@@ -80,6 +80,9 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ISponsorPackageRepo, SponsorPackageRepo>();
 builder.Services.AddScoped<ISponsorPackageService, SponsorPackageService>();
 
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+
 builder.Services.AddScoped<IUserProfileRepo, UserProfileRepo>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 
