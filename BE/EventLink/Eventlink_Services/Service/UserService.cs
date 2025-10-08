@@ -59,5 +59,15 @@ namespace Eventlink_Services.Service
             //}
             return query.ToList();
         }
+
+        public async Task<User> GetUserByEmailAsync(string email)
+        {
+            var user = await _userRepository.GetByEmailAsync(email);
+            if (user == null)
+            {
+                throw new Exception("User not found");
+            }
+            return user;
+        }
     }
 }

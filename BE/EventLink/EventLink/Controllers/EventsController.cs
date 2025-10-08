@@ -1,12 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using EventLink_Repositories.DBContext;
-using EventLink_Repositories.Models;
 using Eventlink_Services.Interface;
 using Eventlink_Services.Response;
 using static Eventlink_Services.Request.EventRequest;
@@ -18,10 +13,12 @@ namespace EventLink.Controllers
     public class EventsController : ControllerBase
     {
         private readonly IEventService _eventService;
+        private readonly IEventProposalService _eventProposalService;
 
-        public EventsController(IEventService eventService)
+        public EventsController(IEventService eventService, IEventProposalService eventProposalService)
         {
             _eventService = eventService;
+            _eventProposalService = eventProposalService;
         }
 
         // GET: api/Events

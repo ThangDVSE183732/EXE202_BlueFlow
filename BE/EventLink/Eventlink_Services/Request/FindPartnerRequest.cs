@@ -10,9 +10,15 @@ namespace Eventlink_Services.Request
     {
         public class FindSupplierRequest
         {
-            decimal? budget;
-            string? targetAudience;
-            string? packageType;
+            decimal? Budget;
+            string? TargetAudience;
+            string? PackageType;
+        }
+
+        public class FindOrganizerRequest
+        {
+            string? Category;
+            string? Location;
         }
     }
 }
