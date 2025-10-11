@@ -9,6 +9,7 @@ namespace EventLink.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class PartnershipsController : ControllerBase
     {
         private readonly IPartnershipService _partnershipService;
