@@ -95,6 +95,9 @@ builder.Services.AddScoped<IEventProposalService, EventProposalService>();
 builder.Services.AddScoped<IPartnershipRepository, PartnershipRepository>();
 builder.Services.AddScoped<IPartnershipService, PartnershipService>();
 
+builder.Services.AddScoped<ISupplierServiceRepository, SupplierServiceRepository>();
+builder.Services.AddScoped<ISupplierServiceService, SupplierServiceService>();
+
 builder.Services.AddMemoryCache();
 
 // CORS Configuration

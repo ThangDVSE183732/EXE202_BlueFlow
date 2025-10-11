@@ -9,7 +9,7 @@ namespace EventLink_Repositories.Interface
 {
     public interface IPartnershipRepository : IGenericRepository<Partnership>
     {
-        Task<List<Partnership>> GetPartnershipsByEventIdAsync(Guid eventId);
-        Task<Partnership> GetPartnershipByIdAsync(Guid partnershipId);
+        Task<Partnership> GetByIdAsync(Guid id);
+        Task UpdateAsync(Partnership partnership);
     }
 }

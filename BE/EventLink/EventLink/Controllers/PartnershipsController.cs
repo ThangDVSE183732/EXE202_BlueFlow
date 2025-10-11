@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using Eventlink_Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using EventLink_Repositories.DBContext;
-using EventLink_Repositories.Models;
-using Eventlink_Services.Interface;
+using System;
+using System.Threading.Tasks;
 using static Eventlink_Services.Request.PartnershipRequest;
 
 namespace EventLink.Controllers
@@ -23,79 +18,33 @@ namespace EventLink.Controllers
             _partnershipService = partnershipService;
         }
 
-        // GET: api/Partnerships/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Partnership>> GetPartnership(Guid id)
-        {
-            var partnership = await _partnershipService.GetPartnershipByIdAsync(id);
-
-            if (partnership == null)
-            {
-                return NotFound();
-            }
-
-            return partnership;
-        }
-
-        // PUT: api/Partnerships/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutPartnership(Guid id, UpdatePartnershipRequest request)
-        {
-            var existingPartnership = await _partnershipService.GetPartnershipByIdAsync(id);
-            if (existingPartnership == null)
-            {
-                return NotFound();
-            }
-
-            await _partnershipService.UpdatePartnershipAsync(id, request);
-
-            return Ok(new
-            {
-                success = true,
-                message = "Partnership updated successfully"
-            });
-        }
-
-        // POST: api/Partnerships
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Partnership>> PostPartnership(CreatePartnershipRequest request)
+        //[Authorize(Roles = "Organizer")]
+        public async Task<IActionResult> CreatePartnership([FromBody] CreatePartnershipRequest request)
         {
-            if(ModelState.IsValid == false)
-            {
-                return BadRequest(ModelState);
-            }
-            await _partnershipService.CreatePartnershipAsync(request);
-            return Ok(new
-            {
-                success = true,
-                message = "Partnership created successfully"
-            });
-        }
-
-        // DELETE: api/Partnerships/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeletePartnership(Guid id)
-        {
-            var partnership = await _partnershipService.GetPartnershipByIdAsync(id);
-            if (partnership == null)
-            {
-                return NotFound();
-            }
-
-            _partnershipService.DeletePartnershipAsync(id);
+            var userId = Guid.Parse(User.FindFirst("UserId")!.Value);
+            var result = await _partnershipService.CreateAsync(userId, request);
 
             return Ok(new
             {
                 success = true,
-                message = "Partnership deleted successfully"
+                message = "Partnership request sent successfully.",
+                data = result
             });
         }
 
-        private bool PartnershipExists(Guid id)
+        [HttpPut("{id}/status")]
+        //[Authorize(Roles = "Partner")]
+        public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdatePartnershipStatusRequest request)
         {
-            return _partnershipService.GetPartnershipByIdAsync(id) != null;
+            var result = await _partnershipService.UpdateStatusAsync(id, request.Status, request.OrganizerResponse);
+
+            return Ok(new
+            {
+                success = true,
+                message = $"Partnership {request.Status.ToLower()} successfully.",
+                data = result
+            });
         }
     }
 }

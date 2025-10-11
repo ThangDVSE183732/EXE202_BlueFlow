@@ -12,21 +12,19 @@ namespace EventLink_Repositories.Repository
 {
     public class PartnershipRepository : GenericRepository<Partnership>, IPartnershipRepository
     {
-        private readonly List<string> _validStatuses = new() { "Pending", "Accepted", "Rejected", "In Progress", "Completed", "Cancelled" };
-
         private readonly EventLinkDBContext _context;
         public PartnershipRepository(EventLinkDBContext context) : base(context)
         {
         }
-        public async Task<List<Partnership>> GetPartnershipsByEventIdAsync(Guid eventId)
+
+        public async Task UpdateAsync(Partnership partnership)
         {
-            return await _context.Partnerships
-                .Where(p => p.EventId == eventId)
-                .ToListAsync();
+            _context.Update(partnership);
         }
-        public async Task<Partnership> GetPartnershipByIdAsync(Guid partnershipId)
+
+        public async Task<Partnership> GetByIdAsync(Guid id)
         {
-            return await FirstOrDefaultAsync(p => p.Id == partnershipId);
+            return await _context.Partnerships.FirstOrDefaultAsync(p => p.Id == id);
         }
     }
 }
