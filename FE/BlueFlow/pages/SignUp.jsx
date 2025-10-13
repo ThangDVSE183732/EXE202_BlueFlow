@@ -7,7 +7,7 @@ function SignUp() {
             <div className="ml-12 mt-5 mb-10">
             <Logo />
             </div>
-            <div className="items-center flex justify-center w-full h-[170%]  mt-15 mb-13 ">
+            <div className="items-center flex justify-center w-full h-[170%]  mt-15 mb-10 ">
                 <SignUpForm/>   
             </div>
         </div>

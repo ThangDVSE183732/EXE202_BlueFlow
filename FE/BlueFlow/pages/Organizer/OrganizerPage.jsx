@@ -7,6 +7,8 @@ import SegmentedControl from '../../components/OrganizerComponent/SegmentedContr
 import SideBar from '../../components/OrganizerComponent/SideBar';
 import Dashboard from '../../components/OrganizerComponent/DashBoard';
 import SegmentedControlItem from '../../components/OrganizerComponent/SegmentedControlItem';
+import PartnersList from '../../components/OrganizerComponent/PartnersList';
+import AccountSetting from '../../components/OrganizerComponent/AccountSetting';
 
 
 
@@ -50,12 +52,79 @@ const Icon = {
 
 const items = [
     { key: 'dashboard', label: 'Dashboard', icon: Icon.dashboard },
-    { key: 'manager', label: 'Manager', icon: Icon.manage },
     { key: 'discovery', label: 'Discovery', icon: Icon.search },
     { key: 'projects', label: 'My Projects', icon: Icon.folder },
     { key: 'messages', label: 'Messages', icon: Icon.message },
     { key: 'profile', label: 'Profile & Settings', icon: Icon.users },
 ];
+
+const partnersItem = [
+    {
+    location :"Da Nang",
+    forcus : "Green Tech, Education, Entertainment",
+    title : "Music in the park: Summer Concert Series",
+    tags : ["Sponsor", "Financial"],
+    rating: 4.5
+},
+{
+    location :"Da Nang",
+    forcus : "Green Tech, Education, Entertainment",
+    title : "Club Creative",
+    tags : ["Sponsor", "Financial"],
+    rating: 3.5
+},
+{
+    location :"Da Nang",
+    forcus : "Green Tech, Education, Entertainment",
+    title : "Lumire",
+    tags : ["Sponsor", "Financial"],
+     rating: 2.5
+},
+{
+    location :"Da Nang",
+    forcus : "Green Tech, Education, Entertainment",
+    title : "Rimberio",
+    tags : ["Sponsor", "Financial"],
+     rating: 5
+},
+{
+    location :"Da Nang",
+    forcus : "Green Tech, Education, Entertainment",
+    title : "BlissSprhere",
+    tags : ["Sponsor", "Financial"],
+     rating: 3
+},
+{
+    location :"Da Nang",
+    forcus : "Green Tech, Education, Entertainment",
+    title : "Momemtum",
+    tags : ["Sponsor", "Financial"],
+     rating: 1
+},
+{
+    location :"Da Nang",
+    forcus : "Green Tech, Education, Entertainment",
+    title : "Veloria",
+    tags : ["Sponsor", "Financial"],
+     rating: 4.5
+},
+{
+    location :"Da Nang",
+    forcus : "Green Tech, Education, Entertainment",
+    title : "Bela Lumiere",
+    tags : ["Sponsor", "Financial"],
+     rating: 2.5
+},
+{
+    location :"Da Nang",
+    forcus : "Green Tech, Education, Entertainment",
+    title : "B.I.R",
+    tags : ["Sponsor", "Financial"],
+     rating: 5
+},
+
+
+]
 
 
 
@@ -65,6 +134,7 @@ function OrganizerPage() {
     const [tab, setTab] = useState(() => localStorage.getItem('organizer.tab') || 'dashboard');
     const [active, setActive] = useState(() => localStorage.getItem('organizer.active') || 'dashboard');
     const [subChange, setSubChange] = useState(() => localStorage.getItem('organizer.discoverySub') || ''); // 'find' | 'saved'
+  
 
     // Persist to localStorage whenever these change
     useEffect(() => {
@@ -90,7 +160,9 @@ function OrganizerPage() {
         return <Dashboard />;
       case "discovery":
         if(subChange === 'find') {
-            return;
+            return <PartnersList
+            partnersItem={partnersItem}
+          />;
         }else if(subChange === 'saved') {
             return;
         }
@@ -108,7 +180,7 @@ function OrganizerPage() {
          if(subChange === 'brand') {
             return;
         }else if(subChange === 'account') {
-            return;
+            return <AccountSetting/>;
         }else if(subChange === 'marketing') {
             return;
         }
