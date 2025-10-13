@@ -23,7 +23,13 @@ namespace EventLink.Controllers
         //[Authorize(Roles = "Organizer")]
         public async Task<IActionResult> CreatePartnership([FromBody] CreatePartnershipRequest request)
         {
-            var userId = Guid.Parse(User.FindFirst("UserId")!.Value);
+            var userId = Guid.Parse(User.FindFirst("UserId").Value);
+
+            if (userId == null)
+            {
+                return Unauthorized();
+            }
+            
             var result = await _partnershipService.CreateAsync(userId, request);
 
             return Ok(new

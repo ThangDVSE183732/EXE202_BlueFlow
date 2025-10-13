@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -51,12 +52,11 @@ namespace Eventlink_Services.Request
             public string SponsorshipNeeds { get; set; }
             public string SpecialRequirements { get; set; }
 
-            public bool? IsFeatured { get; set; }
+            //public bool? IsFeatured { get; set; }
 
-            [Url(ErrorMessage = "Cover image must be a valid URL")]
-            public string CoverImageUrl { get; set; }
+            public IFormFile CoverImageUrl { get; set; }
 
-            public string EventImages { get; set; }
+            public List<IFormFile> EventImages { get; set; }
 
             [Range(0, int.MaxValue, ErrorMessage = "View count must be non-negative")]
             public int? ViewCount { get; set; }
@@ -106,12 +106,16 @@ namespace Eventlink_Services.Request
             public string SponsorshipNeeds { get; set; }
             public string SpecialRequirements { get; set; }
 
-            public bool? IsFeatured { get; set; }
+            //public bool? IsFeatured { get; set; }
 
             [Url(ErrorMessage = "Cover image must be a valid URL")]
             public string CoverImageUrl { get; set; }
 
-            public string EventImages { get; set; }
+            // ảnh cũ người dùng muốn giữ lại
+            public List<string> ExistingImages { get; set; }
+
+            // ảnh mới người dùng upload thêm
+            public List<IFormFile> NewImages { get; set; }
 
             [Range(0, int.MaxValue, ErrorMessage = "View count must be non-negative")]
             public int? ViewCount { get; set; }

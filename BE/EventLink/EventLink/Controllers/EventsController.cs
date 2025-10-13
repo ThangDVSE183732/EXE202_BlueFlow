@@ -5,11 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 using Eventlink_Services.Interface;
 using Eventlink_Services.Response;
 using static Eventlink_Services.Request.EventRequest;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EventLink.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class EventsController : ControllerBase
     {
         private readonly IEventService _eventService;
@@ -26,6 +28,7 @@ namespace EventLink.Controllers
         public async Task<ActionResult<IEnumerable<EventResponse>>> GetEvents()
         {
             var events = await _eventService.GetAllEventsAsync();
+
             return Ok(new
             {
                 success = true,
@@ -52,7 +55,8 @@ namespace EventLink.Controllers
         // PUT: api/Events/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutEvent(Guid id, UpdateEventRequest @event)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> PutEvent(Guid id, [FromForm] UpdateEventRequest @event)
         {
             var existingEvent = await _eventService.GetEventById(id);
             if (existingEvent == null)
@@ -68,16 +72,39 @@ namespace EventLink.Controllers
             return NoContent();
         }
 
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(Guid id, string status)
+        {
+            var existingEvent = await _eventService.GetEventById(id);
+            if (existingEvent == null)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Event not found"
+                });
+            }
+            _eventService.UpdateStatus(id, status);
+            return Ok(new
+            {
+                success = true,
+                message = "Event status updated successfully"
+            });
+        }
+
         // POST: api/Events
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<EventResponse>> PostEvent(CreateEventRequest request)
+        [Consumes("multipart/form-data")]
+        public async Task<ActionResult<EventResponse>> PostEvent([FromForm] CreateEventRequest request)
         {
             if(!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-            var userIdClaim = User.FindFirst("userId").Value;
+
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out Guid userId))
             {
                 return Unauthorized(new
@@ -103,7 +130,9 @@ namespace EventLink.Controllers
                     message = "Event date cannot be in the past"
                 });
             }
+
             await _eventService.Create(userId, request);
+
             return Ok(new
             {
                 success = true,

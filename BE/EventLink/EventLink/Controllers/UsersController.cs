@@ -51,18 +51,5 @@ namespace EventLink.Controllers
                 count = users.Count
             });
         }
-
-        //[HttpPost("request")]
-        //public async Task RequestPartnership([FromBody] PartnershipSuggestionRequest request)
-        //{
-        //    var subject = "Partnership Request";
-            
-        //    var targetUser = await _userService.GetUserByEmailAsync(request.Email);
-        //    if (targetUser == null)
-        //    {
-        //        throw new Exception("User with the provided email does not exist.");
-        //    }
-        //    await _emailService.SendEmailAsync(targetUser.Email, subject, request.Message);
-        //}
     }
 }

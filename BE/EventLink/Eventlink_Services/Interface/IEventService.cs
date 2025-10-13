@@ -23,5 +23,6 @@ namespace Eventlink_Services.Interface
         Task Create(Guid userId, CreateEventRequest request);
         Task Update(Guid id, UpdateEventRequest request);
         void Remove(Event @event);
+        Task UpdateStatus(Guid id, string status);
     }
 }
