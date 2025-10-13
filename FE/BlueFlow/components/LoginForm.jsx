@@ -1,22 +1,115 @@
 import FloatingInput from "./FloatingInput";
+import { useState } from "react";
+import { validateLoginForm } from "../utils/validation";
+import {useToast} from '../hooks/useToast';
+import ToastContainer from './ToastContainer';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import {authService} from '../services/userService';
+
 
 function LoginForm() {
+	const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+    });
+	const handleInputChange = (name, value) => {
+        setFormData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+    };
+
+     const { toasts, showToast, removeToast } = useToast();
+     const navigate = useNavigate();
+
+
+	const handleSubmit = async(e) => {
+			e.preventDefault();
+			 const validation = validateLoginForm(formData);
+        
+        if(!validation.isValid) {
+            const errorCount = Object.keys(validation.errors).length;
+            const firstError = Object.values(validation.errors)[0];
+            
+            showToast({
+                type: 'error',
+                title: 'Validation Error',
+                message: `${firstError}${errorCount > 1 ? ` (and ${errorCount - 1} more error${errorCount > 2 ? 's' : ''})` : ''}`
+            });
+            return;
+        }
+
+		try {
+			// Bước 1: Gọi API login
+            const response = await authService.login({
+                email: formData.email,
+                password: formData.password
+            });
+
+            if (response.success) {
+                showToast({
+                    type: 'success',
+                    title: 'Success!',
+                    message: response.message || 'OTP has been sent to your email!'
+                });
+
+                // Chuyển đến trang verify OTP với email
+                navigate('/verify-code', { 
+                    state: { 
+                        email: formData.email,
+                        from: 'login'
+                    }
+                });
+            } else {
+                showToast({
+                    type: 'error',
+                    title: 'Login Failed',
+                    message: response.message || 'Login failed. Please try again.'
+                });
+            }
+		}catch (error) {
+			console.error('Login error:', error);
+            
+            showToast({
+                type: 'error',
+                title: 'Login Failed',
+                message: error.message || 'Login failed. Please try again.'
+            });
+		} 
+		};
+
   return (
+	<>
+	<ToastContainer toasts={toasts} onRemoveToast={removeToast} />
     <div className="w-full max-w-md p-8 pt-20 space-y-3 rounded-xl text-black ml-20">
-	<h1 className="text-2xl font-bold text-center mb-15">Welcome</h1>
-	<form noValidate="" action="" >
+	<h1 className="text-2xl font-bold ml-3 text-center mb-15">Welcome</h1>
+	<form onSubmit={handleSubmit} >
 		<div className="space-y-1 text-sm mb-6">
-			<FloatingInput id="username" type="text" label="Username" />
+			<FloatingInput 
+				id="email" 
+				type="email" 
+				label="Email" 
+				value={formData.email}
+				onChange={(value) => handleInputChange('email', value)}
+			/>
 		</div>
 		<div className="space-y-2 text-sm mb-10">
-				<FloatingInput id="password" type="password" label="Password" />
+				<FloatingInput 
+					id="password" 
+					type="password" 
+					label="Password" 
+					value={formData.password}
+					onChange={(value) => handleInputChange('password', value)}
+				/>
 			<div className="flex justify-end text-xs text-red-600 font-medium">
-				<a rel="noopener noreferrer" href="#">Forgot Password?</a>
+				<Link rel="noopener noreferrer" to="/forgot-password">Forgot Password?</Link>
 			</div>
 		</div>
-		<button className="block mb-2 w-full p-3 text-center rounded-lg font-medium text-gray-50 bg-blue-400">Sign in</button>
+		<button type="submit" className="block mb-2 w-full p-3 text-center rounded-lg font-medium text-gray-50 bg-blue-400">Sign in</button>
 		<p className="text-xs font-medium text-center sm:px-6 text-gray-600">Don't have an account?
-		<a rel="noopener noreferrer" href="#" className="text-red-600 text-gray-800"> Sign up</a>
+		<Link rel="noopener noreferrer" to="/signup" className="text-red-600"> Sign up</Link>
 	</p>
 	</form>
 	<div className="flex items-center pt-4 space-x-1">
@@ -43,7 +136,7 @@ function LoginForm() {
 	</div>
 	
 </div>
-
+	</>
     )
     }
 export default LoginForm;

@@ -82,7 +82,7 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                             <span className={[
                                                 'text-sm',
                                                 subChange === 'find' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Find Events</span>
+                                            ].join(' ')}>Find Partners</span>
                                         </button>
                                         <button type="button" onClick={() => onSubChange && onSubChange('saved')} className="flex items-center gap-3 text-left">
                                             <span className={[
@@ -148,7 +148,7 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                                 subChange === 'account' ? 'font-semibold text-black' : 'text-gray-400'
                                             ].join(' ')}>Account Setting</span>
                                         </button>
-                                        <button type="button" onClick={() => onSubChange && onSubChange('marketing')} className="flex items-center gap-3 text-left">
+                                        {/* <button type="button" onClick={() => onSubChange && onSubChange('marketing')} className="flex items-center gap-3 text-left">
                                             <span className={[
                                                 'h-6 w-1 rounded-full',
                                                 subChange === 'marketing' ? 'bg-sky-500' : 'bg-transparent'
@@ -157,7 +157,7 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                                 'text-sm',
                                                 subChange === 'marketing' ? 'font-semibold text-black' : 'text-gray-400'
                                             ].join(' ')}>Marketing Preferences</span>
-                                        </button>
+                                        </button> */}
                                     </div>
                                 )}
                             </div>

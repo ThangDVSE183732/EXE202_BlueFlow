@@ -1,15 +1,13 @@
-import LoginForm from "../components/LoginForm";
+import PasswordChanged from "../components/PasswordChanged";
 
-
-function Login() {
+function PasswordChangedSuccessfully() {
   return (
     <div className="grid grid-cols-10 w-screen h-screen overflow-hidden">
       <div
         className="col-span-5 h-full grid items-start justify-items-start bg-no-repeat bg-cover bg-center"
-        
+        style={{ backgroundImage: "url('/imgs/waveVector.jpg')" }}
       >
-        <LoginForm />
-        
+                <PasswordChanged/>
       </div>
       <div className="col-span-5 grid h-full ">
         <div className="w-full h-screen overflow-hidden">
@@ -23,4 +21,4 @@ function Login() {
     </div>
   );
 }
-export default Login;
+export default PasswordChangedSuccessfully;

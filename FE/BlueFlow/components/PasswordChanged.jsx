@@ -1,4 +1,14 @@
+
+import { useNavigate } from 'react-router-dom';
+
 function PasswordChanged() {
+
+      const navigate = useNavigate();
+      const handleSubmit = (e) => {
+                e.preventDefault();
+                  // Navigation will be handled by RoleBasedRedirect component
+                  navigate('/login');
+              };
     return (
       <div className="text-center w-full max-w-md px-8 pt-35 ml-20 text-black">
         <img src="/imgs/success.png" alt="success" className="mx-auto mb-6 w-20 h-20"/>
@@ -7,9 +17,9 @@ function PasswordChanged() {
           Your password has been changed successfully.
         </p>
 
-        <form noValidate className="w-2xs ml-12">
+        <form onSubmit={handleSubmit} className="w-2xs ml-12">
           
-          <button className="block mb-2 w-full p-3 text-center rounded-lg font-medium text-gray-50 bg-blue-400">
+          <button type="submit" className="block mb-2 w-full p-3 text-center rounded-lg font-medium text-gray-50 bg-blue-400">
             Back to Login
           </button>
           

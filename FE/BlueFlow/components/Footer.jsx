@@ -30,7 +30,7 @@ const NavLink = ({ link, label }) => {
 function Footer() {
     return (
         <>
-      <footer className="relative z-10 bg-sky-100  pt-8 dark:bg-dark  lg:pt-8 pl-36">
+      <footer className="relative z-10 bg-sky-100  pt-8 dark:bg-dark  lg:pt-8 pl-36 " style={{fontFamily: 'Space Grotesk, sans-serif'}}>
         <div className="container">
           <div className="-mx-2 flex flex-wrap">
             <div className="w-full px-4 sm:w-2/3 lg:w-3/12 mr-15">
@@ -43,7 +43,7 @@ function Footer() {
                   />
                   
                 </a>
-                <p className="mb-7 text-left text-body-color text-sm dark:text-dark-6 w-60">
+                <p className="mb-7 text-left text-body-color text-sm dark:text-dark-6 w-60 ml-4">
                   BlueFlow is a student-founded startup that aims to solve key problems in the event industry.
                 </p>
 
