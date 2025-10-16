@@ -34,6 +34,7 @@ builder.Configuration["EmailSettings:Password"] = Environment.GetEnvironmentVari
 builder.Configuration["CLOUDINARY_CLOUD_NAME"] = Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME");
 builder.Configuration["CLOUDINARY_API_KEY"] = Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY");
 builder.Configuration["CLOUDINARY_API_SECRET"] = Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET");
+builder.Configuration["GROQ_API_KEY"] = Environment.GetEnvironmentVariable("GROQ_API_KEY");
 
 // Add services to the container
 builder.Services.AddControllers();
@@ -115,6 +116,7 @@ builder.Services.AddScoped<ISupplierServiceRepository, SupplierServiceRepository
 builder.Services.AddScoped<ISupplierServiceService, SupplierServiceService>();
 
 builder.Services.AddSingleton<CloudinaryService>();
+builder.Services.AddSingleton<OpenAIService>();
 
 builder.Services.AddMemoryCache();
 

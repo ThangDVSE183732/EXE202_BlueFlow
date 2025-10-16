@@ -69,7 +69,10 @@ namespace Eventlink_Services.Service
                 AverageRating = p.AverageRating,
                 VerificationDocuments = p.VerificationDocuments,
                 CreatedAt = p.CreatedAt,
-                UpdatedAt = p.UpdatedAt
+                UpdatedAt = p.UpdatedAt,
+                FullName = p.User.FullName,
+                Email = p.User.Email,
+                Role = p.User.Role
             }).ToList();
             return response;
         }
@@ -98,7 +101,10 @@ namespace Eventlink_Services.Service
                 AverageRating = userProfile.AverageRating,
                 VerificationDocuments = userProfile.VerificationDocuments,
                 CreatedAt = userProfile.CreatedAt,
-                UpdatedAt = userProfile.UpdatedAt
+                UpdatedAt = userProfile.UpdatedAt,
+                FullName = userProfile.User.FullName,
+                Email = userProfile.User.Email,
+                Role = userProfile.User.Role
             };
             return response;
         }

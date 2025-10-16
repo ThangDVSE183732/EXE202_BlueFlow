@@ -12,5 +12,6 @@ namespace Eventlink_Services.Interface
         Task<List<User>> GetSuppliersAsync(string? category, string? location);
         Task<List<User>> GetOrganizersAsync(decimal? budget, string? targetAudience, string? packageType);
         Task<User> GetUserByEmailAsync(string email);
+        Task<IEnumerable<User>> GetAllUsersAsync();
     }
 }

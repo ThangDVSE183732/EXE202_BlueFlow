@@ -18,6 +18,12 @@ namespace Eventlink_Services.Service
         {
             _userRepository = userRepository;
         }
+
+        public async Task<IEnumerable<User>> GetAllUsersAsync()
+        {
+            return await _userRepository.GetAllAsync();
+        }
+
         public async Task<List<User>> GetOrganizersAsync(decimal? budget, string? targetAudience, string? packageType)
         {
             var query = await _userRepository.GetAllAsync();

@@ -67,7 +67,7 @@ namespace EventLink.Controllers
                     message = "Event not found"
                 });
             }
-            _eventService.Update(id, @event);
+            await _eventService.Update(id, @event);
 
             return NoContent();
         }
@@ -76,6 +76,7 @@ namespace EventLink.Controllers
         public async Task<IActionResult> UpdateStatus(Guid id, string status)
         {
             var existingEvent = await _eventService.GetEventById(id);
+
             if (existingEvent == null)
             {
                 return NotFound(new
@@ -84,7 +85,9 @@ namespace EventLink.Controllers
                     message = "Event not found"
                 });
             }
-            _eventService.UpdateStatus(id, status);
+
+            await _eventService.UpdateStatus(id, status);
+
             return Ok(new
             {
                 success = true,
