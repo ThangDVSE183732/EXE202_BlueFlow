@@ -1,6 +1,7 @@
 ﻿using Eventlink_Services.Interface;
 using Eventlink_Services.Request;
 using Eventlink_Services.Response;
+using Eventlink_Services.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -17,11 +18,16 @@ namespace EventLink_API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IGoogleAuthService _googleAuthService;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthService authService, ILogger<AuthController> logger)
+        public AuthController(
+            IAuthService authService,
+            IGoogleAuthService googleAuthService,
+            ILogger<AuthController> logger)
         {
             _authService = authService;
+            _googleAuthService = googleAuthService;
             _logger = logger;
         }
 
@@ -207,6 +213,51 @@ namespace EventLink_API.Controllers
 
             var result = await _authService.CheckEmailExistsAsync(email);
 
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Authenticate with Google
+        /// </summary>
+        /// <param name="request">Google authentication request</param>
+        /// <returns>Authentication response with JWT token</returns>
+        [HttpPost("google")]
+        public async Task<ActionResult<ApiResponse<AuthResponse>>> GoogleAuth([FromBody] GoogleAuthRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .SelectMany(x => x.Value.Errors)
+                    .Select(x => x.ErrorMessage)
+                    .ToList();
+
+                return BadRequest(ApiResponse<AuthResponse>.ErrorResult("Validation failed", errors));
+            }
+
+            var result = await _googleAuthService.AuthenticateWithGoogleAsync(request);
+
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Verify Google token (for testing)
+        /// </summary>
+        /// <param name="idToken">Google ID token</param>
+        /// <returns>Google user information</returns>
+        [HttpPost("google/verify")]
+        public async Task<ActionResult<ApiResponse<GoogleUserInfo>>> VerifyGoogleToken([FromBody] string idToken)
+        {
+            if (string.IsNullOrWhiteSpace(idToken))
+            {
+                return BadRequest(ApiResponse<GoogleUserInfo>.ErrorResult("ID token is required"));
+            }
+
+            var result = await _googleAuthService.VerifyGoogleTokenAsync(idToken);
             return Ok(result);
         }
     }
