@@ -9,6 +9,8 @@ import Dashboard from '../../components/OrganizerComponent/DashBoard';
 import SegmentedControlItem from '../../components/OrganizerComponent/SegmentedControlItem';
 import PartnersList from '../../components/OrganizerComponent/PartnersList';
 import AccountSetting from '../../components/OrganizerComponent/AccountSetting';
+import MessageContent from '../../components/OrganizerComponent/MessageContent';
+import MessagesPage from '../../components/OrganizerComponent/MessagesPage';
 
 
 
@@ -175,7 +177,7 @@ function OrganizerPage() {
         }
         return ;
       case "messages":
-        return ;
+        return <MessagesPage/>;
     case "profile":
          if(subChange === 'brand') {
             return;
