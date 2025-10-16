@@ -125,7 +125,7 @@ const MessagesList = ({ onSelectChat }) => {
   );
 
   return (
-    <div className="w-80 bg-white border-l border-gray-200 flex flex-col h-full max-h-screen  overflow-hidden">
+    <div className="w-70 bg-white border-l border-gray-200 flex flex-col h-full max-h-screen  overflow-hidden">
       {/* Header */}
       <div className="p-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center justify-between mb-4">

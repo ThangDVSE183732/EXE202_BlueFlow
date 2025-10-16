@@ -255,7 +255,7 @@ const AccountSetting = () => {
   return (
     <div className="p-6 pt-3 pl-2 min-h-screen">
       <div className="ml-1 text-left">
-        <h1 className="text-2xl font-semibold text-gray-900 mb-2">Account setting</h1>
+        <h1 className="text-2xl font-semibold text-blue-500 mb-2">Account setting</h1>
         <p className="text-gray-500 text-sm">Update your company information and contact details</p>
       </div>
       <div className="h-px w-full bg-gray-300 mx-1 mb-5 mt-2" />

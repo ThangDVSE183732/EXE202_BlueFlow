@@ -10,7 +10,7 @@ const MessagesPage = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-100 mb-10 border border-gray-400 rounded-xl shadow-lg overflow-hidden">
+    <div className="flex h-screen bg-gray-100 mb-10 border border-gray-300 rounded-xl shadow-lg overflow-hidden">
       {/* Main Content Area */}
       <div className="flex-1">
         <MessageContent selectedChat={selectedChat} />

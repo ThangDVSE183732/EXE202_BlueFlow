@@ -5,7 +5,7 @@ function EventManagement() {
     return(
         <div>
             <div className="space-y-1 text-left">
-            <h1 className="text-3xl font-bold text-sky-500">Workspace</h1>
+            <h1 className="text-2xl font-semibold text-sky-500">Workspace</h1>
             <h className="text-sm text-gray-400">Real-time updates on sponsorships, events, and audience reach.</h>
             </div>
             <div className="h-px w-full bg-gray-300 mx-1 mb-3 mt-6" />

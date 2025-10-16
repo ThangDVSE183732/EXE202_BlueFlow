@@ -11,6 +11,7 @@ import PartnersList from '../../components/OrganizerComponent/PartnersList';
 import AccountSetting from '../../components/OrganizerComponent/AccountSetting';
 import MessageContent from '../../components/OrganizerComponent/MessageContent';
 import MessagesPage from '../../components/OrganizerComponent/MessagesPage';
+import BrandProfile from '../../components/OrganizerComponent/BrandProfile';
 
 
 
@@ -180,7 +181,7 @@ function OrganizerPage() {
         return <MessagesPage/>;
     case "profile":
          if(subChange === 'brand') {
-            return;
+            return <BrandProfile/>;
         }else if(subChange === 'account') {
             return <AccountSetting/>;
         }else if(subChange === 'marketing') {
