@@ -116,10 +116,12 @@ namespace Eventlink_Services.Service
         //    }
         //}
         private readonly IPartnershipRepository _partnershipRepository;
+        private readonly IUserRepository _userRepository;
 
-        public PartnershipService(IPartnershipRepository partnershipRepository)
+        public PartnershipService(IPartnershipRepository partnershipRepository, IUserRepository userRepository)
         {
             _partnershipRepository = partnershipRepository;
+            _userRepository = userRepository;
         }
 
         public async Task<Partnership> CreateAsync(Guid organizerId, CreatePartnershipRequest request)
@@ -135,6 +137,8 @@ namespace Eventlink_Services.Service
                 ServiceDescription = request.ServiceDescription,
                 PreferredContactMethod = request.PreferredContactMethod,
                 OrganizerContactInfo = request.OrganizerContactInfo,
+                StartDate = request.StartDate,
+                DeadlineDate = request.DeadlineDate,
                 Status = PartnershipStatus.Pending,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -142,6 +146,16 @@ namespace Eventlink_Services.Service
 
             await _partnershipRepository.AddAsync(partnership);
             return partnership;
+        }
+
+        public async Task UpdateAsync(Guid partnershipId, UpdatePartnershipRequest request)
+        {
+            var partnershipTask = await _partnershipRepository.GetByIdAsync(partnershipId);
+
+            if (partnershipTask == null)
+                throw new Exception("Partnership not found.");
+
+            _partnershipRepository.Update(partnershipTask);
         }
 
         public async Task<Partnership> UpdateStatusAsync(Guid partnershipId, string status, string response)
@@ -156,6 +170,16 @@ namespace Eventlink_Services.Service
             partnership.Status = status;
             partnership.OrganizerResponse = response;
             partnership.UpdatedAt = DateTime.UtcNow;
+
+            if(status == PartnershipStatus.Accepted)
+            {
+                partnership.AgreedBudget = partnership.ProposedBudget;
+                var partner = await _userRepository.GetActiveUserByIdAsync(partnership.PartnerId);
+                if(partner != null)
+                {
+                    partnership.PartnerContactInfo = partner.Email;
+                }
+            }
 
             await _partnershipRepository.UpdateAsync(partnership);
             return partnership;

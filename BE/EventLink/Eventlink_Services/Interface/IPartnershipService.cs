@@ -17,5 +17,6 @@ namespace Eventlink_Services.Interface
         //void DeletePartnershipAsync(Guid partnershipId);
         Task<Partnership> CreateAsync(Guid organizerId, CreatePartnershipRequest request);
         Task<Partnership> UpdateStatusAsync(Guid partnershipId, string status, string response);
+        Task UpdateAsync(Guid partnershipId, UpdatePartnershipRequest request);
     }
 }

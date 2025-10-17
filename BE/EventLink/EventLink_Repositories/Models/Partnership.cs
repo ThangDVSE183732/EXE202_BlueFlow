@@ -68,3 +68,15 @@ public static class PartnershipStatus
     public const string Completed = "Completed";    
     public const string Cancelled = "Cancelled";    
 }
+
+public static class PartnerType
+{
+    public const string Sponsor = "Sponsor";       
+    public const string Supplier = "Supplier";     
+}
+
+public static class ContactMethod
+{
+    public const string Email = "Email";           
+    public const string Phone = "Phone";           
+}
