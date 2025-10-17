@@ -16,6 +16,10 @@ namespace Eventlink_Services.Service
         public OpenAIService(IConfiguration config)
         {
             _apiKey = config["GROQ_API_KEY"];
+            if(_apiKey == null)
+            {
+                throw new Exception("GROQ_API_KEY is not configured in the environment variables.");
+            }
             _client = new HttpClient
             {
                 BaseAddress = new Uri("https://api.groq.com/openai/v1/")

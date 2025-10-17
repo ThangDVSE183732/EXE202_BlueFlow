@@ -78,10 +78,7 @@ namespace EventLink.Controllers
                 p.CompanyName,
                 p.Bio,
                 p.AverageRating,
-                p.YearsOfExperience,
-                p.TotalProjectsCompleted,
-                p.Location,
-                p.IsVerified
+                p.YearsOfExperience
             });
 
             // 3️⃣ Tạo prompt cho AI
@@ -104,8 +101,7 @@ namespace EventLink.Controllers
                     'companyName': '', 
                     'bio': '', 
                     'averageRating': '', 
-                    'yearsOfExperience': '', 
-                    'reason': ''
+                    'yearsOfExperience': ''
                   }}
                 ]
 
