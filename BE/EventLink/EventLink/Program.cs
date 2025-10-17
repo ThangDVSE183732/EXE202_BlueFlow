@@ -46,6 +46,7 @@ builder.Services.AddDbContext<EventLinkDBContext>(options =>
     options.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
 });
 
+
 // JWT Configuration
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET");
@@ -74,6 +75,8 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero
     };
 });
+
+builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 
 // Authorization Policies
 builder.Services.AddAuthorization(options =>
@@ -154,6 +157,7 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Description = "JWT Authorization header using the Bearer scheme."
     });
+
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
