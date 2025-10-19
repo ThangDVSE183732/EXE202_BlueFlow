@@ -198,7 +198,6 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
 
-//app.MapHub<ChatHub>("/chatHub");
 app.MapHub<AIChatHub>("/aiChatHub");
 
 app.UseAuthentication();
