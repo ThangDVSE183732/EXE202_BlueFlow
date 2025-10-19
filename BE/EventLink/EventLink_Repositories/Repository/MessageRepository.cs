@@ -20,6 +20,7 @@ namespace EventLink_Repositories.Repository
         public async Task<List<Message>> GetMessagesBetweenUsersAsync(Guid userId1, Guid userId2)
         {
             var messages = await _context.Messages
+                .Include(m => m.Sender)
                 .Where(m => (m.SenderId == userId1 && m.ReceiverId == userId2) ||
                             (m.SenderId == userId2 && m.ReceiverId == userId1))
                 .OrderBy(m => m.CreatedAt)
@@ -31,6 +32,7 @@ namespace EventLink_Repositories.Repository
         {
             return await _context.Messages
                 .Where(m => m.PartnershipId == partnershipId)
+                .Include(m => m.Sender)
                 .OrderBy(m => m.CreatedAt)
                 .ToListAsync();
         }

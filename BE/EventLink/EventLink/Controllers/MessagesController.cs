@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace EventLink.Controllers
@@ -24,38 +25,63 @@ namespace EventLink.Controllers
         }
 
         [HttpGet("between-users")]
-        public async Task<IActionResult> GetMessagesBetweenUsers([FromBody] MessageRequest request)
+        public async Task<IActionResult> GetMessagesBetweenUsers(Guid receiverId)
         {
             var userId1Claim = User.FindFirst("UserId")?.Value;
-
-            var userId2 = request.ReceiverId;
 
             if (userId1Claim == null || !Guid.TryParse(userId1Claim, out Guid userId1))
             {
                 return Unauthorized("Invalid or missing UserId claim.");
             }
 
-            var messages = await _messageService.GetMessagesBetweenUsersAsync(userId1, userId2);
-            return Ok(messages);
+            var messages = await _messageService.GetMessagesBetweenUsersAsync(userId1, receiverId);
+
+            // Format ra dạng: "senderName: content"
+            var formatted = messages.Select(m =>
+            {
+                var senderName = m.Sender?.FullName ?? m.SenderId.ToString();
+                return $"{senderName}: {m.Content}";
+            });
+
+            // Ghép thành đoạn hội thoại
+            var chatText = string.Join(Environment.NewLine, formatted);
+            return Content(chatText, "text/plain");
         }
 
         [HttpGet("by-partnership/{partnershipId}")]
         public async Task<IActionResult> GetMessagesByPartnershipId(Guid partnershipId)
         {
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+
+            if (userIdClaim == null || !Guid.TryParse(userIdClaim, out Guid userId))
+            {
+                return Unauthorized("Invalid or missing UserId claim.");
+            }
+
             var messages = await _messageService.GetMessagesByPartnershipIdAsync(partnershipId);
-            return Ok(messages);
+            // Format ra dạng: "senderName: content"
+
+            var formatted = messages.Select(m =>
+            {
+                var senderName = m.Sender?.FullName ?? m.SenderId.ToString();
+                return $"{senderName}: {m.Content}";
+            });
+
+            var chatText = string.Join(Environment.NewLine, formatted);
+
+            return Content(chatText, "text/plain");
         }
 
         [HttpPost("mark-as-read")]
-        public async Task<IActionResult> MarkMessagesAsRead([FromBody] MessageRequest request)
+        public async Task<IActionResult> MarkMessagesAsRead([FromBody] MessagesMarkAsReadRequest request)
         {
             var userIdClaim = User.FindFirst("UserId")?.Value;
             if (userIdClaim == null || !Guid.TryParse(userIdClaim, out Guid receiverId))
             {
                 return Unauthorized("Invalid or missing UserId claim.");
             }
-            var senderId = request.ReceiverId;
-            await _messageService.MarkMessagesAsReadAsync(senderId, receiverId);
+
+            await _messageService.MarkMessagesAsReadAsync(request.SenderId, receiverId);
             return NoContent();
         }
 
@@ -64,20 +90,13 @@ namespace EventLink.Controllers
         {
             var userIdClaim = User.FindFirst("UserId")?.Value;
             if (userIdClaim == null || !Guid.TryParse(userIdClaim, out Guid senderId))
-            {
-                return Unauthorized("Invalid or missing UserId claim.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+                return Unauthorized();
 
             var messageSend = new Message
             {
                 Id = Guid.NewGuid(),
                 SenderId = senderId,
-                ReceiverId = request.ReceiverId,
+                ReceiverId = request.ReceiverId ?? Guid.Empty,
                 PartnershipId = request.PartnershipId,
                 Content = request.Content,
                 MessageType = "Text",
@@ -91,16 +110,20 @@ namespace EventLink.Controllers
 
             if (request.PartnershipId.HasValue)
             {
-                await _hubContext.Clients.Group(request.PartnershipId.ToString())
+                var groupName = $"partnership:{request.PartnershipId.Value}";
+                await _hubContext.Clients.Group(groupName)
                     .SendAsync("ReceiveMessage", message);
             }
-            else
+            else if (request.ReceiverId != Guid.Empty)
             {
-                await _hubContext.Clients.Group(request.ReceiverId.ToString())
-                    .SendAsync("ReceiveMessage", senderId, message);
-            }
+                var a = senderId.ToString();
+                var b = request.ReceiverId.ToString();
+                var ordered = string.CompareOrdinal(a, b) <= 0 ? (a, b) : (b, a);
+                var groupName = $"private:{ordered.Item1}:{ordered.Item2}";
 
-            Console.WriteLine($"📡 SignalR: Sending message from {senderId} to {request.ReceiverId}, partnershipId = {request.PartnershipId}");
+                await _hubContext.Clients.Group(groupName)
+                    .SendAsync("ReceiveMessage", message);
+            }
 
             return Ok(message);
         }

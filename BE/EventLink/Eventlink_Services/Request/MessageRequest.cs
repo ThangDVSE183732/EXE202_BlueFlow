@@ -8,14 +8,19 @@ namespace Eventlink_Services.Request
 {
     public class MessageRequest
     {
-        public Guid ReceiverId { get; set; }
+        public Guid? ReceiverId { get; set; }
 
         public Guid? PartnershipId { get; set; }
 
         public string Content { get; set; }
 
-        public string AttachmentUrl { get; set; }
+        public string? AttachmentUrl { get; set; }
 
-        public string AttachmentName { get; set; }
+        public string? AttachmentName { get; set; }
+    }
+
+    public class MessagesMarkAsReadRequest
+    {
+        public Guid SenderId { get; set; }
     }
 }
