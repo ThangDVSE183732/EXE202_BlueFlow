@@ -1,5 +1,6 @@
 ﻿using Eventlink_Services.Request;
 using Eventlink_Services.Response;
+using EventLink_Services.DTOs.Requests;
 using System;
 using System.Collections.Generic;
 using System.Linq;
