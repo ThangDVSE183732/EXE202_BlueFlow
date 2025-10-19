@@ -1,0 +1,77 @@
+﻿ === TÀI LIỆU HỆ THỐNG EVENTLINK ===
+
+## Tính năng chính:
+1. Quản lý sự kiện: Tạo, chỉnh sửa, xóa, xem chi tiết sự kiện.
+2. Tìm kiếm & gợi ý đối tác: Hệ thống đề xuất đối tác phù hợp dựa trên loại sự kiện, nhu cầu tài trợ, dịch vụ.
+3. Quản lý người dùng: Đăng ký, đăng nhập, phân quyền (người tổ chức, đối tác, quản trị viên).
+4. Quản lý hồ sơ người dùng: Cập nhật thông tin cá nhân, liên hệ, lịch sử tham gia sự kiện.
+5. Quản lý đối tác: Thêm, chỉnh sửa, xóa đối tác, quản lý trạng thái hợp tác.
+6. Quản lý gói tài trợ: Tạo, chỉnh sửa, xóa các gói tài trợ cho sự kiện.
+7. Quản lý tin nhắn & trao đổi: Gửi, nhận tin nhắn giữa người dùng và đối tác.
+8. Thanh toán: Tích hợp cổng thanh toán cho vé sự kiện, xác nhận giao dịch.
+9. Quản lý hồ sơ đối tác: Xem, cập nhật thông tin, lịch sử hợp tác.
+
+## API Endpoints tiêu biểu:
+- POST /api/events/create: Tạo sự kiện mới
+- GET /api/events/{id}: Lấy thông tin sự kiện
+- PUT /api/events/{id}: Chỉnh sửa sự kiện
+- DELETE /api/events/{id}: Xóa sự kiện
+- POST /api/partners/search: Tìm kiếm đối tác
+- GET /api/partners/{id}: Lấy thông tin đối tác
+- POST /api/partners: Thêm đối tác mới
+- PUT /api/partners/{id}: Chỉnh sửa đối tác
+- DELETE /api/partners/{id}: Xóa đối tác
+- POST /api/auth/login: Đăng nhập
+- POST /api/auth/register: Đăng ký
+- GET /api/users/{id}: Lấy thông tin người dùng
+- PUT /api/users/{id}: Chỉnh sửa thông tin người dùng
+- GET /api/userprofiles/{id}: Lấy hồ sơ người dùng
+- PUT /api/userprofiles/{id}: Cập nhật hồ sơ người dùng
+- POST /api/sponsorpackages: Tạo gói tài trợ
+- GET /api/sponsorpackages/{id}: Lấy thông tin gói tài trợ
+- POST /api/messages: Gửi tin nhắn
+- GET /api/messages/{eventId}: Lấy tin nhắn theo sự kiện
+
+## Quy trình tạo sự kiện:
+1. Người dùng điền form thông tin sự kiện (tên, mô tả, thời gian, địa điểm, loại sự kiện).
+2. Hệ thống kiểm tra và xác thực dữ liệu.
+3. Lưu thông tin sự kiện vào cơ sở dữ liệu.
+4. Gửi email xác nhận cho người tổ chức.
+5. Hệ thống tự động gợi ý đối tác phù hợp (nhà tài trợ, nhà cung cấp dịch vụ).
+6. Người tổ chức có thể chọn đối tác, gửi lời mời hợp tác.
+7. Quản lý trạng thái hợp tác, trao đổi qua tin nhắn.
+
+## Quy trình hợp tác đối tác:
+1. Đối tác nhận lời mời hợp tác từ người tổ chức sự kiện.
+2. Xem chi tiết sự kiện, gói tài trợ, quyền lợi.
+3. Trao đổi qua hệ thống tin nhắn.
+4. Xác nhận hợp tác, ký hợp đồng (nếu có).
+5. Theo dõi tiến độ hợp tác trên hệ thống.
+
+## Các loại đối tác:
+- Nhà tài trợ: Hỗ trợ tài chính, cung cấp gói tài trợ, quảng bá thương hiệu.
+- Nhà cung cấp dịch vụ: Âm thanh, ánh sáng, trang trí, vận chuyển, bảo vệ, truyền thông.
+- Đơn vị truyền thông: Quảng bá sự kiện, đưa tin, hỗ trợ truyền thông.
+- Đơn vị địa điểm: Cung cấp địa điểm tổ chức sự kiện.
+
+## Quản lý người dùng & phân quyền:
+- Người tổ chức sự kiện: Tạo, quản lý sự kiện, gửi lời mời đối tác.
+- Đối tác: Nhận lời mời, xác nhận hợp tác, cung cấp dịch vụ/tài trợ.
+- Quản trị viên: Quản lý toàn bộ hệ thống, phê duyệt sự kiện, đối tác.
+
+## Quản lý tin nhắn:
+- Hệ thống hỗ trợ gửi/nhận tin nhắn giữa người tổ chức và đối tác.
+- Lưu lịch sử trao đổi theo từng sự kiện.
+
+## Thanh toán:
+- Tích hợp cổng thanh toán cho việc mua vé sự kiện.
+- Xác nhận giao dịch, gửi thông báo cho người dùng.
+
+## Bảo mật & xác thực:
+- Sử dụng xác thực JWT cho API.
+- Mã hóa mật khẩu người dùng.
+- Phân quyền truy cập theo vai trò.
+
+## Công nghệ sử dụng:
+- .NET 8, C# 12, Entity Framework Core, SignalR cho chat thời gian thực.
+- Cơ sở dữ liệu: SQL Server.

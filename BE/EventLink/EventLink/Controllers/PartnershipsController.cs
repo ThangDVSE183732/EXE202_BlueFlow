@@ -1,9 +1,11 @@
 ﻿using Eventlink_Services.Interface;
 using Eventlink_Services.Service;
+using MailKit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using static Eventlink_Services.Request.PartnershipRequest;
@@ -36,7 +38,7 @@ namespace EventLink.Controllers
             {
                 return Unauthorized();
             }
-            
+
             var result = await _partnershipService.CreateAsync(userId, request);
 
             return Ok(new
@@ -70,97 +72,6 @@ namespace EventLink.Controllers
             {
                 success = true,
                 message = "Partnership updated successfully.",
-            });
-        }
-
-        [HttpPost("query")]
-        public async Task<IActionResult> QueryAI(string message)
-        {
-            // 1️⃣ Lấy dữ liệu hồ sơ người dùng
-            var userProfiles = await _userProfileService.GetAllUserProfilesAsync();
-
-            // 2️⃣ Chỉ chọn các trường cần thiết để AI phân tích
-            var simplifiedProfiles = userProfiles.Select(p => new
-            {
-                p.Id,
-                p.UserId,
-                p.FullName,
-                p.Email,
-                p.Role,
-                p.CompanyName,
-                p.Bio,
-                p.AverageRating,
-                p.YearsOfExperience
-            });
-
-            // 3️⃣ Tạo prompt cho AI
-            var prompt = $@"
-                Người dùng yêu cầu: {message}
-
-                Dưới đây là danh sách các đối tác trong hệ thống:
-                {JsonConvert.SerializeObject(simplifiedProfiles, Formatting.Indented)}
-
-                Nhiệm vụ:
-                - Phân tích dữ liệu và chọn tối đa 3 đối tác phù hợp nhất với yêu cầu người dùng.
-                - Trả lời đúng định dạng sau:
-                1️⃣ Một câu giới thiệu ngắn gọn.
-                2️⃣ Ngay sau đó là danh sách JSON gồm tối đa 3 đối tác:
-                [
-                  {{
-                    'id': '', 
-                    'name': '', 
-                    'role': '', 
-                    'companyName': '', 
-                    'bio': '', 
-                    'averageRating': '', 
-                    'yearsOfExperience': ''
-                  }}
-                ]
-
-                Không thêm mô tả, không giải thích thừa.  
-                Nếu không có ai phù hợp, hãy trả:
-                'Xin lỗi, hiện chưa có đối tác nào phù hợp với yêu cầu này.'
-                ";
-
-            // 4️⃣ Gọi AI service
-            var aiResponse = await _openAIService.GetAIResponse(prompt);
-
-            // 5️⃣ Tách phần JSON trong câu trả lời
-            var jsonPart = System.Text.RegularExpressions.Regex
-                .Match(aiResponse, @"\[.*\]", System.Text.RegularExpressions.RegexOptions.Singleline)
-                .Value;
-
-            object parsedJson = null;
-            try
-            {
-                parsedJson = JsonConvert.DeserializeObject(jsonPart);
-            }
-            catch
-            {
-                parsedJson = aiResponse;
-            }
-
-            // 6️⃣ Trả kết quả cho frontend
-            return Ok(new
-            {
-                success = true,
-                message = "AI query successful.",
-                data = parsedJson
-            });
-        }
-
-        [HttpPost("/aichat")]
-        public async Task<IActionResult> AIChat(string message)
-        {            
-            var prompt = $"Người dùng: {message}";
-            
-            var aiResponse = await _openAIService.GetAIResponse(prompt);
-            
-            return Ok(new
-            {
-                success = true,
-                message = "AI chat successful.",
-                data = aiResponse
             });
         }
     }

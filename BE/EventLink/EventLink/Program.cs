@@ -1,5 +1,4 @@
 ﻿using DotNetEnv;
-using EventLink.SignalR;
 using EventLink_Repositories.DBContext;
 using EventLink_Repositories.Interface;
 using EventLink_Repositories.Repository;
@@ -119,7 +118,6 @@ builder.Services.AddScoped<ISupplierServiceRepository, SupplierServiceRepository
 builder.Services.AddScoped<ISupplierServiceService, SupplierServiceService>();
 
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
-builder.Services.AddScoped<IMessageService, MessageService>();
 
 builder.Services.AddSingleton<CloudinaryService>();
 builder.Services.AddSingleton<OpenAIService>();
@@ -197,8 +195,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
-
-app.MapHub<AIChatHub>("/aiChatHub");
 
 app.UseAuthentication();
 app.UseAuthorization();
