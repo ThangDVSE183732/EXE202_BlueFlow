@@ -148,5 +148,20 @@ namespace EventLink.Controllers
                 data = parsedJson
             });
         }
+
+        [HttpPost("/aichat")]
+        public async Task<IActionResult> AIChat(string message)
+        {            
+            var prompt = $"Người dùng: {message}";
+            
+            var aiResponse = await _openAIService.GetAIResponse(prompt);
+            
+            return Ok(new
+            {
+                success = true,
+                message = "AI chat successful.",
+                data = aiResponse
+            });
+        }
     }
 }

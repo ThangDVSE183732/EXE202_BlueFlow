@@ -1,5 +1,5 @@
 ﻿using DotNetEnv;
-using EventLink;
+using EventLink.SignalR;
 using EventLink_Repositories.DBContext;
 using EventLink_Repositories.Interface;
 using EventLink_Repositories.Repository;
@@ -14,7 +14,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System;
-using System.IO;
 using System.Text;
 
 Env.Load();
@@ -199,7 +198,8 @@ app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
 
-app.MapHub<ChatHub>("/chatHub");
+//app.MapHub<ChatHub>("/chatHub");
+app.MapHub<AIChatHub>("/aiChatHub");
 
 app.UseAuthentication();
 app.UseAuthorization();

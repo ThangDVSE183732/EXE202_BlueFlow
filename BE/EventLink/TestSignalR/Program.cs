@@ -2,12 +2,12 @@
 using System.Net.Http.Headers;
 using System.Text.Json;
 
-Console.WriteLine("🚀 Starting authorized SignalR client...");
+Console.WriteLine("Starting authorized SignalR client...");
 
 var hubUrl = "https://localhost:7029/chatHub";
 var apiBase = "https://localhost:7029/api/messages";
 
-Console.Write("🔑 Enter JWT: ");
+Console.Write("Enter JWT: ");
 var token = Console.ReadLine();
 
 using var http = new HttpClient();
@@ -79,4 +79,4 @@ while ((input = Console.ReadLine()) != "exit")
 }
 
 await connection.StopAsync();
-Console.WriteLine("👋 Disconnected.");
+Console.WriteLine("Disconnected.");
