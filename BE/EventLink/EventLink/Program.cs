@@ -1,4 +1,5 @@
 ﻿using DotNetEnv;
+using EventLink;
 using EventLink_Repositories.DBContext;
 using EventLink_Repositories.Interface;
 using EventLink_Repositories.Repository;
@@ -118,10 +119,15 @@ builder.Services.AddScoped<IPartnershipService, PartnershipService>();
 builder.Services.AddScoped<ISupplierServiceRepository, SupplierServiceRepository>();
 builder.Services.AddScoped<ISupplierServiceService, SupplierServiceService>();
 
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+
 builder.Services.AddSingleton<CloudinaryService>();
 builder.Services.AddSingleton<OpenAIService>();
 
 builder.Services.AddMemoryCache();
+
+builder.Services.AddSignalR();
 
 // CORS Configuration
 builder.Services.AddCors(options =>
@@ -192,6 +198,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");
+
+app.MapHub<ChatHub>("/chatHub");
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -64,13 +64,12 @@ namespace EventLink.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePartnership(Guid id, [FromBody] UpdatePartnershipRequest request)
         {
-            var result = await _partnershipService.UpdateAsync(id, request);
+            await _partnershipService.UpdateAsync(id, request);
 
             return Ok(new
             {
                 success = true,
                 message = "Partnership updated successfully.",
-                data = result
             });
         }
 

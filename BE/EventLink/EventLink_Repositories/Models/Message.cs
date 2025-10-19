@@ -23,7 +23,7 @@ public partial class Message
 
     public string AttachmentName { get; set; }
 
-    public bool? IsRead { get; set; }
+    public bool IsRead { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 

@@ -15,6 +15,7 @@ namespace EventLink_Repositories.Repository
         private readonly EventLinkDBContext _context;
         public PartnershipRepository(EventLinkDBContext context) : base(context)
         {
+            _context = context;
         }
 
         public async Task UpdateAsync(Partnership partnership)
