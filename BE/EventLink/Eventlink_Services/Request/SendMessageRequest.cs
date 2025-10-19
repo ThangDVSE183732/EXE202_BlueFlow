@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
 
-namespace Eventlink_Services.Request
+namespace EventLink_Services.DTOs.Requests
 {
     public class SendMessageRequest
     {
@@ -18,20 +13,12 @@ namespace Eventlink_Services.Request
 
         public Guid? PartnershipId { get; set; }
 
-        [MaxLength(20)]
-        public string MessageType { get; set; } = "Text"; // Text, Image, File, Contact, System
+        [RegularExpression("^(Text|Image|File|Contact|System)$",
+            ErrorMessage = "MessageType must be: Text, Image, File, Contact, or System")]
+        public string MessageType { get; set; } = "Text"; // Default value
 
         public string? AttachmentUrl { get; set; }
 
         public string? AttachmentName { get; set; }
-    }
-
-    public class GetMessagesRequest
-    {
-        public Guid? PartnerId { get; set; }
-        public Guid? PartnershipId { get; set; }
-        public int Page { get; set; } = 1;
-        public int PageSize { get; set; } = 50;
-        public bool UnreadOnly { get; set; } = false;
     }
 }
