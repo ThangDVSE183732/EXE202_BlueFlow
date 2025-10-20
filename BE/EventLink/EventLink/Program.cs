@@ -118,6 +118,7 @@ builder.Services.AddScoped<ISupplierServiceRepository, SupplierServiceRepository
 builder.Services.AddScoped<ISupplierServiceService, SupplierServiceService>();
 
 builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IMessageService, MessageService>();
 
 builder.Services.AddSingleton<CloudinaryService>();
 builder.Services.AddSingleton<OpenAIService>();

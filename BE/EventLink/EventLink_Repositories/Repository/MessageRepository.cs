@@ -17,44 +17,115 @@ namespace EventLink_Repositories.Repository
         {
             _context = context;
         }
-        public async Task<List<Message>> GetMessagesBetweenUsersAsync(Guid userId1, Guid userId2)
+
+        public async Task<List<Message>> GetConversationMessagesAsync(Guid userId, Guid partnerId, int page, int pageSize)
         {
-            var messages = await _context.Messages
+            return await _context.Messages
+                .Where(m => (m.SenderId == userId && m.ReceiverId == partnerId) ||
+                           (m.SenderId == partnerId && m.ReceiverId == userId))
+                .OrderByDescending(m => m.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Include(m => m.Sender)
-                .Where(m => (m.SenderId == userId1 && m.ReceiverId == userId2) ||
-                            (m.SenderId == userId2 && m.ReceiverId == userId1))
-                .OrderBy(m => m.CreatedAt)
+                .Include(m => m.Receiver)
                 .ToListAsync();
-            return messages;
         }
 
-        public async Task<List<Message>> GetMessagesByPartnershipIdAsync(Guid partnershipId)
+        public async Task<List<Message>> GetPartnershipMessagesAsync(Guid partnershipId, int page, int pageSize)
         {
             return await _context.Messages
                 .Where(m => m.PartnershipId == partnershipId)
+                .OrderByDescending(m => m.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .Include(m => m.Sender)
-                .OrderBy(m => m.CreatedAt)
+                .Include(m => m.Receiver)
                 .ToListAsync();
         }
 
-        public async Task MarkMessagesAsReadAsync(Guid senderId, Guid receiverId)
+        public async Task<int> GetUnreadCountAsync(Guid userId)
         {
-            var messages = _context.Messages
-                .Where(m => m.SenderId == senderId && m.ReceiverId == receiverId && !m.IsRead)
-                .ToList();
+            return await _context.Messages
+                .Where(m => m.ReceiverId == userId && m.IsRead == false)
+                .CountAsync();
+        }
 
-            foreach (var message in messages)
+        public async Task<int> GetUnreadCountFromUserAsync(Guid userId, Guid senderId)
+        {
+            return await _context.Messages
+                .Where(m => m.ReceiverId == userId && m.SenderId == senderId && m.IsRead == false)
+                .CountAsync();
+        }
+
+        public async Task<List<Message>> GetUnreadMessagesAsync(Guid userId)
+        {
+            return await _context.Messages
+                .Where(m => m.ReceiverId == userId && m.IsRead == false)
+                .OrderByDescending(m => m.CreatedAt)
+                .Include(m => m.Sender)
+                .ToListAsync();
+        }
+
+        public async Task MarkAsReadAsync(Guid messageId)
+        {
+            var message = await _context.Messages.FindAsync(messageId);
+            if (message != null && message.IsRead == false)
+            {
+                message.IsRead = true;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task MarkConversationAsReadAsync(Guid userId, Guid partnerId)
+        {
+            var unreadMessages = await _context.Messages
+                .Where(m => m.ReceiverId == userId && m.SenderId == partnerId && m.IsRead == false)
+                .ToListAsync();
+
+            foreach (var message in unreadMessages)
             {
                 message.IsRead = true;
             }
+
             await _context.SaveChangesAsync();
         }
 
-        public async Task<Message> SendMessageAsync(Message message)
+        public async Task<List<Guid>> GetUserConversationPartnersAsync(Guid userId)
         {
-            await _context.Messages.AddAsync(message);
-            await _context.SaveChangesAsync();
-            return message;
+            var sentTo = await _context.Messages
+                .Where(m => m.SenderId == userId)
+                .Select(m => m.ReceiverId)
+                .Distinct()
+                .ToListAsync();
+
+            var receivedFrom = await _context.Messages
+                .Where(m => m.ReceiverId == userId)
+                .Select(m => m.SenderId)
+                .Distinct()
+                .ToListAsync();
+
+            return sentTo.Union(receivedFrom).Distinct().ToList();
+        }
+
+        public async Task<Message?> GetLastMessageWithUserAsync(Guid userId, Guid partnerId)
+        {
+            return await _context.Messages
+                .Where(m => (m.SenderId == userId && m.ReceiverId == partnerId) ||
+                           (m.SenderId == partnerId && m.ReceiverId == userId))
+                .OrderByDescending(m => m.CreatedAt)
+                .Include(m => m.Sender)
+                .Include(m => m.Receiver)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<bool> CanUserSendMessageAsync(Guid senderId, Guid receiverId)
+        {
+            // Check if users exist and are active
+            var sender = await _context.Users.FindAsync(senderId);
+            var receiver = await _context.Users.FindAsync(receiverId);
+
+            return sender != null && receiver != null &&
+                   sender.IsActive == true && receiver.IsActive == true;
         }
     }
 }
