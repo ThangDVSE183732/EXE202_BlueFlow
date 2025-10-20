@@ -12,6 +12,7 @@ import AccountSetting from '../../components/OrganizerComponent/AccountSetting';
 import MessageContent from '../../components/OrganizerComponent/MessageContent';
 import MessagesPage from '../../components/OrganizerComponent/MessagesPage';
 import BrandProfile from '../../components/OrganizerComponent/BrandProfile';
+import EventDetail from '../../components/OrganizerComponent/EventDetail';
 
 
 
@@ -160,7 +161,7 @@ function OrganizerPage() {
         if(tab === 'event') {
             return <EventManagement />;
         }
-        return <Dashboard />;
+        return <EventDetail />;
       case "discovery":
         if(subChange === 'find') {
             return <PartnersList
