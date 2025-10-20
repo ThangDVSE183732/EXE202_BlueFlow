@@ -10,9 +10,9 @@ namespace EventLink_Repositories.DBContext;
 
 public partial class EventLinkDBContext : DbContext
 {
-    public EventLinkDBContext()
-    {
-    }
+    //public EventLinkDBContext()
+    //{
+    //}
 
     public EventLinkDBContext(DbContextOptions<EventLinkDBContext> options)
         : base(options)
@@ -65,8 +65,22 @@ public partial class EventLinkDBContext : DbContext
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer(GetConnectionString("DefaultConnection")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            var config = new ConfigurationBuilder()
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: true)
+                .AddEnvironmentVariables()
+                .Build();
 
+            var connectionString = config.GetConnectionString("DefaultConnection")
+                                   ?? config["DB_CONNECTION"];
+
+            if (!string.IsNullOrEmpty(connectionString))
+                optionsBuilder.UseSqlServer(connectionString);
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

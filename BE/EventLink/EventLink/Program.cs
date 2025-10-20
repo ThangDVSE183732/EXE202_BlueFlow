@@ -1,3 +1,4 @@
+﻿using DotNetEnv;
 using EventLink_Repositories.DBContext;
 using EventLink_Repositories.Interface;
 using EventLink_Repositories.Repository;
@@ -7,17 +8,32 @@ using EventLink_Services.Services.Implementations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Text;
 
+Env.Load();
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Configuration["ConnectionStrings:DefaultConnection"] = Environment.GetEnvironmentVariable("DB_CONNECTION");
+builder.Configuration["JwtSettings:SecretKey"] = Environment.GetEnvironmentVariable("JWT_SECRET");
+builder.Configuration["JwtSettings:Issuer"] = Environment.GetEnvironmentVariable("JWT_ISSUER");
+builder.Configuration["JwtSettings:Audience"] = Environment.GetEnvironmentVariable("JWT_AUDIENCE");
+builder.Configuration["JwtSettings:ExpireHours"] = Environment.GetEnvironmentVariable("JWT_EXPIRE_HOURS");
+builder.Configuration["EmailSettings:SmtpServer"] = Environment.GetEnvironmentVariable("EMAIL_SMTP");
+builder.Configuration["EmailSettings:Port"] = Environment.GetEnvironmentVariable("EMAIL_PORT");
+builder.Configuration["EmailSettings:SenderName"] = Environment.GetEnvironmentVariable("EMAIL_SENDER_NAME");
+builder.Configuration["EmailSettings:SenderEmail"] = Environment.GetEnvironmentVariable("EMAIL_SENDER_EMAIL");
+builder.Configuration["EmailSettings:Username"] = Environment.GetEnvironmentVariable("EMAIL_USERNAME");
+builder.Configuration["EmailSettings:Password"] = Environment.GetEnvironmentVariable("EMAIL_PASSWORD");
+builder.Configuration["CLOUDINARY_CLOUD_NAME"] = Environment.GetEnvironmentVariable("CLOUDINARY_CLOUD_NAME");
+builder.Configuration["CLOUDINARY_API_KEY"] = Environment.GetEnvironmentVariable("CLOUDINARY_API_KEY");
+builder.Configuration["CLOUDINARY_API_SECRET"] = Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET");
+builder.Configuration["GROQ_API_KEY"] = Environment.GetEnvironmentVariable("GROQ_API_KEY");
 
 // Add services to the container
 builder.Services.AddControllers();
@@ -25,13 +41,14 @@ builder.Services.AddControllers();
 // Database Configuration
 builder.Services.AddDbContext<EventLinkDBContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseSqlServer(Environment.GetEnvironmentVariable("DB_CONNECTION"));
     options.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
 });
 
+
 // JWT Configuration
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["SecretKey"];
+var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET");
 
 if (string.IsNullOrEmpty(secretKey))
 {
@@ -51,12 +68,14 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = jwtSettings["Issuer"],
-        ValidAudience = jwtSettings["Audience"],
+        ValidIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER"),
+        ValidAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE"),
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
         ClockSkew = TimeSpan.Zero
     };
 });
+
+builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 
 // Authorization Policies
 builder.Services.AddAuthorization(options =>
@@ -80,10 +99,33 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ISponsorPackageRepo, SponsorPackageRepo>();
 builder.Services.AddScoped<ISponsorPackageService, SponsorPackageService>();
 
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+
 builder.Services.AddScoped<IUserProfileRepo, UserProfileRepo>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IEventService, EventService>();
+
+builder.Services.AddScoped<IEventProposalRepository, EventProposalRepository>();
+builder.Services.AddScoped<IEventProposalService, EventProposalService>();
+
+builder.Services.AddScoped<IPartnershipRepository, PartnershipRepository>();
+builder.Services.AddScoped<IPartnershipService, PartnershipService>();
+
+builder.Services.AddScoped<ISupplierServiceRepository, SupplierServiceRepository>();
+builder.Services.AddScoped<ISupplierServiceService, SupplierServiceService>();
+
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<IMessageService, MessageService>();
+
+builder.Services.AddSingleton<CloudinaryService>();
+builder.Services.AddSingleton<OpenAIService>();
+
 builder.Services.AddMemoryCache();
+
+builder.Services.AddSignalR();
 
 // CORS Configuration
 builder.Services.AddCors(options =>
@@ -112,12 +154,14 @@ builder.Services.AddSwaggerGen(options =>
     // Add JWT authentication to Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Enter 'Bearer' [space] and then your token.",
         Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Description = "JWT Authorization header using the Bearer scheme."
     });
+
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -135,18 +179,6 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-//// Logging
-//builder.Logging.ClearProviders();
-//builder.Logging.AddConsole();
-//builder.Logging.AddDebug();
-
-//builder.Services.AddSwaggerGen();
-//builder.Services.AddScoped<ISponsorPackageRepo, SponsorPackageRepo>();
-
-//builder.Services.AddDbContext<EventLinkDBContext>(options =>
-//    options.UseSqlServer(
-//        EventLinkDBContext.GetConnectionString("DefaultConnection"))
-//);
 var app = builder.Build();
 
 // Configure the HTTP request pipeline

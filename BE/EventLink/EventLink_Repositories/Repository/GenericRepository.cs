@@ -26,7 +26,7 @@ namespace EventLink_Repositories.Repository
             return await _dbSet.FindAsync(id);
         }
 
-        // Add Guid overload for User entity
+        // Add Guid overload
         public async Task<T> GetByIdAsync(Guid id)
         {
             return await _dbSet.FindAsync(id);

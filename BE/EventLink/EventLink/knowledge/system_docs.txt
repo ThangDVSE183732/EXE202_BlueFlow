@@ -1,0 +1,65 @@
+﻿=== TÀI LIỆU HỆ THỐNG EVENTLINK ===
+
+## Tính năng nổi bật:
+1. Quản lý sự kiện: Tạo, chỉnh sửa, xóa, xem chi tiết sự kiện dễ dàng.
+2. Tìm kiếm & gợi ý đối tác: Hệ thống tự động đề xuất đối tác phù hợp với từng loại sự kiện, nhu cầu tài trợ hoặc dịch vụ.
+3. Quản lý người dùng: Đăng ký, đăng nhập, phân quyền (người tổ chức, đối tác, quản trị viên).
+4. Quản lý hồ sơ cá nhân: Cập nhật thông tin, liên hệ, xem lịch sử tham gia sự kiện.
+5. Quản lý đối tác: Thêm, chỉnh sửa, xóa đối tác, theo dõi trạng thái hợp tác.
+6. Quản lý gói tài trợ: Tạo, chỉnh sửa, xóa các gói tài trợ cho sự kiện.
+7. Nhắn tin & trao đổi: Gửi, nhận tin nhắn giữa người tổ chức và đối tác, hỗ trợ hội thoại theo từng sự kiện.
+8. Thanh toán: Mua vé sự kiện, xác nhận giao dịch, nhận thông báo khi thanh toán thành công.
+9. Quản lý hồ sơ đối tác: Xem, cập nhật thông tin, lịch sử hợp tác.
+
+## Tính năng nhắn tin mới nhất:
+- Gửi tin nhắn nhanh chóng giữa người tổ chức và đối tác, gắn với từng sự kiện cụ thể.
+- Xem lịch sử hội thoại của sự kiện, giúp bạn không bỏ lỡ thông tin quan trọng.
+- Phân loại tin nhắn: tin nhắn mới, đã đọc, tin nhắn hệ thống.
+- Nhận thông báo khi có tin nhắn mới.
+- Giao diện nhắn tin thân thiện, dễ sử dụng.
+
+## Các bước tạo sự kiện:
+1. Điền thông tin sự kiện (tên, mô tả, thời gian, địa điểm, loại sự kiện).
+2. Hệ thống kiểm tra và xác nhận thông tin.
+3. Lưu sự kiện và gửi email xác nhận cho bạn.
+4. Hệ thống tự động gợi ý đối tác phù hợp.
+5. Bạn có thể chọn đối tác, gửi lời mời hợp tác và bắt đầu trao đổi qua tin nhắn.
+
+## Quy trình hợp tác với đối tác:
+1. Đối tác nhận lời mời hợp tác từ bạn.
+2. Xem chi tiết sự kiện, các gói tài trợ, quyền lợi.
+3. Trao đổi qua tin nhắn để thống nhất hợp tác.
+4. Xác nhận hợp tác, ký hợp đồng (nếu cần).
+5. Theo dõi tiến độ hợp tác ngay trên hệ thống.
+
+## Các loại đối tác:
+- Nhà tài trợ: Hỗ trợ tài chính, cung cấp gói tài trợ, quảng bá thương hiệu.
+- Nhà cung cấp dịch vụ: Âm thanh, ánh sáng, trang trí, vận chuyển, bảo vệ, truyền thông.
+- Đơn vị truyền thông: Quảng bá sự kiện, đưa tin, hỗ trợ truyền thông.
+- Đơn vị địa điểm: Cung cấp địa điểm tổ chức sự kiện.
+
+## Quản lý người dùng & phân quyền:
+- Người tổ chức sự kiện: Tạo, quản lý sự kiện, gửi lời mời đối tác, trao đổi tin nhắn.
+- Đối tác: Nhận lời mời, xác nhận hợp tác, cung cấp dịch vụ/tài trợ, trao đổi tin nhắn.
+- Quản trị viên: Quản lý toàn bộ hệ thống, phê duyệt sự kiện, đối tác.
+
+## Quản lý tin nhắn:
+- Gửi/nhận tin nhắn giữa người tổ chức và đối tác, gắn với từng sự kiện.
+- Xem lịch sử hội thoại, phân loại tin nhắn.
+- Nhận thông báo khi có tin nhắn mới.
+
+## Thanh toán:
+- Mua vé sự kiện qua hệ thống.
+- Nhận xác nhận giao dịch và thông báo khi thanh toán thành công.
+
+## Bảo mật & xác thực:
+- Đăng nhập an toàn, bảo vệ thông tin cá nhân.
+- Phân quyền truy cập theo vai trò.
+
+## Công nghệ sử dụng:
+- Hệ thống xây dựng trên nền tảng .NET 8, C# 12.
+- Sử dụng SignalR cho chat thời gian thực.
+- Lưu trữ dữ liệu an toàn với SQL Server.
+
+---
+**Lưu ý:** Khi hỏi AI về hệ thống, bạn sẽ nhận được câu trả lời ngắn gọn, dễ hiểu, tập trung vào trải nghiệm người dùng và các thao tác thực tế, không dùng thuật ngữ kỹ thuật chuyên sâu.
