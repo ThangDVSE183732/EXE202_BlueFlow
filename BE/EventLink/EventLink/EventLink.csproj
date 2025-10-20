@@ -3,10 +3,10 @@
 		<TargetFramework>net8.0</TargetFramework>
 	</PropertyGroup>
 	<ItemGroup>
-	  <None Remove="knowledge\system_docs.txt" />
+	  <None Remove="Knowledge\system_docs.txt" />
 	</ItemGroup>
 	<ItemGroup>
-	  <Content Include="knowledge\system_docs.txt">
+	  <Content Include="Knowledge\System_docs.txt">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </Content>
 	</ItemGroup>
