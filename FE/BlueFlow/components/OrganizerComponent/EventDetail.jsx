@@ -1,9 +1,10 @@
-import React from 'react';
-import { Calendar, MapPin, Users, Building2, ChevronDown, Search, Info, User, Mail, Phone, Globe } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, MapPin, Users, Building2, ChevronDown, Search, Info, User, Mail, Phone, Globe, Pencil, Check, X } from 'lucide-react';
 import EventTimeline from './EventTimeline';
 
 const EventDetail = () => {
-  const eventData = {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState({
     name: 'TechEvents',
     rating: 4.8,
     reviews: 52,
@@ -34,6 +35,45 @@ const EventDetail = () => {
       'Innovation',
       'Networking'
     ]
+  });
+
+  const handleSave = () => {
+    // Save logic here (API call)
+    console.log('Saving changes:', editedData);
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    // Reset to original data if needed
+    setIsEditing(false);
+  };
+
+  const handleInputChange = (field, value) => {
+    setEditedData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleArrayItemChange = (field, index, value) => {
+    setEditedData(prev => ({
+      ...prev,
+      [field]: prev[field].map((item, i) => i === index ? value : item)
+    }));
+  };
+
+  const addArrayItem = (field) => {
+    setEditedData(prev => ({
+      ...prev,
+      [field]: [...prev[field], '']
+    }));
+  };
+
+  const removeArrayItem = (field, index) => {
+    setEditedData(prev => ({
+      ...prev,
+      [field]: prev[field].filter((_, i) => i !== index)
+    }));
   };
 
   return (
@@ -47,16 +87,16 @@ const EventDetail = () => {
               <span className="text-white font-bold text-lg">M</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{eventData.name}</h1>
+              <h1 className="text-xl font-bold text-gray-900">{editedData.name}</h1>
             </div>
             <div className="flex items-center space-x-1 ml-2">
               <span className="text-yellow-500 text-sm">★</span>
-              <span className="font-semibold text-gray-900 text-sm">{eventData.rating}</span>
-              <span className="text-gray-400 text-xs">| {eventData.reviews} reviews</span>
+              <span className="font-semibold text-gray-900 text-sm">{editedData.rating}</span>
+              <span className="text-gray-400 text-xs">| {editedData.reviews} reviews</span>
             </div>
           </div>
           <button className="px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg flex items-center space-x-1 transition-colors">
-            <span>{eventData.status}</span>
+            <span>{editedData.status}</span>
             <ChevronDown size={14} />
           </button>
         </div>
@@ -68,7 +108,7 @@ const EventDetail = () => {
               <Calendar size={16} />
               <span className="text-xs font-medium">Date</span>
             </div>
-            <p className="text-gray-900 font-semibold text-sm">{eventData.date}</p>
+            <p className="text-gray-900 font-semibold text-sm">{editedData.date}</p>
           </div>
           
           <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
@@ -76,7 +116,7 @@ const EventDetail = () => {
               <MapPin size={16} />
               <span className="text-xs font-medium">Location</span>
             </div>
-            <p className="text-gray-900 font-semibold text-sm">{eventData.location}</p>
+            <p className="text-gray-900 font-semibold text-sm">{editedData.location}</p>
           </div>
           
           <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
@@ -84,7 +124,7 @@ const EventDetail = () => {
               <Users size={16} />
               <span className="text-xs font-medium">Attendees</span>
             </div>
-            <p className="text-gray-900 font-semibold text-sm">{eventData.attendees}</p>
+            <p className="text-gray-900 font-semibold text-sm">{editedData.attendees}</p>
           </div>
           
           <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
@@ -92,13 +132,43 @@ const EventDetail = () => {
               <Building2 size={16} />
               <span className="text-xs font-medium">Industry</span>
             </div>
-            <p className="text-gray-900 font-semibold text-sm">{eventData.industry}</p>
+            <p className="text-gray-900 font-semibold text-sm">{editedData.industry}</p>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="relative bg-white rounded-2xl p-6 shadow-sm border mt-10 border-gray-200">
+        {/* Edit/Save/Cancel Buttons - Top Right Corner */}
+        <div className="absolute top-4 right-4 flex items-center space-x-2">
+          {isEditing ? (
+            <>
+              <button 
+                className="p-2 hover:bg-green-50 rounded-lg transition-colors group"
+                onClick={handleSave}
+                title="Save changes"
+              >
+                <Check size={18} className="text-green-600 group-hover:text-green-700" />
+              </button>
+              <button 
+                className="p-2 hover:bg-red-50 rounded-lg transition-colors group"
+                onClick={handleCancel}
+                title="Cancel editing"
+              >
+                <X size={18} className="text-red-600 group-hover:text-red-700" />
+              </button>
+            </>
+          ) : (
+            <button 
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors group"
+              onClick={() => setIsEditing(true)}
+              title="Edit event details"
+            >
+              <Pencil size={18} className="text-gray-600 group-hover:text-blue-500" />
+            </button>
+          )}
+        </div>
+
         {/* Tab Navigation - Inside Card */}
         <div className="flex justify-center absolute -top-4 left-1/2 transform -translate-x-1/2">
           <button className="px-6 py-1 bg-blue-400 text-white text-lg font-semibold rounded-full hover:bg-blue-600 transition-colors shadow-md">
@@ -116,51 +186,138 @@ const EventDetail = () => {
         {/* About this event */}
         <div className="mb-4 text-left">
           <h2 className="text-sm font-bold text-gray-900 mb-2">About this event:</h2>
-          <p className="text-gray-600 text-xs leading-relaxed pl-4">
-            {eventData.about}
-          </p>
+          {isEditing ? (
+            <textarea
+              value={editedData.about}
+              onChange={(e) => handleInputChange('about', e.target.value)}
+              className="w-full text-gray-600 text-xs leading-relaxed pl-4 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 resize-none whitespace-pre-wrap break-words"
+              rows={4}
+            />
+          ) : (
+            <p className="text-gray-600 text-xs leading-relaxed pl-4 break-words whitespace-pre-wrap">
+              {editedData.about}
+            </p>
+          )}
         </div>
 
 
         {/* What to Expect */}
         <div className="mb-4 ">
           <h2 className="text-sm font-bold text-gray-900 mb-3 text-left">What to Expect:</h2>
-          <div className="grid grid-cols-3 gap-x-1 gap-y-1.5 pl-15">
-            {eventData.whatToExpect.map((item, index) => (
-              <div key={index} className="flex items-center space-x-1.5">
-                <span className="w-1 h-1 bg-blue-500 rounded-full flex-shrink-0"></span>
-                <span className="text-gray-700 text-xs">{item}</span>
+          <div className="grid grid-cols-3 gap-x-3 gap-y-1.5 pl-15">
+            {editedData.whatToExpect.map((item, index) => (
+              <div key={index} className="flex items-start space-x-1.5 min-w-0 max-w-full">
+                <span className="w-1 h-1 bg-blue-500 rounded-full flex-shrink-0 mt-1"></span>
+                {isEditing ? (
+                  <div className="flex items-center space-x-1 flex-1 min-w-0">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => handleArrayItemChange('whatToExpect', index, e.target.value)}
+                      className="text-gray-700 text-xs border-b border-gray-300 focus:border-blue-500 focus:outline-none flex-1 min-w-0"
+                    />
+                    <button
+                      onClick={() => removeArrayItem('whatToExpect', index)}
+                      className="text-red-500 hover:text-red-700 flex-shrink-0"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-gray-700 text-xs truncate block" title={item}>{item}</span>
+                )}
               </div>
             ))}
+            {isEditing && (
+              <button
+                onClick={() => addArrayItem('whatToExpect')}
+                className="text-blue-500 text-xs hover:text-blue-700 flex items-center space-x-1"
+              >
+                <span>+ Add item</span>
+              </button>
+            )}
           </div>
         </div>
 
         {/* Target Audience */}
         <div className="mb-7 text-left">
           <h2 className="text-sm font-bold text-gray-900 mb-2">Target Audience:</h2>
-          <div className="grid grid-cols-2 gap-x-1 gap-y-1.5 pl-15">
-            {eventData.targetAudience.map((item, index) => (
-              <div key={index} className="flex items-center space-x-1.5">
-                <span className="w-1 h-1 bg-blue-500 rounded-full flex-shrink-0"></span>
-                <span className="text-gray-700 text-xs">{item}</span>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 pl-15">
+            {editedData.targetAudience.map((item, index) => (
+              <div key={index} className="flex items-start space-x-1.5 min-w-0 max-w-full">
+                <span className="w-1 h-1 bg-blue-500 rounded-full flex-shrink-0 mt-1"></span>
+                {isEditing ? (
+                  <div className="flex items-center space-x-1 flex-1 min-w-0">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => handleArrayItemChange('targetAudience', index, e.target.value)}
+                      className="text-gray-700 text-xs border-b border-gray-300 focus:border-blue-500 focus:outline-none flex-1 min-w-0"
+                    />
+                    <button
+                      onClick={() => removeArrayItem('targetAudience', index)}
+                      className="text-red-500 hover:text-red-700 flex-shrink-0"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-gray-700 text-xs truncate block" title={item}>{item}</span>
+                )}
               </div>
             ))}
+            {isEditing && (
+              <button
+                onClick={() => addArrayItem('targetAudience')}
+                className="text-blue-500 text-xs hover:text-blue-700 flex items-center space-x-1"
+              >
+                <span>+ Add item</span>
+              </button>
+            )}
           </div>
         </div>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-2">
-          {eventData.tags.map((tag, index) => (
-            <span 
-              key={index}
-              className="px-3 py-1 bg-blue-50 text-blue-500 text-xs font-medium rounded-full"
-            >
-              {tag}
-            </span>
+          {editedData.tags.map((tag, index) => (
+            <div key={index} className="relative group max-w-[10rem]">
+              {isEditing ? (
+                <div className="flex items-center space-x-1 px-3 py-1 bg-blue-50 rounded-full">
+                  <input
+                    type="text"
+                    value={tag}
+                    onChange={(e) => handleArrayItemChange('tags', index, e.target.value)}
+                    className="bg-transparent text-blue-500 text-xs font-medium focus:outline-none w-24"
+                  />
+                  <button
+                    onClick={() => removeArrayItem('tags', index)}
+                    className="text-red-500 hover:text-red-700 flex-shrink-0"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <span 
+                  className="px-3 py-1 bg-blue-50 text-blue-500 text-xs font-medium rounded-full inline-block truncate max-w-full" 
+                  title={tag}
+                >
+                  {tag}
+                </span>
+              )}
+            </div>
           ))}
-          <button className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full hover:bg-gray-200 transition-colors">
-            ...
-          </button>
+          {isEditing ? (
+            <button
+              onClick={() => addArrayItem('tags')}
+              className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full hover:bg-gray-200 transition-colors flex-shrink-0"
+            >
+              + Add tag
+            </button>
+          ) : (
+            <button className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full hover:bg-gray-200 transition-colors flex-shrink-0">
+              ...
+            </button>
+          )}
         </div>
       </div>
 

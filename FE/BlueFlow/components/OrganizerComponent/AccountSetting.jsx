@@ -121,7 +121,7 @@ const AccountSetting = () => {
     linkedinProfile: '',
     companyDescription: '',
     officialEmail: '',
-    companyPhone: '',
+    province: '',
     country: '',
     city: '',
     fullAddress: '',
@@ -393,13 +393,13 @@ const AccountSetting = () => {
               error={errors.officialEmail}
             />
             <FormInput
-              label="Company Phone"
-              name="companyPhone"
+              label="State/Province"
+              name="province"
               type="tel"
-              value={formData.companyPhone}
+              value={formData.province}
               onChange={handleInputChange}
               required
-              error={errors.companyPhone}
+              error={errors.province}
             />
           </div>
 

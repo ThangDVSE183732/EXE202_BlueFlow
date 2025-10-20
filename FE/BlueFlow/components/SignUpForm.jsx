@@ -151,7 +151,7 @@ function SignUpForm() {
                         />
                     </div>
                     <div className="mr-12">
-                        <h6 className="text-xs text-left mb-2 text-sky-400">State/Provide</h6>
+                        <h6 className="text-xs text-left mb-2 text-sky-400">State/Province</h6>
                         <input 
                             type="text" 
                             name="state"
