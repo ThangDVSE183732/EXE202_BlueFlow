@@ -34,7 +34,11 @@ const EventDetail = () => {
       'Startups',
       'Innovation',
       'Networking'
-    ]
+    ],
+    eventManager: 'Jessica Miller',
+    email: 'events@techpro.com',
+    phone: '+1 (555) 123-4567',
+    website: 'techsummit2024.com'
   });
 
   const handleSave = () => {
@@ -86,19 +90,66 @@ const EventDetail = () => {
             <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-lg">M</span>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{editedData.name}</h1>
+            <div className="max-w-xs">
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editedData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  className="text-xl font-bold text-gray-900 border-b-2 border-blue-500 focus:outline-none bg-transparent w-full"
+                  title={editedData.name}
+                />
+              ) : (
+                <h1 className="text-xl font-bold text-gray-900 truncate" title={editedData.name}>{editedData.name}</h1>
+              )}
             </div>
             <div className="flex items-center space-x-1 ml-2">
               <span className="text-yellow-500 text-sm">★</span>
-              <span className="font-semibold text-gray-900 text-sm">{editedData.rating}</span>
-              <span className="text-gray-400 text-xs">| {editedData.reviews} reviews</span>
+              {isEditing ? (
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="5"
+                  value={editedData.rating}
+                  onChange={(e) => handleInputChange('rating', parseFloat(e.target.value))}
+                  className="font-semibold text-gray-900 text-sm w-12 border-b border-blue-500 focus:outline-none bg-transparent"
+                />
+              ) : (
+                <span className="font-semibold text-gray-900 text-sm">{editedData.rating}</span>
+              )}
+              <span className="text-gray-400 text-xs">|</span>
+              {isEditing ? (
+                <input
+                  type="number"
+                  min="0"
+                  value={editedData.reviews}
+                  onChange={(e) => handleInputChange('reviews', parseInt(e.target.value))}
+                  className="text-gray-400 text-xs w-12 border-b border-blue-500 focus:outline-none bg-transparent"
+                />
+              ) : (
+                <span className="text-gray-400 text-xs">{editedData.reviews}</span>
+              )}
+              <span className="text-gray-400 text-xs">reviews</span>
             </div>
           </div>
-          <button className="px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg flex items-center space-x-1 transition-colors">
-            <span>{editedData.status}</span>
-            <ChevronDown size={14} />
-          </button>
+          {isEditing ? (
+            <select
+              value={editedData.status}
+              onChange={(e) => handleInputChange('status', e.target.value)}
+              className="px-4 py-1.5 bg-blue-500 text-white text-sm font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+            >
+              <option value="Ongoing">Ongoing</option>
+              <option value="Upcoming">Upcoming</option>
+              <option value="Completed">Completed</option>
+              <option value="Cancelled">Cancelled</option>
+            </select>
+          ) : (
+            <button className="px-4 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg flex items-center space-x-1 transition-colors">
+              <span>{editedData.status}</span>
+              <ChevronDown size={14} />
+            </button>
+          )}
         </div>
 
         {/* Event Info Cards */}
@@ -108,7 +159,18 @@ const EventDetail = () => {
               <Calendar size={16} />
               <span className="text-xs font-medium">Date</span>
             </div>
-            <p className="text-gray-900 font-semibold text-sm">{editedData.date}</p>
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedData.date}
+                onChange={(e) => handleInputChange('date', e.target.value)}
+                className="text-gray-900 font-semibold text-sm w-full border-b border-blue-500 focus:outline-none bg-transparent"
+                placeholder="March 15-17, 2024"
+                title={editedData.date}
+              />
+            ) : (
+              <p className="text-gray-900 font-semibold text-sm truncate" title={editedData.date}>{editedData.date}</p>
+            )}
           </div>
           
           <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
@@ -116,7 +178,18 @@ const EventDetail = () => {
               <MapPin size={16} />
               <span className="text-xs font-medium">Location</span>
             </div>
-            <p className="text-gray-900 font-semibold text-sm">{editedData.location}</p>
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedData.location}
+                onChange={(e) => handleInputChange('location', e.target.value)}
+                className="text-gray-900 font-semibold text-sm w-full border-b border-blue-500 focus:outline-none bg-transparent"
+                placeholder="Location"
+                title={editedData.location}
+              />
+            ) : (
+              <p className="text-gray-900 font-semibold text-sm truncate" title={editedData.location}>{editedData.location}</p>
+            )}
           </div>
           
           <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
@@ -124,7 +197,18 @@ const EventDetail = () => {
               <Users size={16} />
               <span className="text-xs font-medium">Attendees</span>
             </div>
-            <p className="text-gray-900 font-semibold text-sm">{editedData.attendees}</p>
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedData.attendees}
+                onChange={(e) => handleInputChange('attendees', e.target.value)}
+                className="text-gray-900 font-semibold text-sm w-full border-b border-blue-500 focus:outline-none bg-transparent"
+                placeholder="2,500+ Professional"
+                title={editedData.attendees}
+              />
+            ) : (
+              <p className="text-gray-900 font-semibold text-sm truncate" title={editedData.attendees}>{editedData.attendees}</p>
+            )}
           </div>
           
           <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
@@ -132,7 +216,18 @@ const EventDetail = () => {
               <Building2 size={16} />
               <span className="text-xs font-medium">Industry</span>
             </div>
-            <p className="text-gray-900 font-semibold text-sm">{editedData.industry}</p>
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedData.industry}
+                onChange={(e) => handleInputChange('industry', e.target.value)}
+                className="text-gray-900 font-semibold text-sm w-full border-b border-blue-500 focus:outline-none bg-transparent"
+                placeholder="Technology & Innovation"
+                title={editedData.industry}
+              />
+            ) : (
+              <p className="text-gray-900 font-semibold text-sm truncate" title={editedData.industry}>{editedData.industry}</p>
+            )}
           </div>
         </div>
       </div>
@@ -362,26 +457,48 @@ const EventDetail = () => {
           
           <div className="space-y-3 mr-3">
             {/* First Row: Event Manager and Email */}
-            <div className="grid grid-cols-2  ">
+            <div className="grid grid-cols-2">
               {/* Event Manager */}
-              <div className="flex justify-center items-center space-x-2">
+              <div className="flex justify-center items-center space-x-2 min-w-0">
                 <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
                   <User size={14} className="text-blue-500" />
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-gray-900">Event Manager</p>
-                  <p className="text-xs text-gray-600">Jessica Miller</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editedData.eventManager}
+                      onChange={(e) => handleInputChange('eventManager', e.target.value)}
+                      className="text-xs text-gray-600 w-full border-b border-blue-500 focus:outline-none bg-transparent"
+                      placeholder="Event Manager"
+                      title={editedData.eventManager}
+                    />
+                  ) : (
+                    <p className="text-xs text-gray-600 truncate" title={editedData.eventManager}>{editedData.eventManager}</p>
+                  )}
                 </div>
               </div>
 
               {/* Email */}
-              <div className="flex justify-center items-center space-x-2">
+              <div className="flex justify-center items-center space-x-2 min-w-0">
                 <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Mail size={14} className="text-blue-500" />
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-gray-900">Email</p>
-                  <p className="text-xs text-gray-600">events@techpro.com</p>
+                  {isEditing ? (
+                    <input
+                      type="email"
+                      value={editedData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className="text-xs text-gray-600 w-full border-b border-blue-500 focus:outline-none bg-transparent"
+                      placeholder="Email"
+                      title={editedData.email}
+                    />
+                  ) : (
+                    <p className="text-xs text-gray-600 truncate" title={editedData.email}>{editedData.email}</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -389,24 +506,46 @@ const EventDetail = () => {
             {/* Second Row: Phone and Website */}
             <div className="grid grid-cols-2">
               {/* Phone */}
-              <div className="flex justify-center items-center pl-4 space-x-2">
+              <div className="flex justify-center items-center  space-x-2 min-w-0">
                 <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Phone size={14} className="text-blue-500" />
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-gray-900">Phone</p>
-                  <p className="text-xs text-gray-600">+1 (555) 123-4567</p>
+                  {isEditing ? (
+                    <input
+                      type="tel"
+                      value={editedData.phone}
+                      onChange={(e) => handleInputChange('phone', e.target.value)}
+                      className="text-xs text-gray-600 w-full border-b border-blue-500 focus:outline-none bg-transparent"
+                      placeholder="Phone"
+                      title={editedData.phone}
+                    />
+                  ) : (
+                    <p className="text-xs text-gray-600 truncate" title={editedData.phone}>{editedData.phone}</p>
+                  )}
                 </div>
               </div>
 
               {/* Website */}
-              <div className="flex justify-center items-center space-x-2">
+              <div className="flex justify-center items-center space-x-2 min-w-0">
                 <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
                   <Globe size={14} className="text-blue-500" />
                 </div>
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-xs font-semibold text-gray-900">Website</p>
-                  <p className="text-xs text-gray-600">techsummit2024.com</p>
+                  {isEditing ? (
+                    <input
+                      type="url"
+                      value={editedData.website}
+                      onChange={(e) => handleInputChange('website', e.target.value)}
+                      className="text-xs text-gray-600 w-full border-b border-blue-500 focus:outline-none bg-transparent"
+                      placeholder="Website"
+                      title={editedData.website}
+                    />
+                  ) : (
+                    <p className="text-xs text-gray-600 truncate" title={editedData.website}>{editedData.website}</p>
+                  )}
                 </div>
               </div>
             </div>

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Edit, Plus, Upload } from 'lucide-react';
+import { Edit, Plus, Upload, Check, X } from 'lucide-react';
 
 const BrandProfile = () => {
-  const profileData = {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedData, setEditedData] = useState({
     companyName: 'TechCorp Solutions',
     tagline: 'Technology & Innovation Sponsor',
     location: 'Ho Chi Minh City, Vietnam',
@@ -24,17 +25,60 @@ const BrandProfile = () => {
       email: 'techcorpsolution@gmail.com',
       phone: '+84 949xxxxxx'
     }
+  });
+
+  const handleSave = () => {
+    console.log('Saving changes:', editedData);
+    setIsEditing(false);
   };
 
+  const handleCancel = () => {
+    setIsEditing(false);
+  };
 
-  const handleEdit = (section) => {
-    console.log(`Editing ${section}`);
+  const handleInputChange = (field, value) => {
+    if (field.includes('.')) {
+      const [parent, child] = field.split('.');
+      setEditedData(prev => ({
+        ...prev,
+        [parent]: {
+          ...prev[parent],
+          [child]: value
+        }
+      }));
+    } else {
+      setEditedData(prev => ({
+        ...prev,
+        [field]: value
+      }));
+    }
+  };
+
+  const handleArrayItemChange = (index, value) => {
+    setEditedData(prev => ({
+      ...prev,
+      mission: prev.mission.map((item, i) => i === index ? value : item)
+    }));
+  };
+
+  const addMissionItem = () => {
+    setEditedData(prev => ({
+      ...prev,
+      mission: [...prev.mission, '']
+    }));
+  };
+
+  const removeMissionItem = (index) => {
+    setEditedData(prev => ({
+      ...prev,
+      mission: prev.mission.filter((_, i) => i !== index)
+    }));
   };
 
 
 
   return (
-    <div className="min-h-screen bg-white p-6 pt-1">
+    <div className="min-h-screen bg-white p-6 pt-1 overflow-x-hidden">
       {/* Header */}
       <div className="mb-8 text-left">
         <h1 className="text-2xl font-semibold text-blue-500 mb-2">Profile Management</h1>
@@ -43,30 +87,82 @@ const BrandProfile = () => {
 
       </div>
 
-      <div className="bg-white border rounded-xl shadow-xl border-gray-300">
+      <div className="bg-white border rounded-xl shadow-xl border-gray-300 overflow-hidden max-w-full">
       {/* Company Banner */}
-      <div className="bg-black rounded-2xl px-10 py-5 mb-3 relative overflow-hidden">
-        {/* Published Button - Top Right */}
-        <div className="absolute top-3 right-4 flex items-center space-x-2">
-          <button
-            className="px-3 py-1 rounded-full text-xs font-medium transition-all bg-blue-500 text-white hover:bg-blue-600"
-          >
-           Edit
-          </button>
+      <div className="bg-black rounded-2xl px-10 py-5 mb-3 relative overflow-hidden min-w-0 max-w-full">
+        {/* Edit/Save/Cancel Buttons - Top Right */}
+        <div className="absolute top-3 right-4 flex items-center space-x-2 z-10">
+          {isEditing ? (
+            <>
+              <button
+                onClick={handleSave}
+                className="px-3 py-1 rounded-full text-xs font-medium transition-all bg-green-500 text-white hover:bg-green-600 flex items-center space-x-1"
+                title="Save changes"
+              >
+                <Check size={14} />
+                <span>Save</span>
+              </button>
+              <button
+                onClick={handleCancel}
+                className="px-3 py-1 rounded-full text-xs font-medium transition-all bg-red-500 text-white hover:bg-red-600 flex items-center space-x-1"
+                title="Cancel editing"
+              >
+                <X size={14} />
+                <span>Cancel</span>
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="px-3 py-1 rounded-full text-xs font-medium transition-all bg-blue-500 text-white hover:bg-blue-600"
+            >
+              Edit
+            </button>
+          )}
           <button className="w-6 h-6 flex items-center justify-center text-white hover:bg-white/10 rounded-full transition-colors">
             <Upload size={14} />
           </button>
         </div>
 
         {/* Logo and Company Info - Left */}
-        <div className="flex items-center space-x-5 mb-6 mt-5">
+        <div className="flex items-center space-x-5 mb-6 mt-5 min-w-0 w-full max-w-[calc(100%-8rem)]">
           <div className="w-26 h-26 bg-white rounded-full flex items-center justify-center flex-shrink-0">
             <span className="text-2xl font-bold text-gray-800">TC</span>
           </div>
-          <div className='text-left'>
-            <h2 className="text-2xl font-bold text-blue-400 mb-0.5">{profileData.companyName}</h2>
-            <p className="text-white text-sm mb-0.5">{profileData.tagline}</p>
-            <p className="text-gray-400 text-xs">{profileData.location}</p>
+          <div className='text-left min-w-0 flex-1 overflow-hidden'>
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedData.companyName}
+                onChange={(e) => handleInputChange('companyName', e.target.value)}
+                className="text-2xl font-bold text-blue-400 mb-0.5 bg-transparent border-b-2 border-blue-400 focus:outline-none w-full min-w-0"
+                title={editedData.companyName}
+              />
+            ) : (
+              <h2 className="text-2xl font-bold text-blue-400 mb-0.5 truncate min-w-0" title={editedData.companyName}>{editedData.companyName}</h2>
+            )}
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedData.tagline}
+                onChange={(e) => handleInputChange('tagline', e.target.value)}
+                className="text-white text-sm mb-0.5 bg-transparent border-b border-white/50 focus:outline-none w-full min-w-0"
+                title={editedData.tagline}
+              />
+            ) : (
+              <p className="text-white text-sm mb-0.5 truncate min-w-0" title={editedData.tagline}>{editedData.tagline}</p>
+            )}
+            {isEditing ? (
+              <input
+                type="text"
+                value={editedData.location}
+                onChange={(e) => handleInputChange('location', e.target.value)}
+                className="text-gray-400 text-xs bg-transparent border-b border-gray-400/50 focus:outline-none w-full min-w-0"
+                title={editedData.location}
+              />
+            ) : (
+              <p className="text-gray-400 text-xs truncate min-w-0" title={editedData.location}>{editedData.location}</p>
+            )}
           </div>
         </div>
 
@@ -74,43 +170,71 @@ const BrandProfile = () => {
       </div>
 
       {/* Main Content - Centered */}
-      <div className="max-w-5xl space-y-4 px-6">
+      <div className="max-w-full space-y-4 px-6 min-w-0 w-full overflow-x-hidden">
         {/* About Us Section */}
-        <div className="bg-white p-5 ">
+        <div className="bg-white p-5 min-w-0 overflow-hidden max-w-full">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-bold text-gray-900">About Us</h3>
-            <button
-              onClick={() => handleEdit('about')}
-              className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors"
-            >
-              Edit
-            </button>
+           
           </div>
 
-          <p className="text-gray-600 leading-relaxed text-xs text-left">
-            {profileData.aboutUs}
-          </p>
+          {isEditing ? (
+            <textarea
+              value={editedData.aboutUs}
+              onChange={(e) => handleInputChange('aboutUs', e.target.value)}
+              className="w-full max-w-full text-gray-600 leading-relaxed text-xs text-left border border-gray-300 rounded-lg p-3 focus:outline-none focus:border-blue-500 resize-none break-all overflow-wrap-anywhere box-border"
+              rows={4}
+              style={{ wordBreak: 'break-all' }}
+            />
+          ) : (
+            <p className="text-gray-600 leading-relaxed text-xs text-left break-all overflow-wrap-anywhere whitespace-pre-wrap overflow-hidden max-w-full" style={{ wordBreak: 'break-all' }}>
+              {editedData.aboutUs}
+            </p>
+          )}
         </div>
 
         {/* Our Mission Section */}
-        <div className="bg-white  p-5 ">
+        <div className="bg-white p-5 min-w-0 overflow-hidden max-w-full">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-bold text-gray-900">Our mission:</h3>
-            <button
-              onClick={() => handleEdit('mission')}
-              className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors"
-            >
-              Edit
-            </button>
+            
           </div>
 
-          <ul className="space-y-1.5">
-            {profileData.mission.map((item, index) => (
-              <li key={index} className="flex items-start space-x-2">
+          <ul className="space-y-1.5 min-w-0 w-full overflow-hidden max-w-full">
+            {editedData.mission.map((item, index) => (
+              <li key={index} className="flex items-start space-x-2 min-w-0 w-full overflow-hidden max-w-full">
                 <span className="w-1 h-1 bg-gray-400 rounded-full mt-1.5 flex-shrink-0"></span>
-                <span className="text-gray-600 text-xs">{item}</span>
+                {isEditing ? (
+                  <div className="flex items-center space-x-1 flex-1 min-w-0 overflow-hidden max-w-full">
+                    <input
+                      type="text"
+                      value={item}
+                      onChange={(e) => handleArrayItemChange(index, e.target.value)}
+                      className="text-gray-600 text-xs flex-1 min-w-0 max-w-full border-b border-gray-300 focus:border-blue-500 focus:outline-none bg-transparent box-border"
+                      title={item}
+                      style={{ wordBreak: 'break-all' }}
+                    />
+                    <button
+                      onClick={() => removeMissionItem(index)}
+                      className="text-red-500 hover:text-red-700 flex-shrink-0"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ) : (
+                  <span className="text-gray-600 text-left text-xs min-w-0 flex-1 max-w-full block" title={item} style={{ wordBreak: 'break-all', overflowWrap: 'anywhere' }}>{item}</span>
+                )}
               </li>
             ))}
+            {isEditing && (
+              <button
+                onClick={addMissionItem}
+                className="text-blue-500 text-xs hover:text-blue-700 flex items-center space-x-1 ml-3"
+              >
+                <Plus size={14} />
+                <span>Add mission</span>
+              </button>
+            )}
           </ul>
         </div>
 
@@ -118,38 +242,93 @@ const BrandProfile = () => {
         <div className="bg-white  p-5 ">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-bold text-gray-900">Company Information</h3>
-            <button
-              onClick={() => handleEdit('company')}
-              className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium rounded-lg transition-colors"
-            >
-              Edit
-            </button>
+           
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 min-w-0">
+            <div className="min-w-0">
               <label className="block text-xs font-medium text-gray-400 mb-0.5">Industry</label>
-              <p className="text-gray-900 text-sm font-semibold">{profileData.companyInfo.industry}</p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editedData.companyInfo.industry}
+                  onChange={(e) => handleInputChange('companyInfo.industry', e.target.value)}
+                  className="text-gray-900 text-sm font-semibold w-full min-w-0 border-b border-blue-500 focus:outline-none bg-transparent"
+                  title={editedData.companyInfo.industry}
+                />
+              ) : (
+                <p className="text-gray-900 text-sm font-semibold truncate min-w-0" title={editedData.companyInfo.industry}>{editedData.companyInfo.industry}</p>
+              )}
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="block text-xs font-medium text-gray-400 mb-0.5">Company Size</label>
-              <p className="text-gray-900 text-sm font-semibold">{profileData.companyInfo.companySize}</p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editedData.companyInfo.companySize}
+                  onChange={(e) => handleInputChange('companyInfo.companySize', e.target.value)}
+                  className="text-gray-900 text-sm font-semibold w-full min-w-0 border-b border-blue-500 focus:outline-none bg-transparent"
+                  title={editedData.companyInfo.companySize}
+                />
+              ) : (
+                <p className="text-gray-900 text-sm font-semibold truncate min-w-0" title={editedData.companyInfo.companySize}>{editedData.companyInfo.companySize}</p>
+              )}
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="block text-xs font-medium text-gray-400 mb-0.5">Founded</label>
-              <p className="text-gray-900 text-sm font-semibold">{profileData.companyInfo.founded}</p>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editedData.companyInfo.founded}
+                  onChange={(e) => handleInputChange('companyInfo.founded', e.target.value)}
+                  className="text-gray-900 text-sm font-semibold w-full min-w-0 border-b border-blue-500 focus:outline-none bg-transparent"
+                  title={editedData.companyInfo.founded}
+                />
+              ) : (
+                <p className="text-gray-900 text-sm font-semibold truncate min-w-0" title={editedData.companyInfo.founded}>{editedData.companyInfo.founded}</p>
+              )}
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="block text-xs font-medium text-gray-400 mb-0.5">Website</label>
-              <p className="text-blue-500 hover:text-blue-600 cursor-pointer text-sm font-semibold">{profileData.companyInfo.website}</p>
+              {isEditing ? (
+                <input
+                  type="url"
+                  value={editedData.companyInfo.website}
+                  onChange={(e) => handleInputChange('companyInfo.website', e.target.value)}
+                  className="text-blue-500 text-sm font-semibold w-full min-w-0 border-b border-blue-500 focus:outline-none bg-transparent"
+                  title={editedData.companyInfo.website}
+                />
+              ) : (
+                <p className="text-blue-500 hover:text-blue-600 cursor-pointer text-sm font-semibold truncate min-w-0" title={editedData.companyInfo.website}>{editedData.companyInfo.website}</p>
+              )}
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="block text-xs font-medium text-gray-400 mb-0.5">email</label>
-              <p className="text-gray-900 text-sm font-semibold">{profileData.companyInfo.email}</p>
+              {isEditing ? (
+                <input
+                  type="email"
+                  value={editedData.companyInfo.email}
+                  onChange={(e) => handleInputChange('companyInfo.email', e.target.value)}
+                  className="text-gray-900 text-sm font-semibold w-full min-w-0 border-b border-blue-500 focus:outline-none bg-transparent"
+                  title={editedData.companyInfo.email}
+                />
+              ) : (
+                <p className="text-gray-900 text-sm font-semibold truncate min-w-0" title={editedData.companyInfo.email}>{editedData.companyInfo.email}</p>
+              )}
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-0.5">Company Size</label>
-              <p className="text-gray-900 text-sm font-semibold">{profileData.companyInfo.phone}</p>
+            <div className="min-w-0">
+              <label className="block text-xs font-medium text-gray-400 mb-0.5">Phone</label>
+              {isEditing ? (
+                <input
+                  type="tel"
+                  value={editedData.companyInfo.phone}
+                  onChange={(e) => handleInputChange('companyInfo.phone', e.target.value)}
+                  className="text-gray-900 text-sm font-semibold w-full min-w-0 border-b border-blue-500 focus:outline-none bg-transparent"
+                  title={editedData.companyInfo.phone}
+                />
+              ) : (
+                <p className="text-gray-900 text-sm font-semibold truncate min-w-0" title={editedData.companyInfo.phone}>{editedData.companyInfo.phone}</p>
+              )}
             </div>
           </div>
         </div>
