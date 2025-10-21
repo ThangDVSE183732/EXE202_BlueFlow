@@ -133,37 +133,12 @@ namespace EventLink_Services.Services.Implementations
                 }
 
                 // Gửi OTP qua email
-                await SendOtpEmailAsync(request.Email);
+                //await SendOtpEmailAsync(request.Email);
 
-                return ApiResponse<string>.SuccessResult(null, "OTP sent to your email. Please verify.");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Login OTP request failed for email: {Email}", request.Email);
-                return ApiResponse<string>.ErrorResult($"Login failed: {ex.Message}");
-            }
-        }
-        public async Task<ApiResponse<AuthResponse>> VerifyOtpAsync(VerifyOtpRequest request)
-        {
-            try
-            {
-                // Tìm user
-                var user = await _userRepository.GetActiveUserByEmailAsync(request.Email);
-                if (user == null)
-                {
-                    return ApiResponse<AuthResponse>.ErrorResult("User not found");
-                }
+                //return ApiResponse<string>.SuccessResult(null, "OTP sent to your email. Please verify.");
 
-                // Kiểm tra OTP
-                if (!VerifyOtp(request.Email, request.Otp))
-                {
-                    return ApiResponse<AuthResponse>.ErrorResult("Invalid or expired OTP");
-                }
-
-                // Update last login
                 user.LastLoginAt = DateTime.UtcNow;
                 await _userRepository.UpdateUserAsync(user);
-
                 // Generate JWT
                 var token = _jwtService.GenerateToken(user);
                 var refreshToken = _jwtService.GenerateRefreshToken();
@@ -175,17 +150,58 @@ namespace EventLink_Services.Services.Implementations
                     Expires = DateTime.UtcNow.AddHours(24),
                     User = MapToUserDto(user)
                 };
-
-                _logger.LogInformation("User logged in successfully after OTP: {Email}", user.Email);
-
-                return ApiResponse<AuthResponse>.SuccessResult(authResponse, "Login successful");
+                _logger.LogInformation("User logged in successfully: {Email}", user.Email);
+                return ApiResponse<string>.SuccessResult(null, "Login successful");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Verify OTP failed for email: {Email}", request.Email);
-                return ApiResponse<AuthResponse>.ErrorResult($"Login failed: {ex.Message}");
+                _logger.LogError(ex, "Login OTP request failed for email: {Email}", request.Email);
+                return ApiResponse<string>.ErrorResult($"Login failed: {ex.Message}");
             }
         }
+        //public async Task<ApiResponse<AuthResponse>> VerifyOtpAsync(VerifyOtpRequest request)
+        //{
+        //    try
+        //    {
+        //        // Tìm user
+        //        var user = await _userRepository.GetActiveUserByEmailAsync(request.Email);
+        //        if (user == null)
+        //        {
+        //            return ApiResponse<AuthResponse>.ErrorResult("User not found");
+        //        }
+
+        //        // Kiểm tra OTP
+        //        if (!VerifyOtp(request.Email, request.Otp))
+        //        {
+        //            return ApiResponse<AuthResponse>.ErrorResult("Invalid or expired OTP");
+        //        }
+
+        //        // Update last login
+        //        user.LastLoginAt = DateTime.UtcNow;
+        //        await _userRepository.UpdateUserAsync(user);
+
+        //        // Generate JWT
+        //        var token = _jwtService.GenerateToken(user);
+        //        var refreshToken = _jwtService.GenerateRefreshToken();
+
+        //        var authResponse = new AuthResponse
+        //        {
+        //            Token = token,
+        //            RefreshToken = refreshToken,
+        //            Expires = DateTime.UtcNow.AddHours(24),
+        //            User = MapToUserDto(user)
+        //        };
+
+        //        _logger.LogInformation("User logged in successfully after OTP: {Email}", user.Email);
+
+        //        return ApiResponse<AuthResponse>.SuccessResult(authResponse, "Login successful");
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Verify OTP failed for email: {Email}", request.Email);
+        //        return ApiResponse<AuthResponse>.ErrorResult($"Login failed: {ex.Message}");
+        //    }
+        //}
 
         public async Task<ApiResponse<UserDto>> GetCurrentUserAsync(Guid userId)
         {

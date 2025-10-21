@@ -103,25 +103,6 @@ namespace EventLink_API.Controllers
             return Ok(result);
         }
 
-        [HttpPost("verify-otp-login")]
-        public async Task<ActionResult<ApiResponse<AuthResponse>>> VerifyLoginOtp([FromBody] VerifyOtpRequest request)
-        {
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState
-                    .SelectMany(x => x.Value.Errors)
-                    .Select(x => x.ErrorMessage)
-                    .ToList();
-                return BadRequest(ApiResponse<AuthResponse>.ErrorResult("Validation failed", errors));
-            }
-            var result = await _authService.VerifyOtpAsync(request);
-            if (!result.Success)
-            {
-                return BadRequest(result);
-            }
-            return Ok(result);
-        }
-
         /// <summary>
         /// Get current user info from JWT claims (Fast - No DB query)
         /// </summary>
