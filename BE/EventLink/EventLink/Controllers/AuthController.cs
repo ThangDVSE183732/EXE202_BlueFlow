@@ -11,7 +11,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using static Eventlink_Services.Request.MailForm;
 
-namespace EventLink_API.Controllers
+namespace EventLink.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]

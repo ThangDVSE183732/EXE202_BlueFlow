@@ -1,10 +1,12 @@
 ﻿using DotNetEnv;
+using EventLink.Hubs;
 using EventLink_Repositories.DBContext;
 using EventLink_Repositories.Interface;
 using EventLink_Repositories.Repository;
 using Eventlink_Services.Interface;
 using Eventlink_Services.Service;
 using EventLink_Services.Services.Implementations;
+using EventLink_Services.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +16,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Text;
+using System.Threading.Tasks;
 
 Env.Load();
 
@@ -45,7 +48,6 @@ builder.Services.AddDbContext<EventLinkDBContext>(options =>
     options.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
 });
 
-
 // JWT Configuration
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
 var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET");
@@ -73,9 +75,24 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
         ClockSkew = TimeSpan.Zero
     };
-});
 
-builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+    // 🔥 Enable JWT for SignalR
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
+            {
+                context.Token = accessToken;
+            }
+
+            return Task.CompletedTask;
+        }
+    };
+});
 
 // Authorization Policies
 builder.Services.AddAuthorization(options =>
@@ -86,38 +103,35 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("EmailVerified", policy => policy.RequireClaim("EmailVerified", "True"));
 });
 
+builder.Services.AddSignalR();
+
+// ✅ Register SignalR notification service (từ EventLink.Services namespace)
+builder.Services.AddScoped<INotificationService, SignalRNotificationService>();
+
+
 // Repository Registration
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
+builder.Services.AddScoped<ISponsorPackageRepo, SponsorPackageRepo>();
+builder.Services.AddScoped<IUserProfileRepo, UserProfileRepo>();
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IEventProposalRepository, EventProposalRepository>();
+builder.Services.AddScoped<IPartnershipRepository, PartnershipRepository>();
+builder.Services.AddScoped<ISupplierServiceRepository, SupplierServiceRepository>();
 
 // Service Registration
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
-
+builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
-
-builder.Services.AddScoped<ISponsorPackageRepo, SponsorPackageRepo>();
 builder.Services.AddScoped<ISponsorPackageService, SponsorPackageService>();
-
-builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
-
-builder.Services.AddScoped<IUserProfileRepo, UserProfileRepo>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
-
-builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IEventService, EventService>();
-
-builder.Services.AddScoped<IEventProposalRepository, EventProposalRepository>();
 builder.Services.AddScoped<IEventProposalService, EventProposalService>();
-
-builder.Services.AddScoped<IPartnershipRepository, PartnershipRepository>();
 builder.Services.AddScoped<IPartnershipService, PartnershipService>();
-
-builder.Services.AddScoped<ISupplierServiceRepository, SupplierServiceRepository>();
 builder.Services.AddScoped<ISupplierServiceService, SupplierServiceService>();
-
-builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 
 builder.Services.AddSingleton<CloudinaryService>();
@@ -125,18 +139,21 @@ builder.Services.AddSingleton<OpenAIService>();
 
 builder.Services.AddMemoryCache();
 
-builder.Services.AddSignalR();
-
 // CORS Configuration
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", builder =>
     {
         builder
-            .WithOrigins("http://localhost:3000", "https://localhost:3000", "http://localhost:5173", "https://localhost:5173") // Next.js default ports
+            .WithOrigins(
+                "http://localhost:3000",
+                "https://localhost:3000",
+                "http://localhost:5173",
+                "https://localhost:5173"
+            )
             .AllowAnyMethod()
             .AllowAnyHeader()
-            .AllowCredentials();
+            .AllowCredentials(); // Important for SignalR
     });
 });
 
@@ -151,7 +168,6 @@ builder.Services.AddSwaggerGen(options =>
         Description = "EventLink Authentication API for connecting Organizers, Suppliers, and Sponsors"
     });
 
-    // Add JWT authentication to Swagger
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -161,7 +177,6 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Description = "JWT Authorization header using the Bearer scheme."
     });
-
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
@@ -188,17 +203,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(options =>
     {
         options.SwaggerEndpoint("/swagger/v1/swagger.json", "EventLink API v1");
-        // Remove or comment out this line:
-        // options.RoutePrefix = string.Empty;
     });
 }
 
 app.UseHttpsRedirection();
 
+// CORS must be before Authentication
 app.UseCors("AllowFrontend");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHub<ChatHub>("/chatHub");
 
 app.MapControllers();
 
