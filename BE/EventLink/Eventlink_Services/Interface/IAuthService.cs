@@ -13,7 +13,7 @@ namespace Eventlink_Services.Interface
     {
         Task<ApiResponse<string>> RegisterAsync(RegisterRequest request);
         Task<ApiResponse<AuthResponse>> VerifyRegistrationOtpAsync(VerifyOtpRequest request);
-        Task<ApiResponse<string>> LoginAsync(LoginRequest request);
+        Task<ApiResponse<AuthResponse>> LoginAsync(LoginRequest request);
         //Task<ApiResponse<AuthResponse>> VerifyOtpAsync(VerifyOtpRequest request);
         Task<ApiResponse<UserDto>> GetCurrentUserAsync(Guid userId);
         Task<ApiResponse<string>> LogoutAsync(Guid userId);

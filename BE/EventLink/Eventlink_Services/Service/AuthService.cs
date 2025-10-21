@@ -119,7 +119,7 @@ namespace EventLink_Services.Services.Implementations
             }
         }
 
-        public async Task<ApiResponse<string>> LoginAsync(LoginRequest request)
+        public async Task<ApiResponse<AuthResponse>> LoginAsync(LoginRequest request)
         {
             try
             {
@@ -129,7 +129,7 @@ namespace EventLink_Services.Services.Implementations
                 if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
                 {
                     _logger.LogWarning("Invalid login attempt for email: {Email}", request.Email);
-                    return ApiResponse<string>.ErrorResult("Invalid email or password");
+                    return ApiResponse<AuthResponse>.ErrorResult("Invalid email or password");
                 }
 
                 // Gửi OTP qua email
@@ -151,12 +151,12 @@ namespace EventLink_Services.Services.Implementations
                     User = MapToUserDto(user)
                 };
                 _logger.LogInformation("User logged in successfully: {Email}", user.Email);
-                return ApiResponse<string>.SuccessResult(null, "Login successful");
+                return ApiResponse<AuthResponse>.SuccessResult(authResponse, "Login successful");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Login OTP request failed for email: {Email}", request.Email);
-                return ApiResponse<string>.ErrorResult($"Login failed: {ex.Message}");
+                return ApiResponse<AuthResponse>.ErrorResult($"Login failed: {ex.Message}");
             }
         }
         //public async Task<ApiResponse<AuthResponse>> VerifyOtpAsync(VerifyOtpRequest request)
