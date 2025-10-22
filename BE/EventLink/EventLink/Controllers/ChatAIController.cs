@@ -1,4 +1,5 @@
 ﻿using Eventlink_Services.Interface;
+using Eventlink_Services.Response;
 using Eventlink_Services.Service;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -30,15 +31,17 @@ namespace EventLink.Controllers
             // 2️ Chỉ chọn các trường cần thiết để AI phân tích
             var simplifiedProfiles = userProfiles.Select(p => new
             {
-                p.Id,
-                p.UserId,
-                p.FullName,
-                p.Email,
-                p.Role,
                 p.CompanyName,
-                p.Bio,
-                p.AverageRating,
-                p.YearsOfExperience
+                p.Industry,
+                p.CompanySize,
+                p.FoundedYear,
+                p.City,
+                p.CountryRegion,
+                p.FullName,
+                p.JobTitle,
+                p.DirectEmail,
+                p.DirectPhone,
+                p.Role,
             });
 
             // 3️ Tạo prompt cho AI
@@ -55,13 +58,16 @@ namespace EventLink.Controllers
                 2️⃣ Ngay sau đó là danh sách JSON gồm tối đa 3 đối tác:
                 [
                   {{
-                    'id': '', 
                     'name': '', 
                     'role': '', 
                     'companyName': '', 
-                    'bio': '', 
-                    'averageRating': '', 
-                    'yearsOfExperience': ''
+                    'industry': '', 
+                    'country': '', 
+                    'city': '', 
+                    'jobTitle': '', 
+                    'directEmail': '', 
+                    'directPhone': '',
+                    'role': ''    
                   }}
                 ]
 

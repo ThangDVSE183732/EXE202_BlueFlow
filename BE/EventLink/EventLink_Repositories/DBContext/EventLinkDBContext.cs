@@ -50,6 +50,9 @@ public partial class EventLinkDBContext : DbContext
     public virtual DbSet<UserActivity> UserActivities { get; set; }
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
+    //public virtual DbSet<OrganizerProfile> OrganizerProfiles { get; set; }
+    //public virtual DbSet<SupplierProfile> SupplierProfiles { get; set; }
+    //public virtual DbSet<SponsorProfile> SponsorProfiles { get; set; }
 
     public virtual DbSet<UserSubscription> UserSubscriptions { get; set; }
 
@@ -491,27 +494,37 @@ public partial class EventLinkDBContext : DbContext
 
         modelBuilder.Entity<UserProfile>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__UserProf__3214EC07B7F92C63");
-
+            entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.AverageRating)
-                .HasDefaultValue(0m)
-                .HasColumnType("decimal(3, 2)");
-            entity.Property(e => e.Bio).HasMaxLength(2000);
-            entity.Property(e => e.CompanyName).HasMaxLength(255);
-            entity.Property(e => e.CoverImageUrl).HasMaxLength(500);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.FacebookUrl).HasMaxLength(500);
-            entity.Property(e => e.IsVerified).HasDefaultValue(false);
-            entity.Property(e => e.LinkedInUrl).HasMaxLength(500);
-            entity.Property(e => e.Location).HasMaxLength(255);
-            entity.Property(e => e.ProfileImageUrl).HasMaxLength(500);
-            entity.Property(e => e.TotalProjectsCompleted).HasDefaultValue(0);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.Website).HasMaxLength(255);
-            entity.Property(e => e.YearsOfExperience).HasDefaultValue(0);
 
-            entity.HasOne(d => d.User).WithMany(p => p.UserProfiles)
+            // Company Information
+            entity.Property(e => e.CompanyName).HasMaxLength(255);
+            entity.Property(e => e.CompanyLogoUrl).HasMaxLength(500);
+            entity.Property(e => e.Industry).HasMaxLength(255);
+            entity.Property(e => e.CompanySize).HasMaxLength(100);
+            entity.Property(e => e.CompanyDescription).HasMaxLength(2000);
+            entity.Property(e => e.SocialProfile).HasMaxLength(500);
+            entity.Property(e => e.LinkedInProfile).HasMaxLength(500);
+
+            // Contact Information
+            entity.Property(e => e.OfficialEmail).HasMaxLength(255);
+            entity.Property(e => e.StateProvince).HasMaxLength(255);
+            entity.Property(e => e.CountryRegion).HasMaxLength(255);
+            entity.Property(e => e.City).HasMaxLength(255);
+            entity.Property(e => e.StreetAddress).HasMaxLength(500);
+
+            // Primary Contact Person
+            entity.Property(e => e.FullName).HasMaxLength(255);
+            entity.Property(e => e.JobTitle).HasMaxLength(255);
+            entity.Property(e => e.DirectEmail).HasMaxLength(255);
+            entity.Property(e => e.DirectPhone).HasMaxLength(50);
+
+            // Common fields
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.User)
+                .WithMany(p => p.UserProfiles)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK_UserProfiles_Users");
         });

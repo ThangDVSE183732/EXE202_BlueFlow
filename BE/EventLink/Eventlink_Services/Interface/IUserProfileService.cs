@@ -1,11 +1,11 @@
 ﻿using EventLink_Repositories.Models;
+using Eventlink_Services.Request;
 using Eventlink_Services.Response;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Eventlink_Services.Request.UserProfileRequest;
 
 namespace Eventlink_Services.Interface
 {

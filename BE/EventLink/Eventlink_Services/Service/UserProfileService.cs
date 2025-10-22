@@ -1,4 +1,5 @@
-﻿using EventLink_Repositories.Interface;
+﻿using Azure.Core;
+using EventLink_Repositories.Interface;
 using EventLink_Repositories.Models;
 using Eventlink_Services.Interface;
 using Eventlink_Services.Request;
@@ -8,39 +9,48 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Eventlink_Services.Request.UserProfileRequest;
 
 namespace Eventlink_Services.Service
 {
     public class UserProfileService : IUserProfileService
     {
         private readonly IUserProfileRepo _userProfileRepository;
-        public UserProfileService(IUserProfileRepo userProfileRepository)
+        private readonly IUserRepository _userRepository;
+        public UserProfileService(IUserProfileRepo userProfileRepository, IUserRepository userRepository)
         {
             _userProfileRepository = userProfileRepository;
+            _userRepository = userRepository;
         }
 
         public async Task CreateAsync(Guid userId, CreateUserProfileRequest request)
         {
+            var user = await _userRepository.GetByIdAsync(userId);
+
+            if (user == null)
+            {
+                throw new Exception("User not found");
+            }
+
             await _userProfileRepository.AddAsync(new UserProfile
             {
                 UserId = userId,
-                Bio = request.Bio,
                 CompanyName = request.CompanyName,
-                Website = request.Website,
-                Location = request.Location,
-                ProfileImageUrl = request.ProfileImageUrl,
-                CoverImageUrl = request.CoverImageUrl,
-                LinkedInUrl = request.LinkedInUrl,
-                FacebookUrl = request.FacebookUrl,
-                PortfolioImages = request.PortfolioImages,
-                WorkSamples = request.WorkSamples,
-                Certifications = request.Certifications,
-                YearsOfExperience = request.YearsOfExperience,
-                TotalProjectsCompleted = request.TotalProjectsCompleted,
-                AverageRating = request.AverageRating,
-                VerificationDocuments = request.VerificationDocuments,
-                IsVerified = true,
+                CompanyLogoUrl = request.CompanyLogoUrl,
+                Industry = request.Industry,
+                CompanySize = request.CompanySize,
+                FoundedYear = request.FoundedYear,
+                CompanyDescription = request.CompanyDescription,
+                SocialProfile = request.SocialProfile,
+                LinkedInProfile = request.LinkedInProfile,
+                OfficialEmail = request.OfficialEmail,
+                StateProvince = request.StateProvince,
+                CountryRegion = request.CountryRegion,
+                City = request.City,
+                StreetAddress = request.StreetAddress,
+                FullName = user.FullName,
+                JobTitle = request.JobTitle,
+                DirectEmail = user.Email,
+                DirectPhone = user.PhoneNumber,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             });
@@ -51,27 +61,26 @@ namespace Eventlink_Services.Service
             var profiles = await _userProfileRepository.GetAllUserProfilesAsync();
             var response = profiles.Select(p => new UserProfileResponse
             {
-                Id = p.Id,
                 UserId = p.UserId,
-                Bio = p.Bio,
                 CompanyName = p.CompanyName,
-                Website = p.Website,
-                Location = p.Location,
-                ProfileImageUrl = p.ProfileImageUrl,
-                CoverImageUrl = p.CoverImageUrl,
-                LinkedInUrl = p.LinkedInUrl,
-                FacebookUrl = p.FacebookUrl,
-                PortfolioImages = p.PortfolioImages,
-                WorkSamples = p.WorkSamples,
-                Certifications = p.Certifications,
-                YearsOfExperience = p.YearsOfExperience,
-                TotalProjectsCompleted = p.TotalProjectsCompleted,
-                AverageRating = p.AverageRating,
-                VerificationDocuments = p.VerificationDocuments,
-                CreatedAt = p.CreatedAt,
-                UpdatedAt = p.UpdatedAt,
-                FullName = p.User.FullName,
-                Email = p.User.Email,
+                CompanyLogoUrl = p.CompanyLogoUrl,
+                Industry = p.Industry,
+                CompanySize = p.CompanySize,
+                FoundedYear = p.FoundedYear,
+                CompanyDescription = p.CompanyDescription,
+                SocialProfile = p.SocialProfile,
+                LinkedInProfile = p.LinkedInProfile,
+                OfficialEmail = p.OfficialEmail,
+                StateProvince = p.StateProvince,
+                CountryRegion = p.CountryRegion,
+                City = p.City,
+                StreetAddress = p.StreetAddress,
+                FullName = p.FullName,
+                JobTitle = p.JobTitle,
+                DirectEmail = p.DirectEmail,
+                DirectPhone = p.DirectPhone,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
                 Role = p.User.Role
             }).ToList();
             return response;
@@ -83,27 +92,26 @@ namespace Eventlink_Services.Service
             if (userProfile == null) return null;
             var response = new UserProfileResponse
             {
-                Id = userProfile.Id,
                 UserId = userProfile.UserId,
-                Bio = userProfile.Bio,
                 CompanyName = userProfile.CompanyName,
-                Website = userProfile.Website,
-                Location = userProfile.Location,
-                ProfileImageUrl = userProfile.ProfileImageUrl,
-                CoverImageUrl = userProfile.CoverImageUrl,
-                LinkedInUrl = userProfile.LinkedInUrl,
-                FacebookUrl = userProfile.FacebookUrl,
-                PortfolioImages = userProfile.PortfolioImages,
-                WorkSamples = userProfile.WorkSamples,
-                Certifications = userProfile.Certifications,
-                YearsOfExperience = userProfile.YearsOfExperience,
-                TotalProjectsCompleted = userProfile.TotalProjectsCompleted,
-                AverageRating = userProfile.AverageRating,
-                VerificationDocuments = userProfile.VerificationDocuments,
-                CreatedAt = userProfile.CreatedAt,
-                UpdatedAt = userProfile.UpdatedAt,
-                FullName = userProfile.User.FullName,
-                Email = userProfile.User.Email,
+                CompanyLogoUrl = userProfile.CompanyLogoUrl,
+                Industry = userProfile.Industry,
+                CompanySize = userProfile.CompanySize,
+                FoundedYear = userProfile.FoundedYear,
+                CompanyDescription = userProfile.CompanyDescription,
+                SocialProfile = userProfile.SocialProfile,
+                LinkedInProfile = userProfile.LinkedInProfile,
+                OfficialEmail = userProfile.OfficialEmail,
+                StateProvince = userProfile.StateProvince,
+                CountryRegion = userProfile.CountryRegion,
+                City = userProfile.City,
+                StreetAddress = userProfile.StreetAddress,
+                FullName = userProfile.FullName,
+                JobTitle = userProfile.JobTitle,
+                DirectEmail = userProfile.DirectEmail,
+                DirectPhone = userProfile.DirectPhone,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow,
                 Role = userProfile.User.Role
             };
             return response;
@@ -126,24 +134,25 @@ namespace Eventlink_Services.Service
         public async Task Update(Guid id, UpdateUserProfileRequest request)
         {
             var existingProfile = await _userProfileRepository.GetByUserIdAsync(id);
-            if(existingProfile != null)
+
+            if (existingProfile != null)
             {
-                existingProfile.Bio = request.Bio;
                 existingProfile.CompanyName = request.CompanyName;
-                existingProfile.Website = request.Website;
-                existingProfile.Location = request.Location;
-                existingProfile.ProfileImageUrl = request.ProfileImageUrl;
-                existingProfile.CoverImageUrl = request.CoverImageUrl;
-                existingProfile.LinkedInUrl = request.LinkedInUrl;
-                existingProfile.FacebookUrl = request.FacebookUrl;
-                existingProfile.PortfolioImages = request.PortfolioImages;
-                existingProfile.WorkSamples = request.WorkSamples;
-                existingProfile.Certifications = request.Certifications;
-                existingProfile.YearsOfExperience = request.YearsOfExperience;
-                existingProfile.TotalProjectsCompleted = request.TotalProjectsCompleted;
-                existingProfile.AverageRating = request.AverageRating;
-                existingProfile.VerificationDocuments = request.VerificationDocuments;
+                existingProfile.CompanyLogoUrl = request.CompanyLogoUrl;
+                existingProfile.Industry = request.Industry;
+                existingProfile.CompanySize = request.CompanySize;
+                existingProfile.FoundedYear = request.FoundedYear;
+                existingProfile.CompanyDescription = request.CompanyDescription;
+                existingProfile.SocialProfile = request.SocialProfile;
+                existingProfile.LinkedInProfile = request.LinkedInProfile;
+                existingProfile.OfficialEmail = request.OfficialEmail;
+                existingProfile.StateProvince = request.StateProvince;
+                existingProfile.CountryRegion = request.CountryRegion;
+                existingProfile.City = request.City;
+                existingProfile.StreetAddress = request.StreetAddress;
+                existingProfile.JobTitle = request.JobTitle;
                 existingProfile.UpdatedAt = DateTime.UtcNow;
+
                 _userProfileRepository.Update(existingProfile);
             }
         }
