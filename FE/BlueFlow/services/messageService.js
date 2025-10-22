@@ -23,6 +23,17 @@ export const messageService = {
     }
   },
 
+  // GET /api/Message/conversation - Get partner list chats
+  getPartnerListChat: async () => {
+    try {
+      const response = await api.get(`/Message/conversations`);
+      return response.data;
+    } catch (error) {
+      console.error('Error getting partner list chats:', error);
+      throw error;
+    }
+  },
+
 
   // PUT /api/Message/conversation/{partnerId}/read - Mark all messages in a conversation as read
   markConversationAsRead: async (partnerId) => {

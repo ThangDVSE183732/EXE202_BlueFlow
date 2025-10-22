@@ -66,35 +66,7 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
           await signalRService.startConnection();
         }
 
-        // Listen for real-time messages from backend
-        signalRService.onReceiveMessage((message) => {
-          if (!isSubscribed) return;
-          
-          console.log('📨 Real-time message received:', message);
-          
-          // Add new message to the list if it's from the current partner
-          if (message.senderId === partnerId || message.receiverId === partnerId) {
-            setMessages(prev => {
-              // Avoid duplicates
-              if (prev.some(msg => msg.id === message.id)) {
-                return prev;
-              }
-              
-              return [...prev, {
-                id: message.id || Date.now(),
-                sender: message.senderId === partnerId ? selectedChat : 'You',
-                content: message.content,
-                timestamp: new Date(message.sentAt || new Date()).toLocaleTimeString('en-US', { 
-                  hour: 'numeric', 
-                  minute: '2-digit',
-                  hour12: true 
-                }),
-                isOwn: message.senderId !== partnerId,
-                isRead: message.isRead || false
-              }];
-            });
-          }
-        });
+        // Backend không có JoinConversation - SignalR chỉ dùng cho typing indicator
         
         // Listen for typing indicator - Backend sends senderId (string)
         signalRService.onUserTyping((senderId) => {
@@ -139,7 +111,6 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
     return () => {
       isSubscribed = false;
       // SignalR event names are camelCase
-      signalRService.off('receiveMessage');
       signalRService.off('userTyping');
       signalRService.off('userStoppedTyping');
       

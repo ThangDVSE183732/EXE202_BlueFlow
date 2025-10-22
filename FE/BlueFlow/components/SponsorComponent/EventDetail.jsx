@@ -81,7 +81,7 @@ const EventDetail = () => {
   };
 
   return (
-    <div className="min-h-screen  p-6 max-w-full overflow-hidden">
+    <div className="min-h-screen bg-gray-50 p-6 max-w-full overflow-hidden">
       {/* Event Header */}
       <div className="mb-4">
         {/* Top Row - Logo, Name, Rating, Button */}
@@ -154,7 +154,7 @@ const EventDetail = () => {
 
         {/* Event Info Cards */}
         <div className="grid grid-cols-4 gap-3">
-          <div className="bg-white border shadow-xl border-gray-200 rounded-lg p-3 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
             <div className="flex items-center space-x-2 text-blue-500 mb-1.5">
               <Calendar size={16} />
               <span className="text-xs font-medium">Date</span>
@@ -173,7 +173,7 @@ const EventDetail = () => {
             )}
           </div>
           
-          <div className="bg-white border shadow-xl border-gray-200 rounded-lg p-3 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
             <div className="flex items-center space-x-2 text-blue-500 mb-1.5">
               <MapPin size={16} />
               <span className="text-xs font-medium">Location</span>
@@ -192,7 +192,7 @@ const EventDetail = () => {
             )}
           </div>
           
-          <div className="bg-white border shadow-xl border-gray-200 rounded-lg p-3 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
             <div className="flex items-center space-x-2 text-blue-500 mb-1.5">
               <Users size={16} />
               <span className="text-xs font-medium">Attendees</span>
@@ -211,7 +211,7 @@ const EventDetail = () => {
             )}
           </div>
           
-          <div className="bg-white border shadow-xl border-gray-200 rounded-lg p-3 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
             <div className="flex items-center space-x-2 text-blue-500 mb-1.5">
               <Building2 size={16} />
               <span className="text-xs font-medium">Industry</span>
@@ -233,7 +233,7 @@ const EventDetail = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative bg-white rounded-2xl p-6 shadow-xl border mt-10 border-gray-200">
+      <div className="relative bg-white rounded-2xl p-6 shadow-sm border mt-10 border-gray-200">
         {/* Edit/Save/Cancel Buttons - Top Right Corner */}
         <div className="absolute top-4 right-4 flex items-center space-x-2">
           {isEditing ? (
@@ -415,18 +415,18 @@ const EventDetail = () => {
           )}
         </div>
       </div>
-
+      
       <h2 className="text-xl ml-2 mt-6 font-semibold text-gray-900 text-left">Timeline</h2>
 
       {/* Timeline Section */}
-      <div className="mt-3  shadow-xl">
+      <div className="mt-4">
         <EventTimeline />
       </div>
 
       {/* Sponsorship Budget and Event Information Section */}
       <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Sponsorship Budget Card */}
-        <div className="bg-white rounded-xl p-4 shadow-xl border border-gray-200">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
           <div className="flex items-center space-x-2 mb-3">
             <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
               <Search size={16} className="text-white" />
@@ -449,7 +449,7 @@ const EventDetail = () => {
         </div>
 
         {/* Event Information Card */}
-        <div className="bg-white shadow-xl rounded-xl p-4  border border-gray-200 lg:col-span-2">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 lg:col-span-2">
           <div className="flex items-center space-x-2 mb-4">
             <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
               <Info size={16} className="text-white" />

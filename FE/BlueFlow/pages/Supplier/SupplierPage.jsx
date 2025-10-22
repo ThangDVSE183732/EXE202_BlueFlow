@@ -1,19 +1,18 @@
 import Footer from '../../components/Footer';
-import EventManagement from '../../components/OrganizerComponent/EventManagement';
+import EventManagement from '../../components/SupplierComponent/EventManagement';
 import PageNav from '../../components/PageNav';
-import styles from './Organizer.module.css';
+import styles from './Supplier.module.css';
 import { useEffect, useState } from 'react';
-import SegmentedControl from '../../components/OrganizerComponent/SegmentedControl';
-import SideBar from '../../components/OrganizerComponent/SideBar';
-import Dashboard from '../../components/OrganizerComponent/DashBoard';
-import SegmentedControlItem from '../../components/OrganizerComponent/SegmentedControlItem';
-import PartnersList from '../../components/OrganizerComponent/PartnersList';
-import AccountSetting from '../../components/OrganizerComponent/AccountSetting';
-import MessageContent from '../../components/OrganizerComponent/MessageContent';
-import MessagesPage from '../../components/OrganizerComponent/MessagesPage';
-import BrandProfile from '../../components/OrganizerComponent/BrandProfile';
-import EventDetail from '../../components/OrganizerComponent/EventDetail';
-import Chatbot from '../../components/OrganizerComponent/Chatbot';
+import SegmentedControl from '../../components/SupplierComponent/SegmentedControl';
+import SideBar from '../../components/SupplierComponent/SideBar';
+import Dashboard from '../../components/SupplierComponent/DashBoard';
+import SegmentedControlItem from '../../components/SupplierComponent/SegmentedControlItem';
+import PartnersList from '../../components/SupplierComponent/PartnersList';
+import AccountSetting from '../../components/SupplierComponent/AccountSetting';
+import MessageContent from '../../components/SupplierComponent/MessageContent';
+import MessagesPage from '../../components/SupplierComponent/MessagesPage';
+import BrandProfile from '../../components/SupplierComponent/BrandProfile';
+import EventDetail from '../../components/SupplierComponent/EventDetail';
 
 
 
@@ -68,63 +67,63 @@ const partnersItem = [
     location :"Da Nang",
     forcus : "Green Tech, Education, Entertainment",
     title : "Music in the park: Summer Concert Series",
-    tags : ["Sponsor", "Financial"],
+    tags : ["Organizer", "Event"],
     rating: 4.5
 },
 {
     location :"Da Nang",
     forcus : "Green Tech, Education, Entertainment",
     title : "Club Creative",
-    tags : ["Sponsor", "Financial"],
+    tags : ["Organizer", "Event"],
     rating: 3.5
 },
 {
     location :"Da Nang",
     forcus : "Green Tech, Education, Entertainment",
     title : "Lumire",
-    tags : ["Sponsor", "Financial"],
+    tags : ["Organizer", "Event"],
      rating: 2.5
 },
 {
     location :"Da Nang",
     forcus : "Green Tech, Education, Entertainment",
     title : "Rimberio",
-    tags : ["Sponsor", "Financial"],
+    tags : ["Organizer", "Event"],
      rating: 5
 },
 {
     location :"Da Nang",
     forcus : "Green Tech, Education, Entertainment",
     title : "BlissSprhere",
-    tags : ["Sponsor", "Financial"],
+    tags : ["Organizer", "Event"],
      rating: 3
 },
 {
     location :"Da Nang",
     forcus : "Green Tech, Education, Entertainment",
     title : "Momemtum",
-    tags : ["Sponsor", "Financial"],
+    tags : ["Organizer", "Event"],
      rating: 1
 },
 {
     location :"Da Nang",
     forcus : "Green Tech, Education, Entertainment",
     title : "Veloria",
-    tags : ["Sponsor", "Financial"],
+    tags : ["Organizer", "Event"],
      rating: 4.5
 },
 {
     location :"Da Nang",
     forcus : "Green Tech, Education, Entertainment",
     title : "Bela Lumiere",
-    tags : ["Sponsor", "Financial"],
+    tags : ["Organizer", "Event"],
      rating: 2.5
 },
 {
     location :"Da Nang",
     forcus : "Green Tech, Education, Entertainment",
     title : "B.I.R",
-    tags : ["Sponsor", "Financial"],
+    tags : ["Organizer", "Event"],
      rating: 5
 },
 
@@ -135,23 +134,23 @@ const partnersItem = [
 
 
 
-function OrganizerPage() {
-    const [tab, setTab] = useState(() => localStorage.getItem('organizer.tab') || 'dashboard');
-    const [active, setActive] = useState(() => localStorage.getItem('organizer.active') || 'dashboard');
-    const [subChange, setSubChange] = useState(() => localStorage.getItem('organizer.discoverySub') || ''); // 'find' | 'saved'
+function SupplierPage() {
+    const [tab, setTab] = useState(() => localStorage.getItem('supplier.tab') || 'dashboard');
+    const [active, setActive] = useState(() => localStorage.getItem('supplier.active') || 'dashboard');
+    const [subChange, setSubChange] = useState(() => localStorage.getItem('supplier.discoverySub') || ''); // 'find' | 'saved'
   
 
     // Persist to localStorage whenever these change
     useEffect(() => {
-        localStorage.setItem('organizer.tab', tab);
+        localStorage.setItem('supplier.tab', tab);
     }, [tab]);
 
     useEffect(() => {
-        localStorage.setItem('organizer.active', active);
+        localStorage.setItem('supplier.active', active);
     }, [active]);
 
     useEffect(() => {
-        localStorage.setItem('organizer.discoverySub', subChange);
+        localStorage.setItem('supplier.discoverySub', subChange);
     }, [subChange]);
 
 
@@ -162,7 +161,7 @@ function OrganizerPage() {
         if(tab === 'event') {
             return <EventManagement />;
         }
-        return <Chatbot />;
+        return <EventDetail />;
       case "discovery":
         if(subChange === 'find') {
             return <PartnersList
@@ -196,7 +195,7 @@ function OrganizerPage() {
   };
     
     return (
-        <div className={styles.organizerPage}>
+        <div className={styles.supplierPage}>
             <PageNav />
                         <div className="max-w-6xl mx-auto px-4 py-6">
                 
@@ -220,4 +219,4 @@ function OrganizerPage() {
         </div>
     )
 }
-export default OrganizerPage;
+export default SupplierPage;

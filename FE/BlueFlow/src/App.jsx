@@ -11,6 +11,8 @@ import SetNewPassword from "../pages/SetPassword";
 import PasswordChangedSuccessfully from "../pages/PasswordChanged";
 import ForgotPassword from "../pages/ForgotPassword";
 import OrganizerPage from "../pages/Organizer/OrganizerPage";
+import SponsorPage from "../pages/Sponsor/SponsorPage";
+import SupplierPage from "../pages/Supplier/SupplierPage";
 
 function App() {
   return (
@@ -26,6 +28,9 @@ function App() {
           <Route path="/set-password" element={<SetNewPassword />} />
           <Route path="/password-changed" element={<PasswordChangedSuccessfully />} />
           <Route path="/organizer" element={<OrganizerPage />} />
+          <Route path="/sponsor" element={<SponsorPage />} />
+          <Route path="/supplier" element={<SupplierPage />} />
+
 
           <Route index element={<Homepage />} />
           
