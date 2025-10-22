@@ -77,18 +77,42 @@ const MessagesList = ({ onSelectChat }) => {
           await signalRService.startConnection();
         }
 
-        // Backend chỉ broadcast UserOnline và UserOffline
-        // Không có ReceiveMessage broadcast - cần polling hoặc backend phải thêm
+        // Listen for conversation updates
+        signalRService.onConversationUpdated((senderId) => {
+          if (!isSubscribed) return;
+          console.log('🔄 Conversation updated from:', senderId);
+          
+          // Refresh the partner list to get latest message
+          messageService.getPartnerListChat().then(response => {
+            if (response.success && response.data) {
+              const formattedChats = response.data.map((chat) => ({
+                id: chat.partnerId,
+                name: chat.partnerName || 'Unknown',
+                message: chat.lastMessage?.content || 'No messages yet',
+                time: chat.lastMessageTime ? new Date(chat.lastMessageTime).toLocaleTimeString('en-US', { 
+                  hour: 'numeric', 
+                  minute: '2-digit',
+                  hour12: false 
+                }) : '',
+                avatar: chat.partnerAvatar,
+                hasNotification: (chat.unreadCount || 0) > 0,
+                unreadCount: chat.unreadCount || 0,
+                partnerRole: chat.partnerRole
+              }));
+              setAllChats(formattedChats);
+            }
+          });
+        });
         
         signalRService.onUserOnline((userId) => {
           if (!isSubscribed) return;
-          console.log('User online:', userId);
+          console.log('🟢 User online:', userId);
           // TODO: Update UI to show user is online
         });
 
         signalRService.onUserOffline((userId) => {
           if (!isSubscribed) return;
-          console.log('User offline:', userId);
+          console.log('🔴 User offline:', userId);
           // TODO: Update UI to show user is offline
         });
 
@@ -103,6 +127,7 @@ const MessagesList = ({ onSelectChat }) => {
     return () => {
       isSubscribed = false;
       // SignalR event names are camelCase
+      signalRService.off('conversationUpdated');
       signalRService.off('userOnline');
       signalRService.off('userOffline');
     };
