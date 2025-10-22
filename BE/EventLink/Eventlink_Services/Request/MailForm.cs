@@ -23,5 +23,11 @@ namespace Eventlink_Services.Request
             [Required, StringLength(6, MinimumLength = 6, ErrorMessage = "OTP phải có 6 ký tự")]
             public string Otp { get; set; }
         }
+
+        public class VerifyRegisterOtpWithProfileRequest
+        {
+            public VerifyOtpRequest OtpRequest { get; set; }
+            public CreateUserProfileRequest ProfileRequest { get; set; }
+        }
     }
 }

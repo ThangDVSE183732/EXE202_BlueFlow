@@ -18,14 +18,20 @@ namespace EventLink.Controllers
     public class PartnershipsController : ControllerBase
     {
         private readonly IPartnershipService _partnershipService;
-        private readonly IUserProfileService _userProfileService;
+        //private readonly IUserProfileService _userProfileService;
         private readonly OpenAIService _openAIService;
 
-        public PartnershipsController(IPartnershipService partnershipService, OpenAIService openAIService, IUserProfileService userProfileService)
+        //public PartnershipsController(IPartnershipService partnershipService, OpenAIService openAIService, IUserProfileService userProfileService)
+        //{
+        //    _partnershipService = partnershipService;
+        //    _openAIService = openAIService;
+        //    _userProfileService = userProfileService;
+        //}
+
+        public PartnershipsController(IPartnershipService partnershipService, OpenAIService openAIService)
         {
             _partnershipService = partnershipService;
             _openAIService = openAIService;
-            _userProfileService = userProfileService;
         }
 
         [HttpPost]

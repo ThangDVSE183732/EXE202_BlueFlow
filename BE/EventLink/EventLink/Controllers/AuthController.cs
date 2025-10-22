@@ -20,15 +20,18 @@ namespace EventLink.Controllers
         private readonly IAuthService _authService;
         private readonly IGoogleAuthService _googleAuthService;
         private readonly ILogger<AuthController> _logger;
+        private readonly IUserProfileService _userProfileService;
 
         public AuthController(
             IAuthService authService,
             IGoogleAuthService googleAuthService,
-            ILogger<AuthController> logger)
+            ILogger<AuthController> logger,
+            IUserProfileService userProfileService)
         {
             _authService = authService;
             _googleAuthService = googleAuthService;
             _logger = logger;
+            _userProfileService = userProfileService;
         }
 
         [HttpPost("register")]
@@ -58,7 +61,7 @@ namespace EventLink.Controllers
         /// Step 2: Verify OTP - Khi nhập đúng OTP thì mới tạo user
         /// </summary>
         [HttpPost("verify-otp-register")]
-        public async Task<ActionResult<ApiResponse<AuthResponse>>> VerifyRegisterOtp([FromBody] VerifyOtpRequest request)
+        public async Task<ActionResult<ApiResponse<AuthResponse>>> VerifyRegisterOtp([FromBody] VerifyRegisterOtpWithProfileRequest request)
         {
             if (!ModelState.IsValid)
             {
@@ -70,12 +73,21 @@ namespace EventLink.Controllers
                 return BadRequest(ApiResponse<AuthResponse>.ErrorResult("Validation failed", errors));
             }
 
-            var result = await _authService.VerifyRegistrationOtpAsync(request);
+            var result = await _authService.VerifyRegistrationOtpAsync(request.OtpRequest);
 
             if (!result.Success)
             {
                 return BadRequest(result);
             }
+
+            var userIdClaim = User.FindFirst("UserId")?.Value;
+
+            if(userIdClaim == null || !Guid.TryParse(userIdClaim, out Guid userId))
+            {
+                return BadRequest(ApiResponse<AuthResponse>.ErrorResult("UserId not found in token"));
+            }
+
+            await _userProfileService.CreateAsync(userId, request.ProfileRequest);
 
             return Ok(result);
         }

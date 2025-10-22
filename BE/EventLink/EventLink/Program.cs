@@ -10,6 +10,7 @@ using EventLink_Services.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
@@ -44,7 +45,7 @@ builder.Services.AddControllers();
 // Database Configuration
 builder.Services.AddDbContext<EventLinkDBContext>(options =>
 {
-    options.UseSqlServer(Environment.GetEnvironmentVariable("DB_CONNECTION"));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
     options.UseQueryTrackingBehavior(QueryTrackingBehavior.TrackAll);
 });
 

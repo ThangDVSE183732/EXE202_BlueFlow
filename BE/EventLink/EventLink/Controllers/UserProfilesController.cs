@@ -1,7 +1,9 @@
 ﻿using EventLink_Repositories.DBContext;
 using EventLink_Repositories.Models;
 using Eventlink_Services.Interface;
+using Eventlink_Services.Request;
 using Eventlink_Services.Response;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -9,12 +11,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using static Eventlink_Services.Request.UserProfileRequest;
 
 namespace EventLink.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UserProfilesController : ControllerBase
     {
         private readonly IUserProfileService _userProfileService;
@@ -55,7 +57,8 @@ namespace EventLink.Controllers
                 return BadRequest(ModelState);
             }
             await _userProfileService.Update(id, request);
-            return Ok(new {
+            return Ok(new
+            {
                 success = true,
                 message = "User profile updated successfully"
             });
@@ -66,7 +69,7 @@ namespace EventLink.Controllers
         [HttpPost]
         public async Task<ActionResult<UserProfileResponse>> PostUserProfile(CreateUserProfileRequest request)
         {
-            if(!ModelState.IsValid)
+            if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
