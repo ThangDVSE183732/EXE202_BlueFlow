@@ -37,6 +37,7 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
               minute: '2-digit',
               hour12: true 
             }),
+            formattedTime: msg.formattedTime,
             isOwn: msg.senderId !== partnerId, // Message is own if sender is NOT the partner
             isRead: msg.isRead
           }));
@@ -273,8 +274,7 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
                     <p className="text-xs leading-relaxed mb-1 text-left">{message.content}</p>
                     {message.timestamp && (
                       <p className={`text-[9px] mt-1 text-right ${message.isOwn ? 'text-gray-200' : 'text-gray-400'}`}>
-                        {/* {message.timestamp} */}
-                        20:31
+                        {message.formattedTime}
                       </p>
                     )}
                   </div>
