@@ -3,7 +3,7 @@ import { Send, Paperclip, Search, MoreHorizontal } from 'lucide-react';
 import { messageService } from '../../services/messageService';
 import signalRService from '../../services/signalRService';
 
-const MessageContent = ({ selectedChat = 'Event Tech' }) => {
+const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -11,11 +11,15 @@ const MessageContent = ({ selectedChat = 'Event Tech' }) => {
   const [isPartnerTyping, setIsPartnerTyping] = useState(false);
   const typingTimeoutRef = useRef(null);
 
-  // Hardcode partnerId theo yêu cầu
-  const partnerId = '4fc2996d-3e88-45c7-9b09-9585fc5e4435';
+  // partnerId được truyền từ props (từ MessagesPage)
 
   // Load messages từ API
   useEffect(() => {
+    if (!partnerId) {
+      setLoading(false);
+      return;
+    }
+
     const fetchMessages = async () => {
       try {
         setLoading(true);
@@ -51,6 +55,8 @@ const MessageContent = ({ selectedChat = 'Event Tech' }) => {
 
   // Setup SignalR connection
   useEffect(() => {
+    if (!partnerId) return;
+
     let isSubscribed = true;
 
     const initSignalR = async () => {
@@ -60,35 +66,42 @@ const MessageContent = ({ selectedChat = 'Event Tech' }) => {
           await signalRService.startConnection();
         }
 
-        // Join this conversation room
-        await signalRService.joinConversation(partnerId);
-
-        // Listen for new messages
+        // Listen for real-time messages from backend
         signalRService.onReceiveMessage((message) => {
           if (!isSubscribed) return;
           
-          console.log('New message received:', message);
+          console.log('📨 Real-time message received:', message);
           
-          // Add new message to the list
-          setMessages(prev => [...prev, {
-            id: message.id || Date.now(),
-            sender: message.senderId === partnerId ? selectedChat : 'You',
-            content: message.content,
-            timestamp: new Date(message.sentAt || new Date()).toLocaleTimeString('en-US', { 
-              hour: 'numeric', 
-              minute: '2-digit',
-              hour12: true 
-            }),
-            isOwn: message.senderId !== partnerId,
-            isRead: message.isRead || false
-          }]);
+          // Add new message to the list if it's from the current partner
+          if (message.senderId === partnerId || message.receiverId === partnerId) {
+            setMessages(prev => {
+              // Avoid duplicates
+              if (prev.some(msg => msg.id === message.id)) {
+                return prev;
+              }
+              
+              return [...prev, {
+                id: message.id || Date.now(),
+                sender: message.senderId === partnerId ? selectedChat : 'You',
+                content: message.content,
+                timestamp: new Date(message.sentAt || new Date()).toLocaleTimeString('en-US', { 
+                  hour: 'numeric', 
+                  minute: '2-digit',
+                  hour12: true 
+                }),
+                isOwn: message.senderId !== partnerId,
+                isRead: message.isRead || false
+              }];
+            });
+          }
         });
-
-        // Listen for typing indicator
-        signalRService.onUserTyping((data) => {
+        
+        // Listen for typing indicator - Backend sends senderId (string)
+        signalRService.onUserTyping((senderId) => {
           if (!isSubscribed) return;
           
-          if (data.userId === partnerId) {
+          // Check if the typing user is our chat partner
+          if (senderId === partnerId) {
             setIsPartnerTyping(true);
             
             // Clear existing timeout
@@ -103,17 +116,16 @@ const MessageContent = ({ selectedChat = 'Event Tech' }) => {
           }
         });
 
-        // Listen for message read
-        signalRService.onMessageRead((data) => {
+        // Listen for stop typing
+        signalRService.onUserStoppedTyping((senderId) => {
           if (!isSubscribed) return;
           
-          console.log('Messages marked as read:', data);
-          
-          // Update all messages as read
-          setMessages(prev => prev.map(msg => ({
-            ...msg,
-            isRead: true
-          })));
+          if (senderId === partnerId) {
+            setIsPartnerTyping(false);
+            if (typingTimeoutRef.current) {
+              clearTimeout(typingTimeoutRef.current);
+            }
+          }
         });
 
       } catch (err) {
@@ -126,10 +138,10 @@ const MessageContent = ({ selectedChat = 'Event Tech' }) => {
     // Cleanup
     return () => {
       isSubscribed = false;
-      signalRService.leaveConversation(partnerId);
-      signalRService.off('ReceiveMessage');
-      signalRService.off('UserTyping');
-      signalRService.off('MessageRead');
+      // SignalR event names are camelCase
+      signalRService.off('receiveMessage');
+      signalRService.off('userTyping');
+      signalRService.off('userStoppedTyping');
       
       if (typingTimeoutRef.current) {
         clearTimeout(typingTimeoutRef.current);
@@ -142,10 +154,12 @@ const MessageContent = ({ selectedChat = 'Event Tech' }) => {
       const messageContent = newMessage.trim();
       setNewMessage(''); // Clear input immediately
       
+      const optimisticMessageId = Date.now(); // Store ID outside try-catch
+      
       try {
         // Add optimistic message first
         const optimisticMessage = {
-          id: Date.now(),
+          id: optimisticMessageId,
           sender: 'You',
           content: messageContent,
           timestamp: new Date().toLocaleTimeString('en-US', { 
@@ -159,27 +173,27 @@ const MessageContent = ({ selectedChat = 'Event Tech' }) => {
         
         setMessages(prev => [...prev, optimisticMessage]);
         
-        // Send via SignalR if connected, otherwise fallback to REST API
+        // Backend không có SendMessage qua SignalR - chỉ dùng REST API
+        const messageData = {
+          receiverId: partnerId,
+          content: messageContent,
+          partnershipId: null,
+          messageType: "Text",
+          attachmentUrl: null,
+          attachmentName: null
+        };
+        await messageService.sendMessage(messageData);
+        
+        // Stop typing indicator after sending
         if (signalRService.isConnectionActive()) {
-          await signalRService.sendMessage(partnerId, messageContent, null);
-        } else {
-          // Fallback to REST API
-          const messageData = {
-            receiverId: partnerId,
-            content: messageContent,
-            partnershipId: null,
-            messageType: "Text",
-            attachmentUrl: null,
-            attachmentName: null
-          };
-          await messageService.sendMessage(messageData);
+          await signalRService.stopTypingIndicator(partnerId);
         }
         
       } catch (err) {
         console.error('Error sending message:', err);
         setError('Failed to send message');
         // Remove optimistic message on error
-        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessageId));
       }
     }
   };

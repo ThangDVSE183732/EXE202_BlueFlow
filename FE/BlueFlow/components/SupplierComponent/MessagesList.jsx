@@ -66,7 +66,7 @@ const MessagesList = ({ onSelectChat }) => {
     fetchPartnerListChat();
   }, []);
 
-  // Setup SignalR for chat list updates
+  // Setup SignalR for online/offline status (backend không có ReceiveMessage broadcast)
   useEffect(() => {
     let isSubscribed = true;
 
@@ -77,73 +77,43 @@ const MessagesList = ({ onSelectChat }) => {
           await signalRService.startConnection();
         }
 
-        // Listen for new messages to update chat list
-        signalRService.onReceiveMessage((message) => {
+        // Listen for conversation updates
+        signalRService.onConversationUpdated((senderId) => {
           if (!isSubscribed) return;
+          console.log('🔄 Conversation updated from:', senderId);
           
-          console.log('New message in chat list:', message);
-          
-          // Update the chat list with new message preview
-          setAllChats(prev => {
-            const chatIndex = prev.findIndex(chat => 
-              chat.id === message.senderId || chat.id === message.receiverId
-            );
-            
-            if (chatIndex !== -1) {
-              // Update existing chat
-              const updatedChats = [...prev];
-              updatedChats[chatIndex] = {
-                ...updatedChats[chatIndex],
-                message: message.content,
-                time: new Date(message.sentAt || new Date()).toLocaleTimeString('en-US', { 
+          // Refresh the partner list to get latest message
+          messageService.getPartnerListChat().then(response => {
+            if (response.success && response.data) {
+              const formattedChats = response.data.map((chat) => ({
+                id: chat.partnerId,
+                name: chat.partnerName || 'Unknown',
+                message: chat.lastMessage?.content || 'No messages yet',
+                time: chat.lastMessageTime ? new Date(chat.lastMessageTime).toLocaleTimeString('en-US', { 
                   hour: 'numeric', 
                   minute: '2-digit',
                   hour12: false 
-                }),
-                hasNotification: true,
-                unreadCount: (updatedChats[chatIndex].unreadCount || 0) + 1
-              };
-              
-              // Move to top
-              const [updatedChat] = updatedChats.splice(chatIndex, 1);
-              return [updatedChat, ...updatedChats];
-            } else {
-              // New chat - refresh list
-              messageService.getPartnerListChat().then(response => {
-                if (response.success && response.data) {
-                  const formattedChats = response.data.map((chat) => ({
-                    id: chat.partnerId,
-                    name: chat.partnerName || 'Unknown',
-                    message: chat.lastMessage?.content || 'No messages yet',
-                    time: chat.lastMessageTime ? new Date(chat.lastMessageTime).toLocaleTimeString('en-US', { 
-                      hour: 'numeric', 
-                      minute: '2-digit',
-                      hour12: false 
-                    }) : '',
-                    avatar: chat.partnerAvatar,
-                    hasNotification: (chat.unreadCount || 0) > 0,
-                    unreadCount: chat.unreadCount || 0,
-                  }));
-                  setAllChats(formattedChats);
-                }
-              });
-              return prev;
+                }) : '',
+                avatar: chat.partnerAvatar,
+                hasNotification: (chat.unreadCount || 0) > 0,
+                unreadCount: chat.unreadCount || 0,
+                partnerRole: chat.partnerRole
+              }));
+              setAllChats(formattedChats);
             }
           });
         });
-
-        // Listen for message read events
-        signalRService.onMessageRead((data) => {
+        
+        signalRService.onUserOnline((userId) => {
           if (!isSubscribed) return;
-          
-          console.log('Message read in chat list:', data);
-          
-          // Clear unread count for this chat
-          setAllChats(prev => prev.map(chat => 
-            chat.id === data.partnerId 
-              ? { ...chat, hasNotification: false, unreadCount: 0 }
-              : chat
-          ));
+          console.log('🟢 User online:', userId);
+          // TODO: Update UI to show user is online
+        });
+
+        signalRService.onUserOffline((userId) => {
+          if (!isSubscribed) return;
+          console.log('🔴 User offline:', userId);
+          // TODO: Update UI to show user is offline
         });
 
       } catch (err) {
@@ -156,9 +126,10 @@ const MessagesList = ({ onSelectChat }) => {
     // Cleanup
     return () => {
       isSubscribed = false;
-      // Don't stop connection here as it might be used by MessageContent
-      signalRService.off('ReceiveMessage');
-      signalRService.off('MessageRead');
+      // SignalR event names are camelCase
+      signalRService.off('conversationUpdated');
+      signalRService.off('userOnline');
+      signalRService.off('userOffline');
     };
   }, []);
 
