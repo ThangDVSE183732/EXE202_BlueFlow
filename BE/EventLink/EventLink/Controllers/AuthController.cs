@@ -58,7 +58,7 @@ namespace EventLink.Controllers
         }
 
         /// <summary>
-        /// Step 2: Verify OTP - Khi nhập đúng OTP thì mới tạo user
+        /// Step 2: Verify OTP - Khi nhập đúng OTP thì mới tạo user và profile
         /// </summary>
         [HttpPost("verify-otp-register")]
         public async Task<ActionResult<ApiResponse<AuthResponse>>> VerifyRegisterOtp([FromBody] VerifyRegisterOtpWithProfileRequest request)
@@ -73,21 +73,13 @@ namespace EventLink.Controllers
                 return BadRequest(ApiResponse<AuthResponse>.ErrorResult("Validation failed", errors));
             }
 
-            var result = await _authService.VerifyRegistrationOtpAsync(request.OtpRequest);
+            // ✅ Gọi method mới để tạo user + profile trong một transaction
+            var result = await _authService.VerifyRegistrationOtpWithProfileAsync(request);
 
             if (!result.Success)
             {
                 return BadRequest(result);
             }
-
-            var userIdClaim = User.FindFirst("UserId")?.Value;
-
-            if(userIdClaim == null || !Guid.TryParse(userIdClaim, out Guid userId))
-            {
-                return BadRequest(ApiResponse<AuthResponse>.ErrorResult("UserId not found in token"));
-            }
-
-            await _userProfileService.CreateAsync(userId, request.ProfileRequest);
 
             return Ok(result);
         }

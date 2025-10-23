@@ -8,7 +8,7 @@ namespace Eventlink_Services.Request
     {
         // Company Information
         public string CompanyName { get; set; }
-        public IFormFile CompanyLogoUrl { get; set; }
+        public IFormFile? CompanyLogoUrl { get; set; }
         public string Industry { get; set; }
         public string CompanySize { get; set; }
         public int? FoundedYear { get; set; }

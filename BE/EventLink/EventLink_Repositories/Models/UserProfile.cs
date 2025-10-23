@@ -6,7 +6,7 @@ public partial class UserProfile
     public Guid UserId { get; set; }
     //Company Information
     public string CompanyName { get; set; }
-    public string CompanyLogoUrl { get; set; }
+    public string? CompanyLogoUrl { get; set; }
     public string Industry { get; set; }
     public string CompanySize { get; set; }
     public int? FoundedYear { get; set; }

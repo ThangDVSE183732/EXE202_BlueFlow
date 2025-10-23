@@ -61,5 +61,14 @@ namespace EventLink_Repositories.Repository
             Update(user);
             return user;
         }
+
+        public async Task DeleteUserAsync(Guid userId)
+        {
+            var user = await GetByIdAsync(userId);
+            if (user != null)
+            {
+                Remove(user);
+            }
+        }
     }
 }

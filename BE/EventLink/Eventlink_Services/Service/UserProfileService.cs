@@ -33,34 +33,37 @@ namespace Eventlink_Services.Service
                 throw new Exception("User not found");
             }
 
+            // ✅ Handle CompanyLogoUrl upload or set default
+            string companyLogoUrl = string.Empty;
+            
+            if (request.CompanyLogoUrl != null)
+            {
+                companyLogoUrl = await _cloudinaryService.UploadImageAsync(request.CompanyLogoUrl);
+            }
+
             var profile = new UserProfile
             {
                 UserId = userId,
-                CompanyName = request.CompanyName,
-                Industry = request.Industry,
-                CompanySize = request.CompanySize,
+                CompanyName = request.CompanyName ?? string.Empty,
+                CompanyLogoUrl = companyLogoUrl,
+                Industry = request.Industry ?? string.Empty,
+                CompanySize = request.CompanySize ?? string.Empty,
                 FoundedYear = request.FoundedYear,
-                CompanyDescription = request.CompanyDescription,
-                SocialProfile = request.SocialProfile,
-                LinkedInProfile = request.LinkedInProfile,
-                OfficialEmail = request.OfficialEmail,
-                StateProvince = request.StateProvince,
-                CountryRegion = request.CountryRegion,
-                City = request.City,
-                StreetAddress = request.StreetAddress,
-                FullName = user.FullName,
-                JobTitle = request.JobTitle,
-                DirectEmail = user.Email,
-                DirectPhone = user.PhoneNumber,
+                CompanyDescription = request.CompanyDescription ?? string.Empty,
+                SocialProfile = request.SocialProfile ?? string.Empty,
+                LinkedInProfile = request.LinkedInProfile ?? string.Empty,
+                OfficialEmail = request.OfficialEmail ?? string.Empty,
+                StateProvince = request.StateProvince ?? string.Empty,
+                CountryRegion = request.CountryRegion ?? string.Empty,
+                City = request.City ?? string.Empty,
+                StreetAddress = request.StreetAddress ?? string.Empty,
+                FullName = user.FullName ?? string.Empty,
+                JobTitle = request.JobTitle ?? string.Empty,
+                DirectEmail = user.Email ?? string.Empty,
+                DirectPhone = user.PhoneNumber ?? string.Empty,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-
-            if(request.CompanyLogoUrl != null)
-            {
-                var companyLogo = await _cloudinaryService.UploadImageAsync(request.CompanyLogoUrl);
-                profile.CompanyLogoUrl = companyLogo;
-            }
 
             await _userProfileRepository.AddAsync(profile);
         }
