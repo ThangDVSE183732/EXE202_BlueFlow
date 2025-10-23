@@ -21,10 +21,11 @@ namespace Eventlink_Services.Service
             _cloudinaryService = cloudinaryService;
         }
 
-        public async Task AddAsync(CreateBrandProfileRequest request)
+        public async Task AddAsync(Guid userId, CreateBrandProfileRequest request)
         {
             var brandProfile = new BrandProfile
             {
+                UserId = userId,
                 BrandName = request.BrandName,
                 Industry = request.Industry,
                 CompanySize = request.CompanySize,

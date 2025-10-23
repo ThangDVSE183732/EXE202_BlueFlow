@@ -4,9 +4,6 @@ public partial class UserProfile
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
-
-    public string AboutUs { get; set; }
-    public string Mission { get; set; }
     //Company Information
     public string CompanyName { get; set; }
     public string CompanyLogoUrl { get; set; }
@@ -23,8 +20,6 @@ public partial class UserProfile
     public string CountryRegion { get; set; }
     public string City { get; set; }
     public string StreetAddress { get; set; }
-
-    public string Tags { get; set; }
 
     // Primary Contact Person
     public string FullName { get; set; }

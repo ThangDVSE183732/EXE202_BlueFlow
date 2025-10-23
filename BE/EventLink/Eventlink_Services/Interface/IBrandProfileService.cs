@@ -14,7 +14,7 @@ namespace Eventlink_Services.Interface
         Task<BrandProfileResponse> GetByUserIdAsync(Guid userId);
         Task<List<BrandProfileResponse>> GetAllAsync();
         Task<BrandProfileResponse> GetByIdAsync(Guid id);
-        Task AddAsync(CreateBrandProfileRequest request);
+        Task AddAsync(Guid userId, CreateBrandProfileRequest request);
         Task UpdateAsync(Guid id, UpdateBrandProfileRequest request);
         Task DeleteAsync(Guid id);
     }

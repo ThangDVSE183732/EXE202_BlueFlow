@@ -63,7 +63,14 @@ namespace EventLink.Controllers
         [HttpPost]
         public async Task<IActionResult> PostBrandProfile(CreateBrandProfileRequest request)
         {
-            await _brandProfileService.AddAsync(request);
+            var userIdClaim = User.FindFirst("userId")?.Value;
+
+            if (userIdClaim == null || !Guid.TryParse(userIdClaim, out Guid userId))
+            {
+                return Unauthorized();
+            }
+
+            await _brandProfileService.AddAsync(userId, request);
 
             return Ok(new
             {
