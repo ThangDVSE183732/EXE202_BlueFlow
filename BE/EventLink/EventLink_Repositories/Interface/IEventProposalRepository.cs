@@ -1,8 +1,6 @@
 ﻿using EventLink_Repositories.Models;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace EventLink_Repositories.Interface
@@ -11,5 +9,13 @@ namespace EventLink_Repositories.Interface
     {
         Task<List<EventProposal>> GetAllEventProposalsAsync();
         Task<EventProposal> GetEventProposalByIdAsync(Guid id);
+
+        // ✅ NEW METHODS
+        Task<List<EventProposal>> GetProposalsByEventIdAsync(Guid eventId);
+        Task<List<EventProposal>> GetProposalsByProposerIdAsync(Guid proposerId);
+        Task<List<EventProposal>> GetProposalsByStatusAsync(string status);
+        Task<EventProposal> GetProposalDetailAsync(Guid id);  // Include User navigation
+        Task<decimal> GetTotalApprovedSponsorshipAsync(Guid eventId);
+        Task<int> GetProposalCountByEventAsync(Guid eventId, string? status = null);
     }
 }
