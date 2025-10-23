@@ -9,7 +9,7 @@ namespace Eventlink_Services.Response
 {
     public class UserProfileResponse
     {
-        public Guid UserId { get; set; }
+        public Guid Id { get; set; }
         public string CompanyName { get; set; }
         public string CompanyLogoUrl { get; set; }
         public string Industry { get; set; }

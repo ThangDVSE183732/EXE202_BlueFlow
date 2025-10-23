@@ -170,7 +170,7 @@ function OrganizerPage() {
         if(tab === 'event') {
             return <EventManagement />;
         }
-        return <Dashboard />;
+        return <EventDetail />;
       case "discovery":
         if(subChange === 'find') {
             return <PartnersList

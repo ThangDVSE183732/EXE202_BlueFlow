@@ -25,7 +25,7 @@ namespace EventLink_Repositories.Repository
 
         public async Task<UserProfile> GetByUserIdAsync(Guid userId)
         {
-            return await _context.UserProfiles.Include(up => up.User).FirstOrDefaultAsync(u => u.Id == userId);
+            return await _context.UserProfiles.Include(up => up.User).FirstOrDefaultAsync(u => u.UserId == userId);
         }
 
         public async Task<bool> UserProfileExistsAsync(Guid userId)
