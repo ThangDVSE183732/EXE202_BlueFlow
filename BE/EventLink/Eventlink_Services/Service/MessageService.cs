@@ -75,7 +75,8 @@ namespace Eventlink_Services.Service
                     AttachmentUrl = message.AttachmentUrl,
                     AttachmentName = message.AttachmentName,
                     IsRead = message.IsRead == true,
-                    CreatedAt = message.CreatedAt,
+                    // ✅ Xử lý nullable DateTime
+                    CreatedAt = message.CreatedAt ?? DateTime.UtcNow,
                     IsSentByCurrentUser = true
                 };
 
@@ -114,7 +115,8 @@ namespace Eventlink_Services.Service
                     AttachmentUrl = m.AttachmentUrl,
                     AttachmentName = m.AttachmentName,
                     IsRead = m.IsRead == true,
-                    CreatedAt = m.CreatedAt,
+                    // ✅ Xử lý nullable DateTime
+                    CreatedAt = m.CreatedAt ?? DateTime.UtcNow,
                     IsSentByCurrentUser = m.SenderId == userId
                 }).Reverse().ToList();
 
@@ -159,7 +161,8 @@ namespace Eventlink_Services.Service
                             Id = lastMessage.Id,
                             Content = lastMessage.Content ?? string.Empty,
                             MessageType = lastMessage.MessageType ?? "Text",
-                            CreatedAt = lastMessage.CreatedAt,
+                            // ✅ Xử lý nullable DateTime
+                            CreatedAt = lastMessage.CreatedAt ?? DateTime.UtcNow,
                             IsSentByCurrentUser = lastMessage.SenderId == userId,
                             IsRead = lastMessage.IsRead == true
                         };
