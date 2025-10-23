@@ -47,5 +47,13 @@ namespace Eventlink_Services.Service
 
             throw new Exception($"Cloudinary upload failed: {uploadResult.Error?.Message}");
         }
+
+        public async Task DeleteImageAsync(string publicId)
+        {
+            var deletionParams = new DeletionParams(publicId);
+            var deletionResult = await _cloudinary.DestroyAsync(deletionParams);
+            if (deletionResult.StatusCode != System.Net.HttpStatusCode.OK)
+                throw new Exception($"Cloudinary deletion failed: {deletionResult.Error?.Message}");
+        }
     }
 }
