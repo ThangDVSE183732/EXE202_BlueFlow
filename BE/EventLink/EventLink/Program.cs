@@ -120,6 +120,7 @@ builder.Services.AddScoped<IEventRepository, EventRepository>();
 builder.Services.AddScoped<IEventProposalRepository, EventProposalRepository>();
 builder.Services.AddScoped<IPartnershipRepository, PartnershipRepository>();
 builder.Services.AddScoped<ISupplierServiceRepository, SupplierServiceRepository>();
+builder.Services.AddScoped<IEventActivityRepository, EventActivityRepository>();
 
 // Service Registration
 builder.Services.AddScoped<IAuthService, AuthService>();

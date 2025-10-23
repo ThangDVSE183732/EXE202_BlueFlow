@@ -27,6 +27,8 @@ public partial class EventLinkDBContext : DbContext
 
     public virtual DbSet<Event> Events { get; set; }
 
+    public virtual DbSet<EventActivity> EventActivities { get; set; }
+
     public virtual DbSet<EventProposal> EventProposals { get; set; }
 
     public virtual DbSet<Message> Messages { get; set; }
@@ -175,6 +177,37 @@ public partial class EventLinkDBContext : DbContext
                 .HasConstraintName("FK_Events_Users");
         });
 
+        modelBuilder.Entity<EventActivity>(entity =>
+        {
+            entity.ToTable("EventActivities");
+            entity.HasKey(e => e.Id).HasName("PK__EventAct__3214EC07");
+
+            entity.HasIndex(e => e.EventId, "IX_EventActivities_EventId");
+            entity.HasIndex(e => new { e.EventId, e.StartTime }, "IX_EventActivities_EventId_StartTime");
+            entity.HasIndex(e => e.ActivityType, "IX_EventActivities_ActivityType");
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.ActivityName).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.ActivityDescription).HasMaxLength(2000);
+            entity.Property(e => e.StartTime).IsRequired();
+            entity.Property(e => e.EndTime).IsRequired();
+            entity.Property(e => e.Location).HasMaxLength(500);
+            entity.Property(e => e.Speakers).HasMaxLength(1000);
+            entity.Property(e => e.ActivityType).HasMaxLength(100);
+            entity.Property(e => e.MaxParticipants).HasDefaultValue(0);
+            entity.Property(e => e.CurrentParticipants).HasDefaultValue(0);
+            entity.Property(e => e.IsPublic).HasDefaultValue(true);
+            entity.Property(e => e.DisplayOrder).HasDefaultValue(0);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Event)
+                .WithMany()
+                .HasForeignKey(d => d.EventId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_EventActivities_Events");
+        });
+
         modelBuilder.Entity<EventProposal>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__EventPro__3214EC07A0C70085");
@@ -191,6 +224,12 @@ public partial class EventLinkDBContext : DbContext
                 .IsRequired()
                 .HasMaxLength(255);
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.SponsorTier).HasMaxLength(50);
+            entity.Property(e => e.FundingBreakdown).HasMaxLength(4000);
+            entity.Property(e => e.Benefits).HasMaxLength(4000);
+            entity.Property(e => e.Status).HasMaxLength(50).HasDefaultValue("Pending");
+            entity.Property(e => e.RejectionReason).HasMaxLength(1000);
+            entity.Property(e => e.ApprovedAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Event).WithMany(p => p.EventProposals)
                 .HasForeignKey(d => d.EventId)
