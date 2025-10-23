@@ -50,9 +50,7 @@ public partial class EventLinkDBContext : DbContext
     public virtual DbSet<UserActivity> UserActivities { get; set; }
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
-    //public virtual DbSet<OrganizerProfile> OrganizerProfiles { get; set; }
-    //public virtual DbSet<SupplierProfile> SupplierProfiles { get; set; }
-    //public virtual DbSet<SponsorProfile> SponsorProfiles { get; set; }
+    public virtual DbSet<BrandProfile> BrandProfiles { get; set; }
 
     public virtual DbSet<UserSubscription> UserSubscriptions { get; set; }
 
@@ -513,9 +511,9 @@ public partial class EventLinkDBContext : DbContext
             entity.Property(e => e.City).HasMaxLength(255);
             entity.Property(e => e.StreetAddress).HasMaxLength(500);
 
-            entity.Property(e => e.AboutUs).HasMaxLength(2000);
-            entity.Property(e => e.Mission).HasMaxLength(2000);
-            entity.Property(e => e.Tags).HasMaxLength(1000);
+            //entity.Property(e => e.AboutUs).HasMaxLength(2000);
+            //entity.Property(e => e.Mission).HasMaxLength(2000);
+            //entity.Property(e => e.Tags).HasMaxLength(1000);
 
             // Primary Contact Person
             entity.Property(e => e.FullName).HasMaxLength(255);
@@ -532,6 +530,32 @@ public partial class EventLinkDBContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK_UserProfiles_Users");
         });
+
+        modelBuilder.Entity<BrandProfile>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+
+            entity.Property(e => e.BrandName).HasMaxLength(255);
+            entity.Property(e => e.BrandLogo).HasMaxLength(500);
+            entity.Property(e => e.Location).HasMaxLength(500);
+            entity.Property(e => e.AboutUs).HasMaxLength(2000);
+            entity.Property(e => e.OurMission).HasMaxLength(2000);
+            entity.Property(e => e.Industry).HasMaxLength(255);
+            entity.Property(e => e.CompanySize).HasMaxLength(100);
+            entity.Property(e => e.Website).HasMaxLength(500);
+            entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.PhoneNumber).HasMaxLength(50);
+            entity.Property(e => e.Tags).HasMaxLength(1000);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.User)
+                .WithMany(p => p.BrandProfiles)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_BrandProfiles_Users");
+        });
+
 
         modelBuilder.Entity<UserSubscription>(entity =>
         {
