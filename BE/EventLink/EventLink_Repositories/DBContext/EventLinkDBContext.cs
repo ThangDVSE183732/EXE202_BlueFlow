@@ -513,6 +513,10 @@ public partial class EventLinkDBContext : DbContext
             entity.Property(e => e.City).HasMaxLength(255);
             entity.Property(e => e.StreetAddress).HasMaxLength(500);
 
+            entity.Property(e => e.AboutUs).HasMaxLength(2000);
+            entity.Property(e => e.Mission).HasMaxLength(2000);
+            entity.Property(e => e.Tags).HasMaxLength(1000);
+
             // Primary Contact Person
             entity.Property(e => e.FullName).HasMaxLength(255);
             entity.Property(e => e.JobTitle).HasMaxLength(255);

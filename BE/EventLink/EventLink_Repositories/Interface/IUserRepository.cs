@@ -16,6 +16,5 @@ namespace EventLink_Repositories.Interface
         Task<User> UpdateUserAsync(User user);
         Task<User?> GetActiveUserByIdAsync(Guid id);
         Task<User?> GetActiveUserByEmailAsync(string email);
-        Task<List<User>> GetPartnersByPartnershipAsync(Guid partnershipId);
     }
 }

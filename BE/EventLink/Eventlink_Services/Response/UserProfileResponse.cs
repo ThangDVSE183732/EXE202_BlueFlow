@@ -15,6 +15,8 @@ namespace Eventlink_Services.Response
         public string Industry { get; set; }
         public string CompanySize { get; set; }
         public int? FoundedYear { get; set; }
+        public string AboutUs { get; set; }
+        public List<string> Mission { get; set; }
         public string CompanyDescription { get; set; }
         public string SocialProfile { get; set; }
         public string LinkedInProfile { get; set; }
@@ -23,6 +25,7 @@ namespace Eventlink_Services.Response
         public string CountryRegion { get; set; }
         public string City { get; set; }
         public string StreetAddress { get; set; }
+        public List<string> Tags { get; set; }
         public string FullName { get; set; }
         public string JobTitle { get; set; }
         public string DirectEmail { get; set; }

@@ -39,6 +39,8 @@ namespace Eventlink_Services.Service
                 Industry = request.Industry,
                 CompanySize = request.CompanySize,
                 FoundedYear = request.FoundedYear,
+                AboutUs = request.AboutUs,
+                Mission = request.Mission,
                 CompanyDescription = request.CompanyDescription,
                 SocialProfile = request.SocialProfile,
                 LinkedInProfile = request.LinkedInProfile,
@@ -47,6 +49,7 @@ namespace Eventlink_Services.Service
                 CountryRegion = request.CountryRegion,
                 City = request.City,
                 StreetAddress = request.StreetAddress,
+                Tags = request.Tags,
                 FullName = user.FullName,
                 JobTitle = request.JobTitle,
                 DirectEmail = user.Email,
@@ -67,6 +70,8 @@ namespace Eventlink_Services.Service
                 Industry = p.Industry,
                 CompanySize = p.CompanySize,
                 FoundedYear = p.FoundedYear,
+                AboutUs = p.AboutUs,
+                Mission = p.Mission.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
                 CompanyDescription = p.CompanyDescription,
                 SocialProfile = p.SocialProfile,
                 LinkedInProfile = p.LinkedInProfile,
@@ -75,6 +80,7 @@ namespace Eventlink_Services.Service
                 CountryRegion = p.CountryRegion,
                 City = p.City,
                 StreetAddress = p.StreetAddress,
+                Tags = p.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
                 FullName = p.FullName,
                 JobTitle = p.JobTitle,
                 DirectEmail = p.DirectEmail,
@@ -98,6 +104,8 @@ namespace Eventlink_Services.Service
                 Industry = userProfile.Industry,
                 CompanySize = userProfile.CompanySize,
                 FoundedYear = userProfile.FoundedYear,
+                AboutUs = userProfile.AboutUs,
+                Mission = userProfile.Mission?.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
                 CompanyDescription = userProfile.CompanyDescription,
                 SocialProfile = userProfile.SocialProfile,
                 LinkedInProfile = userProfile.LinkedInProfile,
@@ -106,6 +114,7 @@ namespace Eventlink_Services.Service
                 CountryRegion = userProfile.CountryRegion,
                 City = userProfile.City,
                 StreetAddress = userProfile.StreetAddress,
+                Tags = userProfile.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
                 FullName = userProfile.FullName,
                 JobTitle = userProfile.JobTitle,
                 DirectEmail = userProfile.DirectEmail,
@@ -142,6 +151,8 @@ namespace Eventlink_Services.Service
                 existingProfile.Industry = request.Industry;
                 existingProfile.CompanySize = request.CompanySize;
                 existingProfile.FoundedYear = request.FoundedYear;
+                existingProfile.AboutUs = request.AboutUs;
+                existingProfile.Mission = request.Mission;
                 existingProfile.CompanyDescription = request.CompanyDescription;
                 existingProfile.SocialProfile = request.SocialProfile;
                 existingProfile.LinkedInProfile = request.LinkedInProfile;
@@ -150,6 +161,7 @@ namespace Eventlink_Services.Service
                 existingProfile.CountryRegion = request.CountryRegion;
                 existingProfile.City = request.City;
                 existingProfile.StreetAddress = request.StreetAddress;
+                existingProfile.Tags = request.Tags;
                 existingProfile.JobTitle = request.JobTitle;
                 existingProfile.UpdatedAt = DateTime.UtcNow;
 
