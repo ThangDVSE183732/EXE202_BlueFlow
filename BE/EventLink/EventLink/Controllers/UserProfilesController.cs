@@ -47,6 +47,17 @@ namespace EventLink.Controllers
             return userProfile;
         }
 
+        [HttpGet("profile_by_userid/{userId}")]
+        public async Task<ActionResult<UserProfileResponse>> GetUserProfileByUserId(Guid userId)
+        {
+            var userProfile = await _userProfileService.GetByUserIdAsync(userId);
+            if (userProfile == null)
+            {
+                return NotFound();
+            }
+            return userProfile;
+        }
+
         // PUT: api/UserProfiles/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]

@@ -1,4 +1,5 @@
-﻿using Eventlink_Services.Interface;
+﻿using EventLink_Repositories.Models;
+using Eventlink_Services.Interface;
 using Eventlink_Services.Service;
 using MailKit;
 using Microsoft.AspNetCore.Authorization;
@@ -79,6 +80,12 @@ namespace EventLink.Controllers
                 success = true,
                 message = "Partnership updated successfully.",
             });
+        }
+
+        [HttpGet("{eventId}/partners")]
+        public async Task<IEnumerable<User>> GetPartnersByEventAsync(Guid eventId)
+        {
+            return await _partnershipService.GetPartnersByEventAsync(eventId);
         }
     }
 }

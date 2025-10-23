@@ -148,6 +148,11 @@ namespace Eventlink_Services.Service
             return partnership;
         }
 
+        public async Task<IEnumerable<User>> GetPartnersByEventAsync(Guid eventId)
+        {
+            return await _partnershipRepository.GetPartnersByEventAsync(eventId);
+        }
+
         public async Task UpdateAsync(Guid partnershipId, UpdatePartnershipRequest request)
         {
             var partnershipTask = await _partnershipRepository.GetByIdAsync(partnershipId);
