@@ -16,10 +16,12 @@ namespace Eventlink_Services.Service
     {
         private readonly IUserProfileRepo _userProfileRepository;
         private readonly IUserRepository _userRepository;
-        public UserProfileService(IUserProfileRepo userProfileRepository, IUserRepository userRepository)
+        private readonly CloudinaryService _cloudinaryService;
+        public UserProfileService(IUserProfileRepo userProfileRepository, IUserRepository userRepository, CloudinaryService cloudinaryService)
         {
             _userProfileRepository = userProfileRepository;
             _userRepository = userRepository;
+            _cloudinaryService = cloudinaryService;
         }
 
         public async Task CreateAsync(Guid userId, CreateUserProfileRequest request)
@@ -31,14 +33,15 @@ namespace Eventlink_Services.Service
                 throw new Exception("User not found");
             }
 
-            await _userProfileRepository.AddAsync(new UserProfile
+            var profile = new UserProfile
             {
                 UserId = userId,
                 CompanyName = request.CompanyName,
-                CompanyLogoUrl = request.CompanyLogoUrl,
                 Industry = request.Industry,
                 CompanySize = request.CompanySize,
                 FoundedYear = request.FoundedYear,
+                AboutUs = request.AboutUs,
+                Mission = request.Mission,
                 CompanyDescription = request.CompanyDescription,
                 SocialProfile = request.SocialProfile,
                 LinkedInProfile = request.LinkedInProfile,
@@ -47,13 +50,22 @@ namespace Eventlink_Services.Service
                 CountryRegion = request.CountryRegion,
                 City = request.City,
                 StreetAddress = request.StreetAddress,
+                Tags = request.Tags,
                 FullName = user.FullName,
                 JobTitle = request.JobTitle,
                 DirectEmail = user.Email,
                 DirectPhone = user.PhoneNumber,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
-            });
+            };
+
+            if(request.CompanyLogoUrl != null)
+            {
+                var companyLogo = await _cloudinaryService.UploadImageAsync(request.CompanyLogoUrl);
+                profile.CompanyLogoUrl = companyLogo;
+            }
+
+            await _userProfileRepository.AddAsync(profile);
         }
 
         public async Task<List<UserProfileResponse>> GetAllUserProfilesAsync()
@@ -67,6 +79,8 @@ namespace Eventlink_Services.Service
                 Industry = p.Industry,
                 CompanySize = p.CompanySize,
                 FoundedYear = p.FoundedYear,
+                AboutUs = p.AboutUs,
+                Mission = p.Mission.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
                 CompanyDescription = p.CompanyDescription,
                 SocialProfile = p.SocialProfile,
                 LinkedInProfile = p.LinkedInProfile,
@@ -75,6 +89,7 @@ namespace Eventlink_Services.Service
                 CountryRegion = p.CountryRegion,
                 City = p.City,
                 StreetAddress = p.StreetAddress,
+                Tags = p.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
                 FullName = p.FullName,
                 JobTitle = p.JobTitle,
                 DirectEmail = p.DirectEmail,
@@ -98,6 +113,8 @@ namespace Eventlink_Services.Service
                 Industry = userProfile.Industry,
                 CompanySize = userProfile.CompanySize,
                 FoundedYear = userProfile.FoundedYear,
+                AboutUs = userProfile.AboutUs,
+                Mission = userProfile.Mission?.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
                 CompanyDescription = userProfile.CompanyDescription,
                 SocialProfile = userProfile.SocialProfile,
                 LinkedInProfile = userProfile.LinkedInProfile,
@@ -106,6 +123,7 @@ namespace Eventlink_Services.Service
                 CountryRegion = userProfile.CountryRegion,
                 City = userProfile.City,
                 StreetAddress = userProfile.StreetAddress,
+                Tags = userProfile.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
                 FullName = userProfile.FullName,
                 JobTitle = userProfile.JobTitle,
                 DirectEmail = userProfile.DirectEmail,
@@ -138,10 +156,11 @@ namespace Eventlink_Services.Service
             if (existingProfile != null)
             {
                 existingProfile.CompanyName = request.CompanyName;
-                existingProfile.CompanyLogoUrl = request.CompanyLogoUrl;
                 existingProfile.Industry = request.Industry;
                 existingProfile.CompanySize = request.CompanySize;
                 existingProfile.FoundedYear = request.FoundedYear;
+                existingProfile.AboutUs = request.AboutUs;
+                existingProfile.Mission = request.Mission;
                 existingProfile.CompanyDescription = request.CompanyDescription;
                 existingProfile.SocialProfile = request.SocialProfile;
                 existingProfile.LinkedInProfile = request.LinkedInProfile;
@@ -150,8 +169,29 @@ namespace Eventlink_Services.Service
                 existingProfile.CountryRegion = request.CountryRegion;
                 existingProfile.City = request.City;
                 existingProfile.StreetAddress = request.StreetAddress;
+                existingProfile.Tags = request.Tags;
                 existingProfile.JobTitle = request.JobTitle;
                 existingProfile.UpdatedAt = DateTime.UtcNow;
+
+                if (request.CompanyLogoUrl != null)
+                {
+                    // Xóa logo cũ nếu có
+                    if (!string.IsNullOrEmpty(existingProfile.CompanyLogoUrl))
+                    {
+                        try
+                        {
+                            await _cloudinaryService.DeleteImageAsync(existingProfile.CompanyLogoUrl);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"⚠️ Không thể xóa logo cũ: {ex.Message}");
+                        }
+                    }
+
+                    // Upload logo mới
+                    var newLogoUrl = await _cloudinaryService.UploadImageAsync(request.CompanyLogoUrl);
+                    existingProfile.CompanyLogoUrl = newLogoUrl;
+                }
 
                 _userProfileRepository.Update(existingProfile);
             }

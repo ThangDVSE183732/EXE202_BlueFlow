@@ -11,5 +11,6 @@ namespace EventLink_Repositories.Interface
     {
         Task<Partnership> GetByIdAsync(Guid id);
         Task UpdateAsync(Partnership partnership);
+        Task<List<User>> GetPartnersByEventAsync(Guid eventId);
     }
 }

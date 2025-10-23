@@ -27,5 +27,14 @@ namespace EventLink_Repositories.Repository
         {
             return await _context.Partnerships.FirstOrDefaultAsync(p => p.Id == id);
         }
+
+        public async Task<List<User>> GetPartnersByEventAsync(Guid eventId)
+        {
+            return await _context.Partnerships
+                .Where(p => p.EventId == eventId)
+                .Select(p => p.Partner)
+                .Include(u => u.UserProfiles)
+                .ToListAsync();
+        }
     }
 }

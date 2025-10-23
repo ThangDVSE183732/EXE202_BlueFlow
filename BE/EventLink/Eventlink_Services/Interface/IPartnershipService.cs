@@ -10,11 +10,7 @@ namespace Eventlink_Services.Interface
 {
     public interface IPartnershipService
     {
-        //Task<List<Partnership>> GetPartnershipsByEventIdAsync(Guid eventId);
-        //Task<Partnership> GetPartnershipByIdAsync(Guid partnershipId);
-        //Task CreatePartnershipAsync(CreatePartnershipRequest request);
-        //Task UpdatePartnershipAsync(Guid id, UpdatePartnershipRequest request);
-        //void DeletePartnershipAsync(Guid partnershipId);
+        Task<IEnumerable<User>> GetPartnersByEventAsync(Guid eventId);
         Task<Partnership> CreateAsync(Guid organizerId, CreatePartnershipRequest request);
         Task<Partnership> UpdateStatusAsync(Guid partnershipId, string status, string response);
         Task UpdateAsync(Guid partnershipId, UpdatePartnershipRequest request);
