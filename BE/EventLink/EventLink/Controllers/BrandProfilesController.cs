@@ -42,6 +42,17 @@ namespace EventLink.Controllers
             return brandProfile;
         }
 
+        [HttpGet("brand_profile_by_userid/{userId}")]
+        public async Task<ActionResult<BrandProfileResponse>> GetBrandProfileByUserId(Guid userId)
+        {
+            var brandProfile = await _brandProfileService.GetByUserIdAsync(userId);
+            if (brandProfile == null)
+            {
+                return NotFound();
+            }
+            return brandProfile;
+        }
+
         // PUT: api/BrandProfiles/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]

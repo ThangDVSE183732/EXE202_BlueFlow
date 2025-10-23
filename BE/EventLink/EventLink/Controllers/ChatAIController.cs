@@ -1,6 +1,7 @@
 ﻿using Eventlink_Services.Interface;
 using Eventlink_Services.Response;
 using Eventlink_Services.Service;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -12,6 +13,7 @@ namespace EventLink.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ChatAIController : ControllerBase
     {
         private readonly OpenAIService _openAIService;

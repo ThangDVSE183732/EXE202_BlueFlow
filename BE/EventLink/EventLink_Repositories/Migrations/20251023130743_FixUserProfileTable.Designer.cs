@@ -4,6 +4,7 @@ using EventLink_Repositories.DBContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EventLink_Repositories.Migrations
 {
     [DbContext(typeof(EventLinkDBContext))]
-    partial class EventLinkDBContextModelSnapshot : ModelSnapshot
+    [Migration("20251023130743_FixUserProfileTable")]
+    partial class FixUserProfileTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
