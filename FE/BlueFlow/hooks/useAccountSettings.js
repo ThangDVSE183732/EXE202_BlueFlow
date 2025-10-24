@@ -85,17 +85,17 @@ export const useAccountSettings = () => {
         // If there's a file, use FormData (multipart/form-data)
         const form = new FormData();
         
-        // IMPORTANT: Append Id field (ASP.NET Core will bind this to UpdateUserProfileRequest.Id)
+        // IMPORTANT: Append Id field first
         form.append('Id', formData.profileId);
 
-        // Append all fields matching UpdateUserProfileRequest
+        // Append all fields theo đúng thứ tự backend validation errors
         form.append('CompanyName', formData.companyName || '');
         form.append('Industry', formData.industry || '');
         form.append('CompanySize', formData.companySize || '');
         form.append('FoundedYear', formData.foundedYear || '');
+        form.append('CompanyDescription', formData.companyDescription || '');
         form.append('SocialProfile', formData.socialProfile || '');
         form.append('LinkedInProfile', formData.linkedinProfile || '');
-        form.append('CompanyDescription', formData.companyDescription || '');
         form.append('OfficialEmail', formData.officialEmail || '');
         form.append('StateProvince', formData.stateProvince || '');
         form.append('CountryRegion', formData.countryRegion || '');
@@ -105,8 +105,7 @@ export const useAccountSettings = () => {
         form.append('JobTitle', formData.jobTitle || '');
         form.append('DirectEmail', formData.directEmail || '');
         form.append('DirectPhone', formData.directPhone || '');
-        
-        // Append file
+        // Append file cuối cùng
         form.append('CompanyLogoUrl', formData.companyLogoFile);
 
 
@@ -118,30 +117,27 @@ export const useAccountSettings = () => {
         }
       } else {
         // No file, send JSON (skip CompanyLogoUrl field)
-        const profileData = {
-          id: formData.profileId,
-          companyName: formData.companyName || '',
-          industry: formData.industry || '',
-          companySize: formData.companySize || '',
-          foundedYear: formData.foundedYear ? parseInt(formData.foundedYear) : null,
-          socialProfile: formData.socialProfile || '',
-          linkedInProfile: formData.linkedinProfile || '',
-          companyDescription: formData.companyDescription || '',
-          officialEmail: formData.officialEmail || '',
-          stateProvince: formData.stateProvince || '',
-          countryRegion: formData.countryRegion || '',
-          city: formData.city || '',
-          streetAddress: formData.streetAddress || '',
-          contactFullName: formData.fullName || '',
-          jobTitle: formData.jobTitle || '',
-          directEmail: formData.directEmail || '',
-          directPhone: formData.directPhone || ''
-          // Skip CompanyLogoUrl when no file
-        };
+        const form = new FormData();
+          form.append('CompanyName', formData.companyName || '');
+        form.append('Industry', formData.industry || '');
+        form.append('CompanySize', formData.companySize || '');
+        form.append('FoundedYear', formData.foundedYear || '');
+        form.append('CompanyDescription', formData.companyDescription || '');
+        form.append('SocialProfile', formData.socialProfile || '');
+        form.append('LinkedInProfile', formData.linkedinProfile || '');
+        form.append('OfficialEmail', formData.officialEmail || '');
+        form.append('StateProvince', formData.stateProvince || '');
+        form.append('CountryRegion', formData.countryRegion || '');
+        form.append('City', formData.city || '');
+        form.append('StreetAddress', formData.streetAddress || '');
+        form.append('ContactFullName', formData.fullName || '');
+        form.append('JobTitle', formData.jobTitle || '');
+        form.append('DirectEmail', formData.directEmail || '');
+        form.append('DirectPhone', formData.directPhone || '');
 
 
         // Update profile with JSON
-        const response = await accountService.updateUserProfile(formData.profileId, profileData);
+        const response = await accountService.updateUserProfile(formData.profileId, form);
 
         if (!response.success) {
           throw new Error(response.message);
