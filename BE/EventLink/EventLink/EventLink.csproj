@@ -2,21 +2,34 @@
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
 	</PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="MailKit" Version="4.13.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.11">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\EventLink_Repositories\EventLink_Repositories.csproj" />
-    <ProjectReference Include="..\Eventlink_Services\Eventlink_Services.csproj" />
-  </ItemGroup>
-
+	<ItemGroup>
+		<None Remove="Knowledge\system_docs.txt" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="Knowledge\System_docs.txt">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="CloudinaryDotNet" Version="1.27.8" />
+		<PackageReference Include="DotNetEnv" Version="3.1.1" />
+		<PackageReference Include="MailKit" Version="4.13.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.10" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.11">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\EventLink_Repositories\EventLink_Repositories.csproj" />
+		<ProjectReference Include="..\Eventlink_Services\Eventlink_Services.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Update=".env">
+			<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
 </Project>

@@ -5,7 +5,7 @@ function EventManagement() {
     return(
         <div>
             <div className="space-y-1 text-left">
-            <h1 className="text-3xl font-bold text-sky-500">Workspace</h1>
+            <h1 className="text-2xl font-semibold text-sky-500">Workspace</h1>
             <h className="text-sm text-gray-400">Real-time updates on sponsorships, events, and audience reach.</h>
             </div>
             <div className="h-px w-full bg-gray-300 mx-1 mb-3 mt-6" />
@@ -18,7 +18,7 @@ function EventManagement() {
             </div>
             <div className="flex justify-between mt-6">
                 <SearchBar sizeClass="w-65" button={"left-57"} input={"w-full rounded-xl py-0.5"}/>
-                <button className="text-white  bg-sky-500 px-8 rounded-full py-1 text-base font-semibold">Event list</button>
+                <button className="text-white  bg-sky-500 px-8 rounded-full py-1 text-base font-semibold">Add new event</button>
             </div>
             <div className="mt-10 mb-15">
                 <EventList />

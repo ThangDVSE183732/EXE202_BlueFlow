@@ -1,82 +1,38 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Http;
+using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace Eventlink_Services.Request
 {
-    public class UserProfileRequest
+    public class CreateUserProfileRequest
     {
-        public class CreateUserProfileRequest
-        {
-            public Guid UserId { get; set; }
+        // Company Information
+        public string CompanyName { get; set; }
+        public IFormFile? CompanyLogoUrl { get; set; }
+        public string Industry { get; set; }
+        public string CompanySize { get; set; }
+        public int? FoundedYear { get; set; }
+        public string CompanyDescription { get; set; }
+        public string SocialProfile { get; set; }
+        public string LinkedInProfile { get; set; }
 
-            public string Bio { get; set; }
+        // Contact Information
+        public string OfficialEmail { get; set; }
+        public string StateProvince { get; set; }
+        public string CountryRegion { get; set; }
+        public string City { get; set; }
+        public string StreetAddress { get; set; }
 
-            public string CompanyName { get; set; }
+        // Primary Contact Person
+        public string ContactFullName { get; set; }
+        public string JobTitle { get; set; }
+        public string DirectEmail { get; set; }
+        public string DirectPhone { get; set; }
+    }
 
-            public string Website { get; set; }
-
-            public string Location { get; set; }
-
-            public string ProfileImageUrl { get; set; }
-
-            public string CoverImageUrl { get; set; }
-
-            public string LinkedInUrl { get; set; }
-
-            public string FacebookUrl { get; set; }
-
-            public string PortfolioImages { get; set; }
-
-            public string WorkSamples { get; set; }
-
-            public string Certifications { get; set; }
-
-            public int? YearsOfExperience { get; set; }
-
-            public int? TotalProjectsCompleted { get; set; }
-
-            public decimal? AverageRating { get; set; }
-
-            public string VerificationDocuments { get; set; }
-        }
-
-        public class UpdateUserProfileRequest
-        {
-            public Guid UserId { get; set; }
-
-            public string Bio { get; set; }
-
-            public string CompanyName { get; set; }
-
-            public string Website { get; set; }
-
-            public string Location { get; set; }
-
-            public string ProfileImageUrl { get; set; }
-
-            public string CoverImageUrl { get; set; }
-
-            public string LinkedInUrl { get; set; }
-
-            public string FacebookUrl { get; set; }
-
-            public string PortfolioImages { get; set; }
-
-            public string WorkSamples { get; set; }
-
-            public string Certifications { get; set; }
-
-            public int? YearsOfExperience { get; set; }
-
-            public int? TotalProjectsCompleted { get; set; }
-
-            public decimal? AverageRating { get; set; }
-
-            public string VerificationDocuments { get; set; }
-
-        }
+    // ✅ Remove Id property - it comes from route parameter
+    public class UpdateUserProfileRequest : CreateUserProfileRequest
+    {
+        // No Id property needed - comes from route
     }
 }

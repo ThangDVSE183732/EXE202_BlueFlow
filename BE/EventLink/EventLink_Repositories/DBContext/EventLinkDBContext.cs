@@ -10,9 +10,9 @@ namespace EventLink_Repositories.DBContext;
 
 public partial class EventLinkDBContext : DbContext
 {
-    public EventLinkDBContext()
-    {
-    }
+    //public EventLinkDBContext()
+    //{
+    //}
 
     public EventLinkDBContext(DbContextOptions<EventLinkDBContext> options)
         : base(options)
@@ -26,6 +26,8 @@ public partial class EventLinkDBContext : DbContext
     public virtual DbSet<DashboardMetric> DashboardMetrics { get; set; }
 
     public virtual DbSet<Event> Events { get; set; }
+
+    public virtual DbSet<EventActivity> EventActivities { get; set; }
 
     public virtual DbSet<EventProposal> EventProposals { get; set; }
 
@@ -50,6 +52,7 @@ public partial class EventLinkDBContext : DbContext
     public virtual DbSet<UserActivity> UserActivities { get; set; }
 
     public virtual DbSet<UserProfile> UserProfiles { get; set; }
+    public virtual DbSet<BrandProfile> BrandProfiles { get; set; }
 
     public virtual DbSet<UserSubscription> UserSubscriptions { get; set; }
 
@@ -65,8 +68,22 @@ public partial class EventLinkDBContext : DbContext
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        => optionsBuilder.UseSqlServer(GetConnectionString("DefaultConnection")).UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+    {
+        if (!optionsBuilder.IsConfigured)
+        {
+            var config = new ConfigurationBuilder()
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: true)
+                .AddEnvironmentVariables()
+                .Build();
 
+            var connectionString = config.GetConnectionString("DefaultConnection")
+                                   ?? config["DB_CONNECTION"];
+
+            if (!string.IsNullOrEmpty(connectionString))
+                optionsBuilder.UseSqlServer(connectionString);
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -160,6 +177,37 @@ public partial class EventLinkDBContext : DbContext
                 .HasConstraintName("FK_Events_Users");
         });
 
+        modelBuilder.Entity<EventActivity>(entity =>
+        {
+            entity.ToTable("EventActivities");
+            entity.HasKey(e => e.Id).HasName("PK__EventAct__3214EC07");
+
+            entity.HasIndex(e => e.EventId, "IX_EventActivities_EventId");
+            entity.HasIndex(e => new { e.EventId, e.StartTime }, "IX_EventActivities_EventId_StartTime");
+            entity.HasIndex(e => e.ActivityType, "IX_EventActivities_ActivityType");
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.ActivityName).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.ActivityDescription).HasMaxLength(2000);
+            entity.Property(e => e.StartTime).IsRequired();
+            entity.Property(e => e.EndTime).IsRequired();
+            entity.Property(e => e.Location).HasMaxLength(500);
+            entity.Property(e => e.Speakers).HasMaxLength(1000);
+            entity.Property(e => e.ActivityType).HasMaxLength(100);
+            entity.Property(e => e.MaxParticipants).HasDefaultValue(0);
+            entity.Property(e => e.CurrentParticipants).HasDefaultValue(0);
+            entity.Property(e => e.IsPublic).HasDefaultValue(true);
+            entity.Property(e => e.DisplayOrder).HasDefaultValue(0);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Event)
+                .WithMany()
+                .HasForeignKey(d => d.EventId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_EventActivities_Events");
+        });
+
         modelBuilder.Entity<EventProposal>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK__EventPro__3214EC07A0C70085");
@@ -176,6 +224,12 @@ public partial class EventLinkDBContext : DbContext
                 .IsRequired()
                 .HasMaxLength(255);
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.SponsorTier).HasMaxLength(50);
+            entity.Property(e => e.FundingBreakdown).HasMaxLength(4000);
+            entity.Property(e => e.Benefits).HasMaxLength(4000);
+            entity.Property(e => e.Status).HasMaxLength(50).HasDefaultValue("Pending");
+            entity.Property(e => e.RejectionReason).HasMaxLength(1000);
+            entity.Property(e => e.ApprovedAt).HasColumnType("datetime");
 
             entity.HasOne(d => d.Event).WithMany(p => p.EventProposals)
                 .HasForeignKey(d => d.EventId)
@@ -477,30 +531,70 @@ public partial class EventLinkDBContext : DbContext
 
         modelBuilder.Entity<UserProfile>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("PK__UserProf__3214EC07B7F92C63");
-
+            entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
-            entity.Property(e => e.AverageRating)
-                .HasDefaultValue(0m)
-                .HasColumnType("decimal(3, 2)");
-            entity.Property(e => e.Bio).HasMaxLength(2000);
-            entity.Property(e => e.CompanyName).HasMaxLength(255);
-            entity.Property(e => e.CoverImageUrl).HasMaxLength(500);
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.FacebookUrl).HasMaxLength(500);
-            entity.Property(e => e.IsVerified).HasDefaultValue(false);
-            entity.Property(e => e.LinkedInUrl).HasMaxLength(500);
-            entity.Property(e => e.Location).HasMaxLength(255);
-            entity.Property(e => e.ProfileImageUrl).HasMaxLength(500);
-            entity.Property(e => e.TotalProjectsCompleted).HasDefaultValue(0);
-            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.Website).HasMaxLength(255);
-            entity.Property(e => e.YearsOfExperience).HasDefaultValue(0);
 
-            entity.HasOne(d => d.User).WithMany(p => p.UserProfiles)
+            // Company Information
+            entity.Property(e => e.CompanyName).HasMaxLength(255);
+            entity.Property(e => e.CompanyLogoUrl).HasMaxLength(500);
+            entity.Property(e => e.Industry).HasMaxLength(255);
+            entity.Property(e => e.CompanySize).HasMaxLength(100);
+            entity.Property(e => e.CompanyDescription).HasMaxLength(2000);
+            entity.Property(e => e.SocialProfile).HasMaxLength(500);
+            entity.Property(e => e.LinkedInProfile).HasMaxLength(500);
+
+            // Contact Information
+            entity.Property(e => e.OfficialEmail).HasMaxLength(255);
+            entity.Property(e => e.StateProvince).HasMaxLength(255);
+            entity.Property(e => e.CountryRegion).HasMaxLength(255);
+            entity.Property(e => e.City).HasMaxLength(255);
+            entity.Property(e => e.StreetAddress).HasMaxLength(500);
+
+            //entity.Property(e => e.AboutUs).HasMaxLength(2000);
+            //entity.Property(e => e.Mission).HasMaxLength(2000);
+            //entity.Property(e => e.Tags).HasMaxLength(1000);
+
+            // Primary Contact Person
+            entity.Property(e => e.FullName).HasMaxLength(255);
+            entity.Property(e => e.JobTitle).HasMaxLength(255);
+            entity.Property(e => e.DirectEmail).HasMaxLength(255);
+            entity.Property(e => e.DirectPhone).HasMaxLength(50);
+
+            // Common fields
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.User)
+                .WithMany(p => p.UserProfiles)
                 .HasForeignKey(d => d.UserId)
                 .HasConstraintName("FK_UserProfiles_Users");
         });
+
+        modelBuilder.Entity<BrandProfile>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+
+            entity.Property(e => e.BrandName).HasMaxLength(255);
+            entity.Property(e => e.BrandLogo).HasMaxLength(500);
+            entity.Property(e => e.Location).HasMaxLength(500);
+            entity.Property(e => e.AboutUs).HasMaxLength(2000);
+            entity.Property(e => e.OurMission).HasMaxLength(2000);
+            entity.Property(e => e.Industry).HasMaxLength(255);
+            entity.Property(e => e.CompanySize).HasMaxLength(100);
+            entity.Property(e => e.Website).HasMaxLength(500);
+            entity.Property(e => e.Email).HasMaxLength(255);
+            entity.Property(e => e.PhoneNumber).HasMaxLength(50);
+            entity.Property(e => e.Tags).HasMaxLength(1000);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.User)
+                .WithMany(p => p.BrandProfiles)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK_BrandProfiles_Users");
+        });
+
 
         modelBuilder.Entity<UserSubscription>(entity =>
         {

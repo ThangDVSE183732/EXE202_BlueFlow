@@ -1,6 +1,7 @@
 ﻿using Eventlink_Services.Interface;
 using Eventlink_Services.Request;
 using Eventlink_Services.Response;
+using Eventlink_Services.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -10,19 +11,27 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using static Eventlink_Services.Request.MailForm;
 
-namespace EventLink_API.Controllers
+namespace EventLink.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IGoogleAuthService _googleAuthService;
         private readonly ILogger<AuthController> _logger;
+        private readonly IUserProfileService _userProfileService;
 
-        public AuthController(IAuthService authService, ILogger<AuthController> logger)
+        public AuthController(
+            IAuthService authService,
+            IGoogleAuthService googleAuthService,
+            ILogger<AuthController> logger,
+            IUserProfileService userProfileService)
         {
             _authService = authService;
+            _googleAuthService = googleAuthService;
             _logger = logger;
+            _userProfileService = userProfileService;
         }
 
         [HttpPost("register")]
@@ -49,10 +58,10 @@ namespace EventLink_API.Controllers
         }
 
         /// <summary>
-        /// Step 2: Verify OTP - Khi nhập đúng OTP thì mới tạo user
+        /// Step 2: Verify OTP - Khi nhập đúng OTP thì mới tạo user và profile
         /// </summary>
         [HttpPost("verify-otp-register")]
-        public async Task<ActionResult<ApiResponse<AuthResponse>>> VerifyRegisterOtp([FromBody] VerifyOtpRequest request)
+        public async Task<ActionResult<ApiResponse<AuthResponse>>> VerifyRegisterOtp([FromBody] VerifyRegisterOtpWithProfileRequest request)
         {
             if (!ModelState.IsValid)
             {
@@ -64,7 +73,8 @@ namespace EventLink_API.Controllers
                 return BadRequest(ApiResponse<AuthResponse>.ErrorResult("Validation failed", errors));
             }
 
-            var result = await _authService.VerifyRegistrationOtpAsync(request);
+            // ✅ Gọi method mới để tạo user + profile trong một transaction
+            var result = await _authService.VerifyRegistrationOtpWithProfileAsync(request);
 
             if (!result.Success)
             {
@@ -94,25 +104,6 @@ namespace EventLink_API.Controllers
                 return BadRequest(result);
             }
 
-            return Ok(result);
-        }
-
-        [HttpPost("verify-otp-login")]
-        public async Task<ActionResult<ApiResponse<AuthResponse>>> VerifyLoginOtp([FromBody] VerifyOtpRequest request)
-        {
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState
-                    .SelectMany(x => x.Value.Errors)
-                    .Select(x => x.ErrorMessage)
-                    .ToList();
-                return BadRequest(ApiResponse<AuthResponse>.ErrorResult("Validation failed", errors));
-            }
-            var result = await _authService.VerifyOtpAsync(request);
-            if (!result.Success)
-            {
-                return BadRequest(result);
-            }
             return Ok(result);
         }
 
@@ -207,6 +198,51 @@ namespace EventLink_API.Controllers
 
             var result = await _authService.CheckEmailExistsAsync(email);
 
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Authenticate with Google
+        /// </summary>
+        /// <param name="request">Google authentication request</param>
+        /// <returns>Authentication response with JWT token</returns>
+        [HttpPost("google")]
+        public async Task<ActionResult<ApiResponse<AuthResponse>>> GoogleAuth([FromBody] GoogleAuthRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState
+                    .SelectMany(x => x.Value.Errors)
+                    .Select(x => x.ErrorMessage)
+                    .ToList();
+
+                return BadRequest(ApiResponse<AuthResponse>.ErrorResult("Validation failed", errors));
+            }
+
+            var result = await _googleAuthService.AuthenticateWithGoogleAsync(request);
+
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Verify Google token (for testing)
+        /// </summary>
+        /// <param name="idToken">Google ID token</param>
+        /// <returns>Google user information</returns>
+        [HttpPost("google/verify")]
+        public async Task<ActionResult<ApiResponse<GoogleUserInfo>>> VerifyGoogleToken([FromBody] string idToken)
+        {
+            if (string.IsNullOrWhiteSpace(idToken))
+            {
+                return BadRequest(ApiResponse<GoogleUserInfo>.ErrorResult("ID token is required"));
+            }
+
+            var result = await _googleAuthService.VerifyGoogleTokenAsync(idToken);
             return Ok(result);
         }
     }

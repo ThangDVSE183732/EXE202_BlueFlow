@@ -27,6 +27,7 @@ function VerifyCode() {
 
      const email = location.state?.email;
      const fromPage = location.state?.from; // Mặc định là 'login' nếu không có giá trị
+     const profileData = location.state?.profileData; // Dữ liệu profile từ SignUpForm
 
 
     //  const handleSubmit = (e) => {
@@ -83,8 +84,32 @@ function VerifyCode() {
       // Gọi API verify OTP
       if(fromPage === 'sign-up') {
          response = await authService.verifyOTPRegister({
-        email: email,
-        otp: formData.code
+          otpRequest: {
+            email: email,
+            otp: formData.code
+          },
+          profileRequest: {
+            companyName: profileData?.companyName || "",
+            // companyLogoUrl: profileData?.companyLogoUrl || "",
+            industry: profileData?.industry || "",
+            companySize: profileData?.companySize || "",
+            foundedYear: profileData?.foundedYear || 0,
+            aboutUs: profileData?.aboutUs || "",
+            mission: profileData?.mission || "",
+            companyDescription: profileData?.companyDescription || "",
+            socialProfile: profileData?.socialProfile || "",
+            linkedInProfile: profileData?.linkedInProfile || "",
+            officialEmail: profileData?.officialEmail || "",
+            stateProvince: profileData?.stateProvince || "",
+            countryRegion: profileData?.countryRegion || "",
+            city: profileData?.city || "",
+            streetAddress: profileData?.streetAddress || "",
+            tags: profileData?.tags || "",
+            contactFullName: profileData?.contactFullName || "",
+            jobTitle: profileData?.jobTitle || "",
+            directEmail: profileData?.directEmail || "",
+            directPhone: profileData?.directPhone || ""
+          }
       });
       } else {
          response = await authService.verifyOTP({

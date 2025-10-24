@@ -6,8 +6,35 @@ export const authService = {
     try {
       const response = await api.post('/Auth/login', credentials);
       const { success, message, data, errors } = response.data;
+      // Lưu token vào localStorage
+      if (success && data?.token) {
+        localStorage.setItem('accessToken', data.token);
+      }
+      if (success && data?.refreshToken) {
+        localStorage.setItem('refreshToken', data.refreshToken);
+      }
+      return { success, message, data, errors };
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Đăng nhập bằng Google
+  loginGoogle: async (googleToken) => {
+    try {
+      const response = await api.post('/Auth/google', {
+        token: googleToken,
+        idToken: googleToken
+      });
+      const { success, message, data, errors } = response.data;
       
-      
+      // Lưu token vào localStorage nếu đăng nhập thành công
+      if (success && data?.token) {
+        localStorage.setItem('accessToken', data.token);
+      }
+      if (success && data?.refreshToken) {
+        localStorage.setItem('refreshToken', data.refreshToken);
+      }
       
       return { success, message, data, errors };
     } catch (error) {
@@ -68,7 +95,7 @@ export const authService = {
   // Đăng xuất
   logout: async () => {
     try {
-      await api.post('/auth/logout');
+      await api.post('/Auth/logout');
     } catch (error) {
       console.error('Logout error:', error);
     } finally {

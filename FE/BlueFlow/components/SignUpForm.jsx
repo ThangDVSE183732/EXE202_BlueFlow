@@ -69,11 +69,20 @@ function SignUpForm() {
                                 message: response.message || 'OTP has been sent to your email!'
                             });
             
-                            // Chuyển đến trang verify OTP với email
+                            // Chuyển đến trang verify OTP với email và profile data
                             navigate('/verify-code', { 
                                 state: { 
                                     email: formData.email,
-                                    from: 'sign-up'
+                                    from: 'sign-up',
+                                    profileData: {
+                                        contactFullName: `${formData.firstName} ${formData.lastName}`,
+                                        directEmail: formData.email,
+                                        directPhone: formData.phoneNumber,
+                                        city: formData.city,
+                                        streetAddress: formData.streetAddress,
+                                        stateProvince: formData.state,
+                                        countryRegion: formData.country
+                                    }
                                 }
                             });
                         } else {
@@ -151,7 +160,7 @@ function SignUpForm() {
                         />
                     </div>
                     <div className="mr-12">
-                        <h6 className="text-xs text-left mb-2 text-sky-400">State/Provide</h6>
+                        <h6 className="text-xs text-left mb-2 text-sky-400">State/Province</h6>
                         <input 
                             type="text" 
                             name="state"

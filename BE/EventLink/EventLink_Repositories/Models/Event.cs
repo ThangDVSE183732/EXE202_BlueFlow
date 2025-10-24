@@ -64,4 +64,13 @@ public partial class Event
     public virtual User Organizer { get; set; }
 
     public virtual ICollection<Partnership> Partnerships { get; set; } = new List<Partnership>();
+
+    public static class EventStatus
+    {
+        public const string Draft = "Draft";
+        public const string Published = "Published";
+        public const string InProgress = "InProgress";
+        public const string Completed = "Completed";
+        public const string Cancelled = "Cancelled";
+    }
 }

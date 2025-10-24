@@ -23,6 +23,7 @@ function LoginForm() {
 
      const { toasts, showToast, removeToast } = useToast();
      const navigate = useNavigate();
+     const { login } = useAuth();
 
 
 	const handleSubmit = async(e) => {
@@ -42,26 +43,37 @@ function LoginForm() {
         }
 
 		try {
-			// Bước 1: Gọi API login
-            const response = await authService.login({
+			const response = await authService.login({
                 email: formData.email,
                 password: formData.password
             });
 
             if (response.success) {
+                // Lưu thông tin user vào AuthContext
+                login(response.data.user);
+
                 showToast({
                     type: 'success',
                     title: 'Success!',
-                    message: response.message || 'OTP has been sent to your email!'
+                    message: response.message || 'Login successful!'
                 });
 
-                // Chuyển đến trang verify OTP với email
-                navigate('/verify-code', { 
-                    state: { 
-                        email: formData.email,
-                        from: 'login'
-                    }
-                });
+                // Chuyển đến trang dashboard tương ứng với role
+                // const userRole = response.data?.user?.role?.toLowerCase() || 'organizer';
+                
+                setTimeout(() => {
+                    // if (userRole === 'admin') {
+                    //     navigate('/admin');
+                    // } else if (userRole === 'organizer') {
+                    //     navigate('/organizer');
+                    // } else if (userRole === 'sponsor') {
+                    //     navigate('/sponsor');
+                    // } else if (userRole === 'supplier') {
+                    //     navigate('/supplier');
+                    // } else {
+                        navigate('/organizer'); // Default to organizer
+                    // }
+                }, 1000);
             } else {
                 showToast({
                     type: 'error',
@@ -75,7 +87,7 @@ function LoginForm() {
             showToast({
                 type: 'error',
                 title: 'Login Failed',
-                message: error.message || 'Login failed. Please try again.'
+                message: error.response?.data?.message || error.message || 'Login failed. Please try again.'
             });
 		} 
 		};

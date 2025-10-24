@@ -4,20 +4,17 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
-
-	<ItemGroup>
-		<Folder Include="Ultility\" />
-	</ItemGroup>
-
 	<ItemGroup>
 		<PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+		<PackageReference Include="CloudinaryDotNet" Version="1.27.8" />
 		<PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.0.3" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.0" />
 		<PackageReference Include="Microsoft.IdentityModel.Tokens" Version="7.0.3" />
 		<PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
+		<PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.0" />
 	</ItemGroup>
-
 	<ItemGroup>
 		<ProjectReference Include="..\EventLink_Repositories\EventLink_Repositories.csproj" />
 	</ItemGroup>
