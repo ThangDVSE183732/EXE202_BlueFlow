@@ -83,8 +83,8 @@ const partnersItem = [
 },
 {
     location :"Da Nang",
+    userId: "f31982d1-4846-4efd-ade9-2c2eede6d5c2",
     logo:"imgs/creative.jpg",
-    userId:"12345",
     forcus : "Green Tech, Education, Entertainment",
     title : "Club Creative",
     tags : ["Supplier", "Financial"],
