@@ -3,7 +3,7 @@ import { BookmarkIcon as BookmarkSolid } from '@heroicons/react/24/solid';
 import { StarIcon as StarSolid } from '@heroicons/react/24/solid';
 import { useState } from 'react';
 
-function PartnersItems({ partnersItem }) {
+function PartnersItems({ partnersItem, onMessageClick }) {
     const {
         location,
         forcus,
@@ -18,11 +18,18 @@ function PartnersItems({ partnersItem }) {
         averageSponsorship = '50M – 500M VND',
         pastEvents = ['GreenFest', 'StartUp Next', 'EduInnovate'],
         statuses = ['Cancelled', 'Chat now'],
+        userId="4602403a-1002-40e4-ade4-86c2c9200a76",
         logo = 'imgs/SaiGon.png'
     } = partnersItem;
 
     const [bookmarked, setBookmarked] = useState(false);
     const [showDetail, setShowDetail] = useState(false);
+
+    const handleMessageClick = () => {
+        if (onMessageClick && userId) {
+            onMessageClick(userId, title); // Truyền userId và tên partner
+        }
+    };
 
      // const formattedDate = (() => {
     //     try {
@@ -119,7 +126,12 @@ function PartnersItems({ partnersItem }) {
                 </div>
                 <div className="mt-1 flex space-x-1 text-[11px] font-medium">
                     <button className="flex-1 px-3 py-1.5 rounded-full bg-sky-500 hover:bg-sky-600 text-white transition">Send</button>
-                    <button className="flex-1 px-3 py-1.5 rounded-full bg-sky-100 text-sky-600 hover:bg-sky-200 transition">Message</button>
+                    <button 
+                        onClick={handleMessageClick}
+                        className="flex-1 px-3 py-1.5 rounded-full bg-sky-100 text-sky-600 hover:bg-sky-200 transition"
+                    >
+                        Message
+                    </button>
                 </div>
             </div>
 

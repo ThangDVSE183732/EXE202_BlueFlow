@@ -74,6 +74,8 @@ const items = [
 const partnersItem = [
     {
     location :"Da Nang",
+    userId: "4602403a-1002-40e4-ade4-86c2c9200a76",
+    logo:"imgs/SaiGon.png",
     forcus : "Green Tech, Education, Entertainment",
     title : "Music in the park: Summer Concert Series",
     tags : ["Sponsor", "Financial"],
@@ -81,13 +83,17 @@ const partnersItem = [
 },
 {
     location :"Da Nang",
+    logo:"imgs/creative.jpg",
+    userId:"12345",
     forcus : "Green Tech, Education, Entertainment",
     title : "Club Creative",
-    tags : ["Sponsor", "Financial"],
+    tags : ["Supplier", "Financial"],
     rating: 3.5
 },
 {
     location :"Da Nang",
+    userId:"12345",
+    logo:"imgs/lumire.jpg",
     forcus : "Green Tech, Education, Entertainment",
     title : "Lumire",
     tags : ["Sponsor", "Financial"],
@@ -95,13 +101,15 @@ const partnersItem = [
 },
 {
     location :"Da Nang",
+    logo:"imgs/Rimberio.jpg",
     forcus : "Green Tech, Education, Entertainment",
     title : "Rimberio",
-    tags : ["Sponsor", "Financial"],
+    tags : ["Supplier", "Financial"],
      rating: 5
 },
 {
     location :"Da Nang",
+    logo:"imgs/Bliss.jpg",
     forcus : "Green Tech, Education, Entertainment",
     title : "BlissSprhere",
     tags : ["Sponsor", "Financial"],
@@ -109,13 +117,15 @@ const partnersItem = [
 },
 {
     location :"Da Nang",
+    logo:"imgs/Momentum.jpg",
     forcus : "Green Tech, Education, Entertainment",
     title : "Momemtum",
-    tags : ["Sponsor", "Financial"],
+    tags : ["Supplier", "Financial"],
      rating: 1
 },
 {
     location :"Da Nang",
+    logo:"imgs/Veloria.jpg",
     forcus : "Green Tech, Education, Entertainment",
     title : "Veloria",
     tags : ["Sponsor", "Financial"],
@@ -123,13 +133,15 @@ const partnersItem = [
 },
 {
     location :"Da Nang",
+    logo:"imgs/lumé.jpg",
     forcus : "Green Tech, Education, Entertainment",
     title : "Bela Lumiere",
-    tags : ["Sponsor", "Financial"],
+    tags : ["Supplier", "Financial"],
      rating: 2.5
 },
 {
     location :"Da Nang",
+     logo:"imgs/B.I.R.jpg",
     forcus : "Green Tech, Education, Entertainment",
     title : "B.I.R",
     tags : ["Sponsor", "Financial"],
@@ -147,7 +159,10 @@ function OrganizerPage() {
     const [tab, setTab] = useState(() => localStorage.getItem('organizer.tab') || 'dashboard');
     const [active, setActive] = useState(() => localStorage.getItem('organizer.active') || 'dashboard');
     const [subChange, setSubChange] = useState(() => localStorage.getItem('organizer.discoverySub') || ''); // 'find' | 'saved'
-  
+    const [messagePartnerId, setMessagePartnerId] = useState(null);
+    const [messagePartnerName, setMessagePartnerName] = useState(null);
+    const [showEventDetail, setShowEventDetail] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState(null);
 
     // Persist to localStorage whenever these change
     useEffect(() => {
@@ -162,19 +177,48 @@ function OrganizerPage() {
         localStorage.setItem('organizer.discoverySub', subChange);
     }, [subChange]);
 
+    // Hàm để navigate đến Messages với partnerId
+    const handleGoToMessages = (partnerId, partnerName) => {
+        setMessagePartnerId(partnerId);
+        setMessagePartnerName(partnerName);
+        setActive('messages');
+    };
 
+    // Hàm để hiển thị Event Detail
+    const handleViewEventDetail = (event, index) => {
+        setSelectedEvent(event);
+        setShowEventDetail(true);
+        setTab('eventDetail');
+    };
+
+    // Hàm để quay lại Event Management
+    const handleBackToEventList = () => {
+        setShowEventDetail(false);
+        setSelectedEvent(null);
+        setTab('event');
+    };
 
     const renderContent = () => {
     switch (active) {
       case "dashboard":
         if(tab === 'event') {
-            return <EventManagement />;
+            return <EventManagement 
+              onViewDetail={handleViewEventDetail}
+              onMessage={handleGoToMessages}
+            />;
         }
-        return <EventDetail />;
+        if(tab === 'eventDetail') {
+            return <EventDetail 
+              event={selectedEvent}
+              onBack={handleBackToEventList}
+            />;
+        }
+        return <Dashboard />;
       case "discovery":
         if(subChange === 'find') {
             return <PartnersList
             partnersItem={partnersItem}
+            onMessageClick={handleGoToMessages}
           />;
         }else if(subChange === 'saved') {
             return;
@@ -188,7 +232,10 @@ function OrganizerPage() {
         }
         return ;
       case "messages":
-        return <MessagesPage/>;
+        return <MessagesPage 
+          initialPartnerId={messagePartnerId}
+          initialPartnerName={messagePartnerName}
+        />;
       case "ai":
         return <Chatbot/>;
     case "profile":

@@ -59,20 +59,20 @@ function LoginForm() {
                 });
 
                 // Chuyển đến trang dashboard tương ứng với role
-                // const userRole = response.data?.user?.role?.toLowerCase() || 'organizer';
+                const userRole = response.data?.user?.role?.toLowerCase() || 'organizer';
                 
                 setTimeout(() => {
-                    // if (userRole === 'admin') {
-                    //     navigate('/admin');
-                    // } else if (userRole === 'organizer') {
-                    //     navigate('/organizer');
-                    // } else if (userRole === 'sponsor') {
-                    //     navigate('/sponsor');
-                    // } else if (userRole === 'supplier') {
-                    //     navigate('/supplier');
-                    // } else {
+                     if (userRole === 'admin') {
+                         navigate('/admin');
+                     } else if (userRole === 'organizer') {
+                         navigate('/organizer');
+                     } else if (userRole === 'sponsor') {
+                         navigate('/sponsor');
+                     } else if (userRole === 'supplier') {
+                         navigate('/supplier');
+                     } else {
                         navigate('/organizer'); // Default to organizer
-                    // }
+                     }
                 }, 1000);
             } else {
                 showToast({

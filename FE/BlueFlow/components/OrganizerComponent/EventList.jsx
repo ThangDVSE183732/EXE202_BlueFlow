@@ -25,7 +25,7 @@ function ActionMenu({ onViewDetail, onMessage }) {
           className="absolute left-1/2 -translate-x-1/2 mt-2 w-28 bg-white shadow-lg rounded-md text-xs text-gray-700 py-1 z-10"
         >
           <button className="block w-full text-left px-3 py-1 hover:bg-gray-50" onClick={onViewDetail}>View Detail</button>
-          <button className="block w-full text-left px-3 py-1 hover:bg-gray-50" onClick={onMessage}>Message</button>
+          <button className="block w-full text-left px-3 py-1 hover:bg-gray-50" onClick={onMessage}>Delete</button>
         </div>
       )}
     </div>

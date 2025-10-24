@@ -1,7 +1,7 @@
 import SearchBar from "../SearchBar";
 import EventList from "./EventList";
 
-function EventManagement() {
+function EventManagement({ onViewDetail, onMessage }) {
     return(
         <div>
             <div className="space-y-1 text-left">
@@ -21,7 +21,10 @@ function EventManagement() {
                 <button className="text-white  bg-sky-500 px-8 rounded-full py-1 text-base font-semibold">Add new event</button>
             </div>
             <div className="mt-10 mb-15">
-                <EventList />
+                <EventList 
+                    onViewDetail={onViewDetail}
+                    onMessage={onMessage}
+                />
             </div>
         </div>
     )
