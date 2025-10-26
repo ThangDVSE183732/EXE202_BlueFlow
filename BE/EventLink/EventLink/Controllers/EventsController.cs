@@ -17,14 +17,12 @@ namespace EventLink.Controllers
     public class EventsController : ControllerBase
     {
         private readonly IEventService _eventService;
-        private readonly IEventActivityService _eventActivityService;
+        // ❌ REMOVED: IEventActivityService _eventActivityService;
 
-        public EventsController(
-            IEventService eventService,
-            IEventActivityService eventActivityService)
+        public EventsController(IEventService eventService)
         {
             _eventService = eventService;
-            _eventActivityService = eventActivityService;
+            // ❌ REMOVED: _eventActivityService = eventActivityService;
         }
 
         #region Basic CRUD
@@ -64,6 +62,7 @@ namespace EventLink.Controllers
 
         /// <summary>
         /// GET: api/Events/{id}/detail - Get complete event with timeline & proposals (Public)
+        /// ✅ This returns EventDetailDto with timeline included!
         /// </summary>
         [HttpGet("{id}/detail")]
         [AllowAnonymous]
@@ -230,8 +229,9 @@ namespace EventLink.Controllers
 
         #endregion
 
-        #region Timeline Management (Separate APIs)
-
+        #region Timeline Management
+        // ⚠️ TEMPORARILY COMMENTED OUT - Implement EventActivityService later
+        /*
         /// <summary>
         /// POST: api/Events/{id}/timeline/initialize - Create initial activities (JSON body)
         /// Separate API to initialize timeline after event creation
@@ -326,7 +326,7 @@ namespace EventLink.Controllers
                 return BadRequest(new { success = false, message = $"Error replacing timeline: {ex.Message}" });
             }
         }
-
+        */
         #endregion
 
         #region Helper Methods
@@ -341,7 +341,7 @@ namespace EventLink.Controllers
     }
 
     /// <summary>
-    /// Request DTOs for timeline management
+    /// Request DTOs for timeline management (for future use)
     /// </summary>
     public class InitializeTimelineRequest
     {
