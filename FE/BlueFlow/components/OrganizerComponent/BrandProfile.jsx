@@ -1,46 +1,35 @@
 import React, { useState } from 'react';
 import { Edit, Plus, Upload, Check, X } from 'lucide-react';
+import { useBrandProfile } from '../../hooks/useBrandProfile';
 
 const BrandProfile = () => {
+  const { brandData, setBrandData, loading, error, updateBrandProfile } = useBrandProfile();
   const [isEditing, setIsEditing] = useState(false);
-  const [editedData, setEditedData] = useState({
-    companyName: 'TechCorp Solutions',
-    tagline: 'Technology & Innovation Sponsor',
-    location: 'Ho Chi Minh City, Vietnam',
-    eventsSponsored: 45,
-    activePartnerships: 12,
-    satisfactionRate: 98,
-    aboutUs: 'TechCorp Solutions is a leading technology company specializing in innovative software solutions and digital transformation services. We are passionate about supporting the tech community through strategic event sponsorships and partnerships.',
-    mission: [
-      'Expertise in digital transformation and software innovation',
-      'Strong commitment to industry collaboration and ecosystem building',
-      'Focused on fostering innovation within the Vietnamese tech community',
-      'Proven record in successful partnerships and event sponsorships'
-    ],
-    companyInfo: {
-      industry: 'Technology & Software',
-      companySize: '500-1000 employees',
-      founded: '2018',
-      website: 'www.techcorp.vn',
-      email: 'techcorpsolution@gmail.com',
-      phone: '+84 949xxxxxx'
-    },
-    industries: [
-      'Artificial Intelligence',
-      'Machine Learning',
-      'Blockchain',
-      'Startups',
-      'Innovation',
-      'Networking'
-    ]
-  });
+  const [editedData, setEditedData] = useState(brandData);
 
-  const handleSave = () => {
-    console.log('Saving changes:', editedData);
-    setIsEditing(false);
+  // Sync editedData với brandData khi brandData thay đổi
+  React.useEffect(() => {
+    setEditedData(brandData);
+  }, [brandData]);
+
+  const handleSave = async () => {
+    try {
+      await updateBrandProfile(editedData);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to save:', error);
+      
+      // Hiển thị lỗi chi tiết từ backend
+      if (error.errorMessages && error.errorMessages.length > 0) {
+        alert(`Failed to save:\n\n${error.errorMessages.join('\n')}`);
+      } else {
+        alert('Failed to save changes. Please try again.');
+      }
+    }
   };
 
   const handleCancel = () => {
+    setEditedData(brandData); // Reset về dữ liệu gốc
     setIsEditing(false);
   };
 
@@ -83,7 +72,21 @@ const BrandProfile = () => {
     }));
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white p-6 pt-1 overflow-x-hidden flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading brand profile...</p>
+        </div>
+      </div>
+    );
+  }
 
+  // Hiển thị error nếu có
+  if (error) {
+    console.warn('Brand profile error:', error);
+  }
 
   return (
     <div className="min-h-screen bg-white p-6 pt-1 overflow-x-hidden">
@@ -135,7 +138,9 @@ const BrandProfile = () => {
         {/* Logo and Company Info - Left */}
         <div className="flex items-center space-x-5 mb-6 mt-5 min-w-0 w-full max-w-[calc(100%-8rem)]">
           <div className="w-26 h-26 bg-white rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-2xl font-bold text-gray-800">TC</span>
+            <span className="text-2xl font-bold text-gray-800">
+              {editedData.companyName ? editedData.companyName.substring(0, 2).toUpperCase() : 'TC'}
+            </span>
           </div>
           <div className='text-left min-w-0 flex-1 overflow-hidden'>
             {isEditing ? (

@@ -30,9 +30,9 @@ namespace Eventlink_Services.Request
         public string DirectPhone { get; set; }
     }
 
+    // ✅ Remove Id property - it comes from route parameter
     public class UpdateUserProfileRequest : CreateUserProfileRequest
     {
-        [Required]
-        public Guid Id { get; set; }
+        // No Id property needed - comes from route
     }
 }

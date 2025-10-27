@@ -18,7 +18,7 @@ function EventManagement() {
             </div>
             <div className="flex justify-between mt-6">
                 <SearchBar sizeClass="w-65" button={"left-57"} input={"w-full rounded-xl py-0.5"}/>
-                <button className="text-white  bg-sky-500 px-8 rounded-full py-1 text-base font-semibold">Event list</button>
+                <button className="text-white  bg-sky-500 px-8 rounded-full py-1 text-base font-semibold">Add new event</button>
             </div>
             <div className="mt-10 mb-15">
                 <EventList />

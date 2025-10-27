@@ -43,6 +43,7 @@ namespace Eventlink_Services.Service
 
             var profile = new UserProfile
             {
+                Id = Guid.NewGuid(), // ✅ Generate Id for UserProfile
                 UserId = userId,
                 CompanyName = request.CompanyName ?? string.Empty,
                 CompanyLogoUrl = companyLogoUrl,
@@ -73,7 +74,7 @@ namespace Eventlink_Services.Service
             var profiles = await _userProfileRepository.GetAllUserProfilesAsync();
             var response = profiles.Select(p => new UserProfileResponse
             {
-                UserId = p.UserId,
+                Id = p.Id,
                 CompanyName = p.CompanyName,
                 CompanyLogoUrl = p.CompanyLogoUrl,
                 Industry = p.Industry,
@@ -104,7 +105,7 @@ namespace Eventlink_Services.Service
             if (userProfile == null) return null;
             var response = new UserProfileResponse
             {
-                UserId = userProfile.UserId,
+                Id = userProfile.Id,
                 CompanyName = userProfile.CompanyName,
                 CompanyLogoUrl = userProfile.CompanyLogoUrl,
                 Industry = userProfile.Industry,
@@ -145,47 +146,50 @@ namespace Eventlink_Services.Service
 
         public async Task Update(Guid id, UpdateUserProfileRequest request)
         {
-            var existingProfile = await _userProfileRepository.GetByUserIdAsync(id);
+            // ✅ Query by UserProfile.Id (Primary Key) instead of UserId
+            var existingProfile = await _userProfileRepository.GetByIdAsync(id);
 
-            if (existingProfile != null)
+            if (existingProfile == null)
             {
-                existingProfile.CompanyName = request.CompanyName;
-                existingProfile.Industry = request.Industry;
-                existingProfile.CompanySize = request.CompanySize;
-                existingProfile.FoundedYear = request.FoundedYear;
-                existingProfile.CompanyDescription = request.CompanyDescription;
-                existingProfile.SocialProfile = request.SocialProfile;
-                existingProfile.LinkedInProfile = request.LinkedInProfile;
-                existingProfile.OfficialEmail = request.OfficialEmail;
-                existingProfile.StateProvince = request.StateProvince;
-                existingProfile.CountryRegion = request.CountryRegion;
-                existingProfile.City = request.City;
-                existingProfile.StreetAddress = request.StreetAddress;
-                existingProfile.JobTitle = request.JobTitle;
-                existingProfile.UpdatedAt = DateTime.UtcNow;
+                throw new Exception("User profile not found");
+            }
 
-                if (request.CompanyLogoUrl != null)
+            existingProfile.CompanyName = request.CompanyName;
+            existingProfile.Industry = request.Industry;
+            existingProfile.CompanySize = request.CompanySize;
+            existingProfile.FoundedYear = request.FoundedYear;
+            existingProfile.CompanyDescription = request.CompanyDescription;
+            existingProfile.SocialProfile = request.SocialProfile;
+            existingProfile.LinkedInProfile = request.LinkedInProfile;
+            existingProfile.OfficialEmail = request.OfficialEmail;
+            existingProfile.StateProvince = request.StateProvince;
+            existingProfile.CountryRegion = request.CountryRegion;
+            existingProfile.City = request.City;
+            existingProfile.StreetAddress = request.StreetAddress;
+            existingProfile.JobTitle = request.JobTitle;
+            existingProfile.UpdatedAt = DateTime.UtcNow;
+
+            if (request.CompanyLogoUrl != null)
+            {
+                // Xóa logo cũ nếu có
+                if (!string.IsNullOrEmpty(existingProfile.CompanyLogoUrl))
                 {
-                    // Xóa logo cũ nếu có
-                    if (!string.IsNullOrEmpty(existingProfile.CompanyLogoUrl))
+                    try
                     {
-                        try
-                        {
-                            await _cloudinaryService.DeleteImageAsync(existingProfile.CompanyLogoUrl);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Không thể xóa logo cũ: {ex.Message}");
-                        }
+                        await _cloudinaryService.DeleteImageAsync(existingProfile.CompanyLogoUrl);
                     }
-
-                    // Upload logo mới
-                    var newLogoUrl = await _cloudinaryService.UploadImageAsync(request.CompanyLogoUrl);
-                    existingProfile.CompanyLogoUrl = newLogoUrl;
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Không thể xóa logo cũ: {ex.Message}");
+                    }
                 }
 
-                _userProfileRepository.Update(existingProfile);
+                // Upload logo mới
+                var newLogoUrl = await _cloudinaryService.UploadImageAsync(request.CompanyLogoUrl);
+                existingProfile.CompanyLogoUrl = newLogoUrl;
             }
+
+            _userProfileRepository.Update(existingProfile);
         }
 
         public async Task<bool> UserProfileExistsAsync(Guid userId)
