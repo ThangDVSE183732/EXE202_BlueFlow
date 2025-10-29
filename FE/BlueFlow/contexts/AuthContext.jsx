@@ -45,12 +45,19 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('refreshToken');
     };
 
+    const updateUser = (updatedData) => {
+        const newUserData = { ...user, ...updatedData };
+        setUser(newUserData);
+        localStorage.setItem('user', JSON.stringify(newUserData));
+    };
+
     const value = {
         user,
         isAuthenticated,
         loading,
         login,
         logout,
+        updateUser,
         userRole: user?.role
     };
 

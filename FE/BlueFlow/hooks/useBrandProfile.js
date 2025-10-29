@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { brandService } from '../services/brandService';
 import { useAuth } from '../contexts/AuthContext';
 
-export const useBrandProfile = () => {
+export const useBrandProfile = (showToast = null) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [brandProfileId, setBrandProfileId] = useState(null);
@@ -11,11 +11,7 @@ export const useBrandProfile = () => {
   // Dữ liệu mặc định
   const defaultData = {
     companyName: 'TechCorp Solutions',
-    tagline: 'Technology & Innovation Sponsor',
     location: 'Ho Chi Minh City, Vietnam',
-    eventsSponsored: 45,
-    activePartnerships: 12,
-    satisfactionRate: 98,
     aboutUs: 'TechCorp Solutions is a leading technology company specializing in innovative software solutions and digital transformation services. We are passionate about supporting the tech community through strategic event sponsorships and partnerships.',
     mission: [
       'Expertise in digital transformation and software innovation',
@@ -48,23 +44,21 @@ export const useBrandProfile = () => {
     console.log('🔄 Mapping API data:', apiData);
     
     return {
-      companyName: apiData?.brandName || defaultData.companyName,
-      tagline: defaultData.tagline, // API không có field này
-      location: apiData?.location || defaultData.location,
-      eventsSponsored: defaultData.eventsSponsored, // API không có
-      activePartnerships: defaultData.activePartnerships, // API không có
-      satisfactionRate: defaultData.satisfactionRate, // API không có
-      aboutUs: apiData?.aboutUs || defaultData.aboutUs,
+      companyName: apiData?.brandName,
+      brandLogo: apiData?.brandLogo,
+      tagline: apiData?.tags, // API không có field này
+      location: apiData?.location,
+      aboutUs: apiData?.aboutUs,
       mission: (apiData?.ourMission && typeof apiData.ourMission === 'string')
         ? apiData.ourMission.split(';').map(m => m.trim()).filter(m => m)
         : defaultData.mission,
       companyInfo: {
-        industry: apiData?.industry || defaultData.companyInfo.industry,
-        companySize: apiData?.companySize || defaultData.companyInfo.companySize,
-        founded: apiData?.foundedYear || defaultData.companyInfo.founded,
-        website: apiData?.website || defaultData.companyInfo.website,
-        email: apiData?.email || defaultData.companyInfo.email,
-        phone: apiData?.phoneNumber || defaultData.companyInfo.phone
+        industry: apiData?.industry ,
+        companySize: apiData?.companySize ,
+        founded: apiData?.foundedYear ,
+        website: apiData?.website ,
+        email: apiData?.email ,
+        phone: apiData?.phoneNumber 
       },
       industries: (apiData?.tags && typeof apiData.tags === 'string')
         ? apiData.tags.split(',').map(t => t.trim()).filter(t => t)
@@ -193,9 +187,29 @@ export const useBrandProfile = () => {
             console.log('✅ Brand profile created successfully');
             setBrandProfileId(user?.id);
             setBrandData(mapApiToUI(createResponse.data));
+            
+            // Show success toast
+            if (showToast) {
+              showToast({
+                type: 'success',
+                title: 'Thành công!',
+                message: 'Đã tạo hồ sơ thương hiệu thành công',
+                duration: 3000
+              });
+            }
           } else {
             console.log('⚠️ Create failed, using default data');
             setError('Failed to create brand profile');
+            
+            // Show error toast
+            if (showToast) {
+              showToast({
+                type: 'error',
+                title: 'Lỗi!',
+                message: 'Không thể tạo hồ sơ thương hiệu',
+                duration: 4000
+              });
+            }
           }
         } catch (createError) {
           console.error('❌ Error creating brand profile:', createError);
@@ -207,8 +221,28 @@ export const useBrandProfile = () => {
           // Set error message cho UI
           if (parsedError.errorMessages.length > 0) {
             setError(parsedError.errorMessages.join(', '));
+            
+            // Show detailed error toast
+            if (showToast) {
+              showToast({
+                type: 'error',
+                title: 'Lỗi tạo hồ sơ!',
+                message: parsedError.errorMessages[0] || 'Không thể tạo hồ sơ thương hiệu',
+                duration: 5000
+              });
+            }
           } else {
             setError('Failed to create brand profile');
+            
+            // Show generic error toast
+            if (showToast) {
+              showToast({
+                type: 'error',
+                title: 'Lỗi!',
+                message: 'Đã xảy ra lỗi khi tạo hồ sơ',
+                duration: 4000
+              });
+            }
           }
           
           // Giữ defaultData trong state
@@ -283,6 +317,17 @@ export const useBrandProfile = () => {
       if (response.success) {
         console.log('✅ Brand profile updated successfully');
         setBrandData(updatedData);
+        
+        // Show success toast
+        if (showToast) {
+          showToast({
+            type: 'success',
+            title: 'Đã lưu!',
+            message: 'Cập nhật hồ sơ thương hiệu thành công',
+            duration: 3000
+          });
+        }
+        
         return { success: true };
       } else {
         console.error('❌ Failed to update:', response.message);
@@ -292,6 +337,17 @@ export const useBrandProfile = () => {
           errors: { Update: [response.message || 'Update failed'] },
           errorMessages: [response.message || 'Update failed']
         };
+        
+        // Show error toast
+        if (showToast) {
+          showToast({
+            type: 'error',
+            title: 'Lỗi cập nhật!',
+            message: response.message || 'Không thể cập nhật hồ sơ',
+            duration: 4000
+          });
+        }
+        
         throw errorDetail;
       }
     } catch (error) {
@@ -300,6 +356,17 @@ export const useBrandProfile = () => {
       // Parse và throw error với format chuẩn
       const parsedError = parseBackendError(error);
       console.error('📋 Error details:', parsedError);
+      
+      // Show detailed error toast
+      if (showToast) {
+        showToast({
+          type: 'error',
+          title: 'Lỗi!',
+          message: parsedError.errorMessages[0] || 'Đã xảy ra lỗi khi cập nhật',
+          duration: 5000
+        });
+      }
+      
       throw parsedError;
     }
   };

@@ -97,7 +97,7 @@ const FormTextarea = ({
   </div>
 );
 
-const AccountSetting = () => {
+const AccountSetting = ({ showToast }) => {
   // Custom hook for account settings management
   const {
     loading,
@@ -109,7 +109,7 @@ const AccountSetting = () => {
     uploadLogo,
     deleteLogo,
     clearMessages
-  } = useAccountSettings();
+  } = useAccountSettings(showToast);
 
   // Form state
   const [formData, setFormData] = useState({

@@ -3,8 +3,8 @@ import { useState, useCallback } from 'react';
 import { accountService } from '../services/accountService';
 import { useAuth } from '../contexts/AuthContext';
 
-export const useAccountSettings = () => {
-  const { user } = useAuth();
+export const useAccountSettings = (showToast = null) => {
+  const { user, updateUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -62,11 +62,22 @@ export const useAccountSettings = () => {
     } catch (err) {
       const errorMessage = err.message || 'Failed to load account data. Please try again.';
       setError(errorMessage);
+      
+      // Show error toast
+      if (showToast) {
+        showToast({
+          type: 'error',
+          title: 'Lỗi tải dữ liệu!',
+          message: errorMessage,
+          duration: 4000
+        });
+      }
+      
       throw new Error(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, showToast]);
 
   // Save account data
   const saveAccountData = useCallback(async (formData) => {
@@ -115,6 +126,15 @@ export const useAccountSettings = () => {
         if (!response.success) {
           throw new Error(response.message);
         }
+        
+        // Update user context với companyLogoUrl mới từ backend response
+        if (updateUser && response.data?.companyLogoUrl) {
+          updateUser({ 
+            companyLogoUrl: response.data.companyLogoUrl,
+            companyName: formData.companyName,
+            fullName: formData.fullName
+          });
+        }
       } else {
         // No file, send JSON (skip CompanyLogoUrl field)
         const form = new FormData();
@@ -142,10 +162,28 @@ export const useAccountSettings = () => {
         if (!response.success) {
           throw new Error(response.message);
         }
+        
+        // Update user context (no new logo, keep existing)
+        if (updateUser) {
+          updateUser({ 
+            companyName: formData.companyName,
+            fullName: formData.fullName
+          });
+        }
       }
 
       
       setSuccess(true);
+      
+      // Show success toast
+      if (showToast) {
+        showToast({
+          type: 'success',
+          title: 'Đã lưu!',
+          message: 'Cài đặt tài khoản đã được cập nhật',
+          duration: 3000
+        });
+      }
       
       // Auto-hide success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000);
@@ -155,11 +193,22 @@ export const useAccountSettings = () => {
     } catch (err) {
       const errorMessage = err.message || 'Failed to save account settings. Please try again.';
       setError(errorMessage);
+      
+      // Show error toast
+      if (showToast) {
+        showToast({
+          type: 'error',
+          title: 'Lỗi lưu cài đặt!',
+          message: errorMessage,
+          duration: 4000
+        });
+      }
+      
       throw new Error(errorMessage);
     } finally {
       setSaving(false);
     }
-  }, [user]);
+  }, [user, showToast, updateUser]);
 
   // Upload logo
   const uploadLogo = useCallback(async (file) => {

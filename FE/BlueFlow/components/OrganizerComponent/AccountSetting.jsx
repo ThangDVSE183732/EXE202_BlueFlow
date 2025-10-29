@@ -97,7 +97,7 @@ const FormTextarea = ({
   </div>
 );
 
-const AccountSetting = () => {
+const AccountSetting = ({ showToast }) => {
   // Custom hook for account settings management
   const {
     loading,
@@ -108,7 +108,7 @@ const AccountSetting = () => {
     saveAccountData,
     deleteLogo,
     clearMessages
-  } = useAccountSettings();
+  } = useAccountSettings(showToast);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -143,9 +143,9 @@ const AccountSetting = () => {
       try {
         const data = await fetchAccountData();
         setFormData(data);
-        // Set logo preview from API if exists
-        if (data.companyLogo) {
-          setLogoPreview(data.companyLogo);
+        // Set logo preview from API if exists (Cloudinary URL)
+        if (data.companyLogoUrl) {
+          setLogoPreview(data.companyLogoUrl);
         }
       } catch (err) {
         console.error('Failed to load account data:', err);
@@ -282,20 +282,6 @@ const AccountSetting = () => {
         <p className="text-gray-500 text-sm">Update your company information and contact details</p>
       </div>
       <div className="h-px w-full bg-gray-300 mx-1 mb-5 mt-2" />
-
-      {/* Success Message */}
-      {success && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
-          ✅ Account settings updated successfully!
-        </div>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
-          ❌ {error}
-        </div>
-      )}
 
       <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-8">
         <div className="flex items-start gap-8 pb-8 border-b border-gray-200 mb-8">

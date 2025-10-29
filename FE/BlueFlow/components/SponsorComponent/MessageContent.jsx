@@ -41,6 +41,9 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
             isRead: msg.isRead
           }));
           setMessages(formattedMessages);
+          
+          // Mark conversation as read
+          await messageService.markConversationAsRead(partnerId);
         }
       } catch (err) {
         console.error('Error loading messages:', err);

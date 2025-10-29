@@ -82,7 +82,7 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                             <span className={[
                                                 'text-sm',
                                                 subChange === 'find' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Find Partners</span>
+                                            ].join(' ')}>Tìm đối tác</span>
                                         </button>
                                         <button type="button" onClick={() => onSubChange && onSubChange('saved')} className="flex items-center gap-3 text-left">
                                             <span className={[
@@ -92,7 +92,7 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                             <span className={[
                                                 'text-sm',
                                                 subChange === 'saved' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Saved Events</span>
+                                            ].join(' ')}>Sự kiện đã lưu</span>
                                         </button>
                                     </div>
                                 )}
@@ -109,7 +109,7 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                             <span className={[
                                                 'text-sm',
                                                 subChange === 'pending' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Pending Projects</span>
+                                            ].join(' ')}>Dự án đang chờ</span>
                                         </button>
                                         <button type="button" onClick={() => onSubChange && onSubChange('completed')} className="flex items-center gap-3 text-left">
                                             <span className={[
@@ -119,7 +119,7 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                             <span className={[
                                                 'text-sm',
                                                 subChange === 'completed' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Completed Projects</span>
+                                            ].join(' ')}>Dự án hoàn thành</span>
                                         </button>
                                     </div>
                                 )}
@@ -136,7 +136,7 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                             <span className={[
                                                 'text-sm',
                                                 subChange === 'brand' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Brand Profile</span>
+                                            ].join(' ')}>Hồ sơ thương hiệu</span>
                                         </button>
                                         <button type="button" onClick={() => onSubChange && onSubChange('account')} className="flex items-center gap-3 text-left">
                                             <span className={[
@@ -146,7 +146,7 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                             <span className={[
                                                 'text-sm',
                                                 subChange === 'account' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Account Setting</span>
+                                            ].join(' ')}>Cài đặt tài khoản</span>
                                         </button>
                                         {/* <button type="button" onClick={() => onSubChange && onSubChange('marketing')} className="flex items-center gap-3 text-left">
                                             <span className={[
