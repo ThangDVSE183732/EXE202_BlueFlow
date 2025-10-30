@@ -145,7 +145,7 @@ namespace Eventlink_Services.Service
 
         public async Task UpdateAsync(Guid id, UpdateBrandProfileRequest request)
         {
-            var existingProfile = await _brandProfileRepository.GetByIdAsync(id);
+            var existingProfile = await _brandProfileRepository.GetByUserIdAsync(id);
 
             if (existingProfile == null)
             {
