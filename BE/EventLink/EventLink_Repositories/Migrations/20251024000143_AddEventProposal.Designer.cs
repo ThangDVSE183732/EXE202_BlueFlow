@@ -4,6 +4,7 @@ using EventLink_Repositories.DBContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EventLink_Repositories.Migrations
 {
     [DbContext(typeof(EventLinkDBContext))]
-    partial class EventLinkDBContextModelSnapshot : ModelSnapshot
+    [Migration("20251024000143_AddEventProposal")]
+    partial class AddEventProposal
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -258,9 +261,6 @@ namespace EventLink_Repositories.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasDefaultValueSql("(newid())");
 
-                    b.Property<decimal?>("AverageRating")
-                        .HasColumnType("decimal(18,2)");
-
                     b.Property<string>("Category")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -282,9 +282,6 @@ namespace EventLink_Repositories.Migrations
 
                     b.Property<DateTime?>("EventDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("EventHighlights")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("EventImages")
                         .HasColumnType("nvarchar(max)");
@@ -321,9 +318,6 @@ namespace EventLink_Repositories.Migrations
                     b.Property<string>("RequiredServices")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("ReviewCount")
-                        .HasColumnType("int");
-
                     b.Property<string>("ShortDescription")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -341,15 +335,9 @@ namespace EventLink_Repositories.Migrations
                         .HasColumnType("nvarchar(20)")
                         .HasDefaultValue("Draft");
 
-                    b.Property<string>("Tags")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("TargetAudience")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("TargetAudienceList")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -430,9 +418,6 @@ namespace EventLink_Repositories.Migrations
                     b.Property<Guid>("EventId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("EventId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<bool?>("IsPublic")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("bit")
@@ -461,8 +446,6 @@ namespace EventLink_Repositories.Migrations
 
                     b.HasKey("Id")
                         .HasName("PK__EventAct__3214EC07");
-
-                    b.HasIndex("EventId1");
 
                     b.HasIndex(new[] { "ActivityType" }, "IX_EventActivities_ActivityType");
 
@@ -1460,10 +1443,6 @@ namespace EventLink_Repositories.Migrations
                         .IsRequired()
                         .HasConstraintName("FK_EventActivities_Events");
 
-                    b.HasOne("EventLink_Repositories.Models.Event", null)
-                        .WithMany("EventActivities")
-                        .HasForeignKey("EventId1");
-
                     b.Navigation("Event");
                 });
 
@@ -1521,10 +1500,11 @@ namespace EventLink_Repositories.Migrations
             modelBuilder.Entity("EventLink_Repositories.Models.Partnership", b =>
                 {
                     b.HasOne("EventLink_Repositories.Models.Event", "Event")
-                        .WithMany()
+                        .WithMany("Partnerships")
                         .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("FK_Partnerships_Events");
 
                     b.HasOne("EventLink_Repositories.Models.User", "Partner")
                         .WithMany("Partnerships")
@@ -1655,9 +1635,9 @@ namespace EventLink_Repositories.Migrations
 
             modelBuilder.Entity("EventLink_Repositories.Models.Event", b =>
                 {
-                    b.Navigation("EventActivities");
-
                     b.Navigation("EventProposals");
+
+                    b.Navigation("Partnerships");
                 });
 
             modelBuilder.Entity("EventLink_Repositories.Models.Partnership", b =>

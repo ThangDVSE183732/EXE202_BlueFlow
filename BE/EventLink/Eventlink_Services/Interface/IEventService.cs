@@ -10,7 +10,7 @@ namespace Eventlink_Services.Interface
 {
     public interface IEventService
     {
-        // Existing methods
+        // ✅ EXISTING METHODS - KEEP
         Task<List<EventResponse>> GetAllEventsAsync();
         Task<EventResponse> GetEventByIdAsync(Guid id);
         Task<Event> GetEventById(Guid id);
@@ -31,16 +31,6 @@ namespace Eventlink_Services.Interface
         Task<EventDetailDto> GetEventDetailAsync(Guid eventId, Guid? currentUserId = null);
 
         /// <summary>
-        /// Create event with initial timeline activities
-        /// </summary>
-        Task<EventDetailDto> CreateEventWithDetailsAsync(Guid organizerId, CreateEventWithDetailsRequest request);
-
-        /// <summary>
-        /// Update event and replace timeline activities
-        /// </summary>
-        Task<EventDetailDto> UpdateEventWithDetailsAsync(Guid eventId, Guid organizerId, UpdateEventWithDetailsRequest request);
-
-        /// <summary>
         /// Check if user can edit event (must be organizer)
         /// </summary>
         Task<bool> CanUserEditEventAsync(Guid eventId, Guid userId);
@@ -49,6 +39,9 @@ namespace Eventlink_Services.Interface
         /// Update event budget and recalculate remaining budget
         /// </summary>
         Task UpdateEventBudgetAsync(Guid eventId);
+
+        // ❌ REMOVED: CreateEventWithDetailsAsync (duplicate, use separate APIs)
+        // ❌ REMOVED: UpdateEventWithDetailsAsync (duplicate, use separate APIs)
     }
 
     public interface IEventActivityService

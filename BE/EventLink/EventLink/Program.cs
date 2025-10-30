@@ -121,6 +121,8 @@ builder.Services.AddScoped<IEventProposalRepository, EventProposalRepository>();
 builder.Services.AddScoped<IPartnershipRepository, PartnershipRepository>();
 builder.Services.AddScoped<ISupplierServiceRepository, SupplierServiceRepository>();
 builder.Services.AddScoped<IEventActivityRepository, EventActivityRepository>();
+builder.Services.AddScoped<IEventActivityRepository, EventActivityRepository>();
+builder.Services.AddScoped<IEventProposalRepository, EventProposalRepository>();
 builder.Services.AddScoped<IBrandProfileRepository, BrandProfileRepository>();
 
 // Service Registration
@@ -136,6 +138,7 @@ builder.Services.AddScoped<IEventProposalService, EventProposalService>();
 builder.Services.AddScoped<IPartnershipService, PartnershipService>();
 builder.Services.AddScoped<ISupplierServiceService, SupplierServiceService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<IEventProposalService, EventProposalService>();
 builder.Services.AddScoped<IBrandProfileService, BrandProfileService>();
 
 builder.Services.AddSingleton<CloudinaryService>();

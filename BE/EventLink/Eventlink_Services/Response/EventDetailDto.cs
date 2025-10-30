@@ -4,6 +4,104 @@ using System.Collections.Generic;
 namespace Eventlink_Services.Response
 {
     /// <summary>
+    /// Enhanced Event Response with timeline and proposals
+    /// UPDATED with Overview fields
+    /// </summary>
+    public class EventDetailDto
+    {
+        public Guid Id { get; set; }
+        public Guid OrganizerId { get; set; }
+        public string OrganizerName { get; set; } = string.Empty;
+        public string? OrganizerEmail { get; set; }
+        public string? OrganizerPhone { get; set; }
+        public string? OrganizerWebsite { get; set; }
+
+        // Basic Info
+        public string Title { get; set; } = string.Empty;
+        public string? Description { get; set; }
+        public string? ShortDescription { get; set; }
+        public DateTime? EventDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public string? Location { get; set; }
+        public string? VenueDetails { get; set; }
+
+        // Budget & Metrics
+        public decimal? TotalBudget { get; set; }
+        public decimal? TotalSponsorship { get; set; }
+        public decimal? RemainingBudget { get; set; }
+        public int? ExpectedAttendees { get; set; }
+
+        // Details
+        public string? Category { get; set; }
+        public string? EventType { get; set; }
+        public string? TargetAudience { get; set; }
+        public string? RequiredServices { get; set; }
+        public string? SponsorshipNeeds { get; set; }
+        public string? SpecialRequirements { get; set; }
+
+        // ✅ NEW FIELDS FOR OVERVIEW
+        /// <summary>
+        /// List of event highlights - "What to Expect"
+        /// Example: ["50+ Expert Speakers", "Interactive Workshops", "Startup Showcase"]
+        /// </summary>
+        public List<string>? EventHighlights { get; set; }
+
+        /// <summary>
+        /// List of tags/keywords for the event
+        /// Example: ["Artificial Intelligence", "Machine Learning", "Blockchain"]
+        /// </summary>
+        public List<string>? Tags { get; set; }
+
+        /// <summary>
+        /// List of target audience segments
+        /// Example: ["Tech executives & software developers", "Entrepreneurs & investors"]
+        /// </summary>
+        public List<string>? TargetAudienceList { get; set; }
+
+        // Status & Visibility
+        public string? Status { get; set; }
+        public bool? IsPublic { get; set; }
+        public bool? IsFeatured { get; set; }
+
+        // Media
+        public string? CoverImageUrl { get; set; }
+        public List<string>? EventImages { get; set; }
+
+        // Engagement
+        public int? ViewCount { get; set; }
+        public int? InterestedCount { get; set; }
+        public decimal? AverageRating { get; set; }
+        public int? ReviewCount { get; set; }
+
+        // Dates
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+
+        // Timeline Activities
+        public List<EventActivityDto>? Timeline { get; set; }
+
+        // Sponsorship Proposals
+        public List<EventProposalDetailDto>? Proposals { get; set; }
+
+        // Computed properties
+        public string? Industry => Category;
+
+        public int? DaysUntilEvent
+        {
+            get
+            {
+                if (EventDate.HasValue)
+                {
+                    return (EventDate.Value.Date - DateTime.UtcNow.Date).Days;
+                }
+                return null;
+            }
+        }
+
+        public string EventDateFormatted => EventDate?.ToString("MMMM dd-dd, yyyy") ?? string.Empty;
+    }
+
+    /// <summary>
     /// Response DTO for Event Activity (Timeline item)
     /// </summary>
     public class EventActivityDto
@@ -47,7 +145,7 @@ namespace Eventlink_Services.Response
     /// </summary>
     public class FundingBreakdownItem
     {
-        public string Category { get; set; } = string.Empty;  // "Booth Setup", "Media Promotion"
+        public string Category { get; set; } = string.Empty;
         public decimal Amount { get; set; }
         public decimal Percentage { get; set; }
     }
@@ -59,7 +157,7 @@ namespace Eventlink_Services.Response
     {
         public Guid Id { get; set; }
         public Guid EventId { get; set; }
-        public string ProposalType { get; set; } = string.Empty;  // Sponsorship, Supplier
+        public string ProposalType { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string? Requirements { get; set; }
@@ -80,7 +178,7 @@ namespace Eventlink_Services.Response
         public List<string>? Benefits { get; set; }
 
         // Status
-        public string? Status { get; set; }  // Pending, Approved, Rejected
+        public string? Status { get; set; }
         public Guid? ApprovedBy { get; set; }
         public string? ApproverName { get; set; }
         public DateTime? ApprovedAt { get; set; }
@@ -107,82 +205,5 @@ namespace Eventlink_Services.Response
                 return 0;
             }
         }
-    }
-
-    /// <summary>
-    /// Enhanced Event Response with timeline and proposals
-    /// </summary>
-    public class EventDetailDto
-    {
-        public Guid Id { get; set; }
-        public Guid OrganizerId { get; set; }
-        public string OrganizerName { get; set; } = string.Empty;
-        public string? OrganizerEmail { get; set; }
-        public string? OrganizerPhone { get; set; }
-        public string? OrganizerWebsite { get; set; }
-
-        // Basic Info
-        public string Title { get; set; } = string.Empty;
-        public string? Description { get; set; }
-        public string? ShortDescription { get; set; }
-        public DateTime? EventDate { get; set; }
-        public DateTime? EndDate { get; set; }
-        public string? Location { get; set; }
-        public string? VenueDetails { get; set; }
-
-        // Budget & Metrics
-        public decimal? TotalBudget { get; set; }
-        public decimal? TotalSponsorship { get; set; }
-        public decimal? RemainingBudget { get; set; }
-        public int? ExpectedAttendees { get; set; }
-
-        // Details
-        public string? Category { get; set; }
-        public string? EventType { get; set; }
-        public string? TargetAudience { get; set; }
-        public string? RequiredServices { get; set; }
-        public string? SponsorshipNeeds { get; set; }
-        public string? SpecialRequirements { get; set; }
-
-        // Status & Visibility
-        public string? Status { get; set; }
-        public bool? IsPublic { get; set; }
-        public bool? IsFeatured { get; set; }
-
-        // Media
-        public string? CoverImageUrl { get; set; }
-        public List<string>? EventImages { get; set; }
-
-        // Engagement
-        public int? ViewCount { get; set; }
-        public int? InterestedCount { get; set; }
-        public decimal? AverageRating { get; set; }
-        public int? ReviewCount { get; set; }
-
-        // Dates
-        public DateTime? CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-
-        // ✅ NEW: Timeline Activities
-        public List<EventActivityDto>? Timeline { get; set; }
-
-        // ✅ NEW: Sponsorship Proposals
-        public List<EventProposalDetailDto>? Proposals { get; set; }
-
-        // Computed properties
-        public string? Industry => Category;
-        public int? DaysUntilEvent
-        {
-            get
-            {
-                if (EventDate.HasValue)
-                {
-                    return (EventDate.Value.Date - DateTime.UtcNow.Date).Days;
-                }
-                return null;
-            }
-        }
-
-        public string EventDateFormatted => EventDate?.ToString("MMMM dd-dd, yyyy") ?? string.Empty;
     }
 }

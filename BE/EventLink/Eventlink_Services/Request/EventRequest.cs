@@ -2,14 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Eventlink_Services.Request
 {
     public class EventRequest
     {
+        /// <summary>
+        /// Create Event Request - UPDATED with Overview fields
+        /// </summary>
         public class CreateEventRequest
         {
             [Required(ErrorMessage = "Title is required")]
@@ -52,11 +52,28 @@ namespace Eventlink_Services.Request
             public string SponsorshipNeeds { get; set; }
             public string SpecialRequirements { get; set; }
 
-            //public bool? IsFeatured { get; set; }
+            // ✅ NEW FIELDS FOR OVERVIEW
+            /// <summary>
+            /// List of event highlights - "What to Expect"
+            /// Example: ["50+ Expert Speakers", "Interactive Workshops", "Startup Showcase"]
+            /// </summary>
+            public List<string>? EventHighlights { get; set; }
 
-            public IFormFile CoverImageUrl { get; set; }
+            /// <summary>
+            /// List of tags/keywords for the event
+            /// Example: ["Artificial Intelligence", "Machine Learning", "Blockchain", "Innovation"]
+            /// </summary>
+            public List<string>? Tags { get; set; }
 
-            public List<IFormFile> EventImages { get; set; }
+            /// <summary>
+            /// List of target audience segments (replaces single TargetAudience string)
+            /// Example: ["Tech executives & software developers", "Entrepreneurs & investors"]
+            /// </summary>
+            public List<string>? TargetAudienceList { get; set; }
+
+            // Media
+            public string? CoverImageUrl { get; set; }
+            public List<string>? EventImages { get; set; }
 
             [Range(0, int.MaxValue, ErrorMessage = "View count must be non-negative")]
             public int? ViewCount { get; set; }
@@ -64,6 +81,10 @@ namespace Eventlink_Services.Request
             [Range(0, int.MaxValue, ErrorMessage = "Interested count must be non-negative")]
             public int? InterestedCount { get; set; }
         }
+
+        /// <summary>
+        /// Update Event Request - UPDATED with Overview fields
+        /// </summary>
         public class UpdateEventRequest
         {
             [Required(ErrorMessage = "Title is required")]
@@ -106,22 +127,32 @@ namespace Eventlink_Services.Request
             public string SponsorshipNeeds { get; set; }
             public string SpecialRequirements { get; set; }
 
-            //public bool? IsFeatured { get; set; }
+            // ✅ NEW FIELDS FOR OVERVIEW
+            /// <summary>
+            /// List of event highlights - "What to Expect"
+            /// </summary>
+            public List<string>? EventHighlights { get; set; }
 
-            [Url(ErrorMessage = "Cover image must be a valid URL")]
-            public string CoverImageUrl { get; set; }
+            /// <summary>
+            /// List of tags/keywords
+            /// </summary>
+            public List<string>? Tags { get; set; }
 
-            // ảnh cũ người dùng muốn giữ lại
-            public List<string> ExistingImages { get; set; }
+            /// <summary>
+            /// List of target audience segments
+            /// </summary>
+            public List<string>? TargetAudienceList { get; set; }
 
-            // ảnh mới người dùng upload thêm
-            public List<IFormFile> NewImages { get; set; }
+            // Media
+            public string? CoverImageUrl { get; set; }
+            public List<string>? ExistingImages { get; set; }
+            public List<string>? NewImages { get; set; }
 
             [Range(0, int.MaxValue, ErrorMessage = "View count must be non-negative")]
             public int? ViewCount { get; set; }
 
             [Range(0, int.MaxValue, ErrorMessage = "Interested count must be non-negative")]
             public int? InterestedCount { get; set; }
-        }   
+        }
     }
 }

@@ -140,13 +140,9 @@ public partial class EventLinkDBContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Events__3214EC077E24E471");
 
             entity.HasIndex(e => e.Category, "IX_Events_Category");
-
             entity.HasIndex(e => e.EventDate, "IX_Events_EventDate");
-
             entity.HasIndex(e => e.Location, "IX_Events_Location");
-
             entity.HasIndex(e => e.OrganizerId, "IX_Events_OrganizerId");
-
             entity.HasIndex(e => new { e.Status, e.IsPublic }, "IX_Events_Status_IsPublic");
 
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
@@ -172,9 +168,12 @@ public partial class EventLinkDBContext : DbContext
             entity.Property(e => e.VenueDetails).HasMaxLength(1000);
             entity.Property(e => e.ViewCount).HasDefaultValue(0);
 
+            // Only configure existing navigation properties:
             entity.HasOne(d => d.Organizer).WithMany(p => p.Events)
                 .HasForeignKey(d => d.OrganizerId)
                 .HasConstraintName("FK_Events_Users");
+
+            // ❌ REMOVE: Partnerships configuration (Event no longer has this property)
         });
 
         modelBuilder.Entity<EventActivity>(entity =>
@@ -299,10 +298,6 @@ public partial class EventLinkDBContext : DbContext
                 .HasMaxLength(20)
                 .HasDefaultValue("Pending");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
-
-            entity.HasOne(d => d.Event).WithMany(p => p.Partnerships)
-                .HasForeignKey(d => d.EventId)
-                .HasConstraintName("FK_Partnerships_Events");
 
             entity.HasOne(d => d.Partner).WithMany(p => p.Partnerships)
                 .HasForeignKey(d => d.PartnerId)
