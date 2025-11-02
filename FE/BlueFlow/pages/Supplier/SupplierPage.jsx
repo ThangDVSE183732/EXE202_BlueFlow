@@ -13,6 +13,8 @@ import MessagesPage from '../../components/SupplierComponent/MessagesPage';
 import BrandProfile from '../../components/SupplierComponent/BrandProfile';
 import EventDetail from '../../components/SupplierComponent/EventDetail';
 import Chatbot from '../../components/SupplierComponent/Chatbot';
+import { useToast } from '../../hooks/useToast';
+import ToastContainer from '../../components/ToastContainer';
 
 
 
@@ -146,7 +148,7 @@ function SupplierPage() {
     const [tab, setTab] = useState(() => localStorage.getItem('supplier.tab') || 'dashboard');
     const [active, setActive] = useState(() => localStorage.getItem('supplier.active') || 'dashboard');
     const [subChange, setSubChange] = useState(() => localStorage.getItem('supplier.discoverySub') || ''); // 'find' | 'saved'
-  
+    const { toasts, showToast, removeToast } = useToast();
 
     // Persist to localStorage whenever these change
     useEffect(() => {
@@ -187,14 +189,14 @@ function SupplierPage() {
         }
         return ;
       case "messages":
-        return <MessagesPage/>;
+        return <MessagesPage showToast={showToast} />;
       case "ai":
-        return <Chatbot/>;
+        return <Chatbot showToast={showToast} />;
     case "profile":
          if(subChange === 'brand') {
-            return <BrandProfile/>;
+            return <BrandProfile showToast={showToast} />;
         }else if(subChange === 'account') {
-            return <AccountSetting/>;
+            return <AccountSetting showToast={showToast} />;
         }else if(subChange === 'marketing') {
             return;
         }
@@ -226,6 +228,7 @@ function SupplierPage() {
 
             </div>
             <Footer/>
+            <ToastContainer toasts={toasts} removeToast={removeToast} />
         </div>
     )
 }

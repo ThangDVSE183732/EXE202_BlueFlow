@@ -1,110 +1,81 @@
-// Account Settings Service
-// This file contains all API calls related to account settings
+import api from './axios';
 
-import axios from 'axios';
+export const accountService = {
+  // GET /api/UserProfiles/{id} - Lấy profile theo ID
+  // getUserProfile: async (id) => {
+  //   try {
+  //     const response = await api.get(`/UserProfiles/${id}`);
+  //     return {
+  //       success: true,
+  //       data: response.data,
+  //       message: 'Profile retrieved successfully'
+  //     };
+  //   } catch (error) {
+  //     console.error('Get user profile error:', error);
+  //     return {
+  //       success: false,
+  //       message: error.response?.data?.message || 'Failed to get user profile',
+  //       errors: error.response?.data?.errors || []
+  //     };
+  //   }
+  // },
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-
-export class AccountService {
-  /**
-   * Get current user's account settings
-   */
-  static async getAccountSettings() {
+  // PUT /api/UserProfiles/{id} - Cập nhật profile theo ID
+  updateUserProfile: async (id, profileData) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/account/settings`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      return response.data;
+      // Axios automatically detects FormData and sets correct Content-Type with boundary
+      const response = await api.put(`/UserProfiles/${id}`, profileData);
+      
+      return {
+        success: true,
+        data: response.data,
+        message: 'Profile updated successfully'
+      };
     } catch (error) {
-      console.error('Error fetching account settings:', error);
-      throw new Error(error.response?.data?.message || 'Failed to fetch account settings');
+      console.error('Update user profile error:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to update user profile',
+        errors: error.response?.data?.errors || []
+      };
     }
-  }
+  },
 
-  /**
-   * Update account settings
-   * @param {Object} formData - Account settings data
-   */
-  static async updateAccountSettings(formData) {
+  // DELETE /api/UserProfiles/{id} - Xóa profile theo ID
+  // deleteUserProfile: async (id) => {
+  //   try {
+  //     const response = await api.delete(`/UserProfiles/${id}`);
+  //     return {
+  //       success: true,
+  //       data: response.data,
+  //       message: 'Profile deleted successfully'
+  //     };
+  //   } catch (error) {
+  //     console.error('Delete user profile error:', error);
+  //     return {
+  //       success: false,
+  //       message: error.response?.data?.message || 'Failed to delete user profile',
+  //       errors: error.response?.data?.errors || []
+  //     };
+  //   }
+  // },
+
+  // GET /api/UserProfiles/profile_by_userid/{userId} - Lấy profile theo userId
+  getUserProfileByUserId: async (userId) => {
     try {
-      const response = await axios.put(`${API_BASE_URL}/account/settings`, formData, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      return response.data;
+      const response = await api.get(`/UserProfiles/profile_by_userid/${userId}`);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Profile retrieved successfully'
+      };
     } catch (error) {
-      console.error('Error updating account settings:', error);
-      throw new Error(error.response?.data?.message || 'Failed to update account settings');
-    }
-  }
-
-  /**
-   * Upload company logo
-   * @param {File} file - Logo file
-   */
-  static async uploadCompanyLogo(file) {
-    try {
-      const formData = new FormData();
-      formData.append('logo', file);
-
-      const response = await axios.post(`${API_BASE_URL}/account/logo`, formData, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error uploading logo:', error);
-      throw new Error(error.response?.data?.message || 'Failed to upload logo');
-    }
-  }
-
-  /**
-   * Delete company logo
-   */
-  static async deleteCompanyLogo() {
-    try {
-      const response = await axios.delete(`${API_BASE_URL}/account/logo`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error deleting logo:', error);
-      throw new Error(error.response?.data?.message || 'Failed to delete logo');
-    }
-  }
-
-  /**
-   * Validate email address
-   * @param {string} email - Email to validate
-   */
-  static async validateEmail(email) {
-    try {
-      const response = await axios.post(`${API_BASE_URL}/account/validate-email`, 
-        { email },
-        {
-          headers: {
-            'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Error validating email:', error);
-      throw new Error(error.response?.data?.message || 'Failed to validate email');
+      console.error('Get user profile by userId error:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to get user profile',
+        errors: error.response?.data?.errors || []
+      };
     }
   }
 }
-
-// Export default for easier imports
-export default AccountService;

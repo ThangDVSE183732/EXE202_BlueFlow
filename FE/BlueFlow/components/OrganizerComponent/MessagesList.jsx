@@ -3,7 +3,7 @@ import { Edit, Search, Pin } from 'lucide-react';
 import { messageService } from '../../services/messageService';
 import signalRService from '../../services/signalRService';
 
-const MessagesList = ({ onSelectChat }) => {
+const MessagesList = ({ onSelectChat, showToast }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [allChats, setAllChats] = useState([]);
   const [pinnedChats, setPinnedChats] = useState([]);
@@ -48,6 +48,7 @@ const MessagesList = ({ onSelectChat }) => {
             }) : '',
             avatar: chat.partnerAvatar,
             hasNotification: (chat.unreadCount || 0) > 0,
+            isRead: chat.lastMessage?.isRead,
             unreadCount: chat.unreadCount || 0,
             partnerRole: chat.partnerRole
           }));
@@ -58,13 +59,23 @@ const MessagesList = ({ onSelectChat }) => {
       } catch (err) {
         console.error('Error loading partner list chat:', err);
         setError('Failed to load chats');
+        
+        // Show error toast
+        if (showToast) {
+          showToast({
+            type: 'error',
+            title: 'Lỗi tải danh sách!',
+            message: 'Không thể tải danh sách đối tác. Vui lòng thử lại.',
+            duration: 4000
+          });
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchPartnerListChat();
-  }, []);
+  }, [showToast]);
 
   // Setup SignalR for online/offline status (backend không có ReceiveMessage broadcast)
   useEffect(() => {
@@ -137,13 +148,29 @@ const MessagesList = ({ onSelectChat }) => {
     chat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleChatClick = (chat) => {
+    // Update chat to mark as read immediately in UI
+    setAllChats(prevChats => 
+      prevChats.map(c => 
+        c.id === chat.id 
+          ? { ...c, isRead: true, hasNotification: false, unreadCount: 0 } 
+          : c
+      )
+    );
+    
+    // Call parent handler
+    if (onSelectChat) {
+      onSelectChat(chat);
+    }
+  };
+
   const renderChatItem = (chat, showNotification = true) => {
     const isPinned = pinnedChats.some(c => c.id === chat.id);
     
     return (
       <div
         key={chat.id}
-        onClick={() => onSelectChat && onSelectChat(chat)}
+        onClick={() => handleChatClick(chat)}
         className="flex items-center space-x-3 p-3 hover:bg-gray-50 cursor-pointer rounded-lg transition-colors"
       >
         <div className="relative flex-shrink-0">
@@ -152,9 +179,9 @@ const MessagesList = ({ onSelectChat }) => {
               {chat.name.charAt(0)}
             </span>
           </div>
-          {showNotification && chat.hasNotification && (
+          {showNotification && chat.hasNotification && chat.isRead === false && (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-              <span className="text-xs text-white font-bold">!</span>
+              <span className="text-xs text-white font-bold">{chat.unreadCount}</span>
             </div>
           )}
         </div>

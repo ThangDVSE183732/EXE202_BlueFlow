@@ -14,6 +14,8 @@ import MessagesPage from '../../components/OrganizerComponent/MessagesPage';
 import BrandProfile from '../../components/OrganizerComponent/BrandProfile';
 import EventDetail from '../../components/OrganizerComponent/EventDetail';
 import Chatbot from '../../components/OrganizerComponent/Chatbot';
+import { useToast } from '../../hooks/useToast';
+import Toast from '../../components/Toast';
 
 
 
@@ -63,12 +65,12 @@ const Icon = {
 };
 
 const items = [
-    { key: 'dashboard', label: 'Dashboard', icon: Icon.dashboard },
-    { key: 'discovery', label: 'Discovery', icon: Icon.search },
-    { key: 'projects', label: 'My Projects', icon: Icon.folder },
-    { key: 'messages', label: 'Messages', icon: Icon.message },
-    { key: 'ai', label: 'AI Assistant', icon: Icon.ai },
-    { key: 'profile', label: 'Profile & Settings', icon: Icon.users },
+    { key: 'dashboard', label: 'Bảng điều khiển', icon: Icon.dashboard },
+    { key: 'discovery', label: 'Khám phá', icon: Icon.search },
+    { key: 'projects', label: 'Dự án của tôi', icon: Icon.folder },
+    { key: 'messages', label: 'Tin nhắn', icon: Icon.message },
+    { key: 'ai', label: 'Trợ lý AI', icon: Icon.ai },
+    { key: 'profile', label: 'Hồ sơ & Cài đặt', icon: Icon.users },
 ];
 
 const partnersItem = [
@@ -147,7 +149,7 @@ function OrganizerPage() {
     const [tab, setTab] = useState(() => localStorage.getItem('organizer.tab') || 'dashboard');
     const [active, setActive] = useState(() => localStorage.getItem('organizer.active') || 'dashboard');
     const [subChange, setSubChange] = useState(() => localStorage.getItem('organizer.discoverySub') || ''); // 'find' | 'saved'
-  
+    const { toasts, showToast, removeToast } = useToast();
 
     // Persist to localStorage whenever these change
     useEffect(() => {
@@ -170,7 +172,7 @@ function OrganizerPage() {
         if(tab === 'event') {
             return <EventManagement />;
         }
-        return <Dashboard />;
+        return <EventDetail />;
       case "discovery":
         if(subChange === 'find') {
             return <PartnersList
@@ -188,14 +190,14 @@ function OrganizerPage() {
         }
         return ;
       case "messages":
-        return <MessagesPage/>;
+        return <MessagesPage showToast={showToast} />;
       case "ai":
-        return <Chatbot/>;
+        return <Chatbot showToast={showToast} />;
     case "profile":
          if(subChange === 'brand') {
-            return <BrandProfile/>;
+            return <BrandProfile showToast={showToast} />;
         }else if(subChange === 'account') {
-            return <AccountSetting/>;
+            return <AccountSetting showToast={showToast} />;
         }else if(subChange === 'marketing') {
             return;
         }
@@ -227,6 +229,20 @@ function OrganizerPage() {
 
             </div>
             <Footer/>
+            
+            {/* Toast Notifications */}
+            {toasts.map((toast) => (
+                <Toast
+                    key={toast.id}
+                    isVisible={toast.isVisible}
+                    type={toast.type}
+                    title={toast.title}
+                    message={toast.message}
+                    duration={toast.duration}
+                    position={toast.position}
+                    onClose={() => removeToast(toast.id)}
+                />
+            ))}
         </div>
     )
 }

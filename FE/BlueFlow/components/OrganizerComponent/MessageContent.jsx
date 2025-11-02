@@ -3,7 +3,7 @@ import { Send, Paperclip, Search, MoreHorizontal } from 'lucide-react';
 import { messageService } from '../../services/messageService';
 import signalRService from '../../services/signalRService';
 
-const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
+const MessageContent = ({ selectedChat = 'Event Tech', partnerId, showToast }) => {
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,17 +42,30 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
             isRead: msg.isRead
           }));
           setMessages(formattedMessages);
+          
+          // Mark conversation as read
+          await messageService.markConversationAsRead(partnerId);
         }
       } catch (err) {
         console.error('Error loading messages:', err);
         setError('Failed to load messages');
+        
+        // Show error toast
+        if (showToast) {
+          showToast({
+            type: 'error',
+            title: 'Lỗi tải tin nhắn!',
+            message: 'Không thể tải tin nhắn. Vui lòng thử lại.',
+            duration: 4000
+          });
+        }
       } finally {
         setLoading(false);
       }
     };
 
     fetchMessages();
-  }, [partnerId, selectedChat]);
+  }, [partnerId, selectedChat, showToast]);
 
   // Setup SignalR connection
   useEffect(() => {
@@ -193,6 +206,17 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
       } catch (err) {
         console.error('Error sending message:', err);
         setError('Failed to send message');
+        
+        // Show error toast
+        if (showToast) {
+          showToast({
+            type: 'error',
+            title: 'Lỗi gửi tin nhắn!',
+            message: 'Không thể gửi tin nhắn. Vui lòng thử lại.',
+            duration: 4000
+          });
+        }
+        
         // Remove optimistic message on error
         setMessages(prev => prev.filter(msg => msg.id !== optimisticMessageId));
       }

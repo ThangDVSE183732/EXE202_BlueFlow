@@ -3,7 +3,7 @@ import { X, RotateCcw } from 'lucide-react';
 import { chatbotService } from '../../services/chatbotService';
 import { parseChatbotResponse } from '../../utils/chatbotUtils';
 
-const Chatbot = () => {
+const Chatbot = ({ showToast }) => {
   const [messages, setMessages] = useState([
     {
       id: 1,
@@ -75,6 +75,16 @@ const Chatbot = () => {
     } catch (err) {
       console.error('Error sending message:', err);
       setError('Failed to get response from AI');
+      
+      // Show error toast
+      if (showToast) {
+        showToast({
+          type: 'error',
+          title: 'Lỗi AI!',
+          message: 'Không thể nhận phản hồi từ trợ lý AI. Vui lòng thử lại.',
+          duration: 4000
+        });
+      }
       
       // Add error message
       const errorMessage = {

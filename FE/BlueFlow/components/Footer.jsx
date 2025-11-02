@@ -44,8 +44,7 @@ function Footer() {
                   
                 </a>
                 <p className="mb-7 text-left text-body-color text-sm dark:text-dark-6 w-60 ml-4">
-                  BlueFlow is a student-founded startup that aims to solve key problems in the event industry.
-                </p>
+BlueFlow là một startup do sinh viên sáng lập, với mục tiêu giải quyết những vấn đề cốt lõi trong ngành tổ chức sự kiện.                </p>
 
               </div>
             </div>

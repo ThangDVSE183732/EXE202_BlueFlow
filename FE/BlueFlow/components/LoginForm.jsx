@@ -59,20 +59,20 @@ function LoginForm() {
                 });
 
                 // Chuyển đến trang dashboard tương ứng với role
-                // const userRole = response.data?.user?.role?.toLowerCase() || 'organizer';
+                const userRole = response.data?.user?.role?.toLowerCase() || 'organizer';
                 
                 setTimeout(() => {
-                    // if (userRole === 'admin') {
-                    //     navigate('/admin');
-                    // } else if (userRole === 'organizer') {
-                    //     navigate('/organizer');
-                    // } else if (userRole === 'sponsor') {
-                    //     navigate('/sponsor');
-                    // } else if (userRole === 'supplier') {
-                    //     navigate('/supplier');
-                    // } else {
+                    if (userRole === 'admin') {
+                        navigate('/admin');
+                    } else if (userRole === 'organizer') {
+                        navigate('/organizer');
+                    } else if (userRole === 'sponsor') {
+                        navigate('/sponsor');
+                    } else if (userRole === 'supplier') {
+                        navigate('/supplier');
+                    } else {
                         navigate('/organizer'); // Default to organizer
-                    // }
+                    }
                 }, 1000);
             } else {
                 showToast({
@@ -96,7 +96,7 @@ function LoginForm() {
 	<>
 	<ToastContainer toasts={toasts} onRemoveToast={removeToast} />
     <div className="w-full max-w-md p-8 pt-20 space-y-3 rounded-xl text-black ml-20">
-	<h1 className="text-2xl font-bold ml-3 text-center mb-15">Welcome</h1>
+	<h1 className="text-2xl font-bold ml-3 text-center mb-15">Chào mừng</h1>
 	<form onSubmit={handleSubmit} >
 		<div className="space-y-1 text-sm mb-6">
 			<FloatingInput 
@@ -116,17 +116,17 @@ function LoginForm() {
 					onChange={(value) => handleInputChange('password', value)}
 				/>
 			<div className="flex justify-end text-xs text-red-600 font-medium">
-				<Link rel="noopener noreferrer" to="/forgot-password">Forgot Password?</Link>
+				<Link rel="noopener noreferrer" to="/forgot-password">Quên mật khẩu?</Link>
 			</div>
 		</div>
-		<button type="submit" className="block mb-2 w-full p-3 text-center rounded-lg font-medium text-gray-50 bg-blue-400">Sign in</button>
-		<p className="text-xs font-medium text-center sm:px-6 text-gray-600">Don't have an account?
-		<Link rel="noopener noreferrer" to="/signup" className="text-red-600"> Sign up</Link>
+		<button type="submit" className="block mb-2 w-full p-3 text-center rounded-lg font-medium text-gray-50 bg-blue-400">Đăng nhập</button>
+		<p className="text-xs font-medium text-center sm:px-6 text-gray-600">Bạn chưa có tài khoản?
+		<Link rel="noopener noreferrer" to="/signup" className="text-red-600"> Đăng ký</Link>
 	</p>
 	</form>
 	<div className="flex items-center pt-4 space-x-1">
 		<div className="flex-1 h-px sm:w-16 bg-gray-300"></div>
-		<p className="px-3 text-sm text-gray-600">Login with social accounts</p>
+		<p className="px-3 text-sm text-gray-600">Đăng nhập bằng tài khoản mạng xã hội</p>
 		<div className="flex-1 h-px sm:w-16 bg-gray-300"></div>
 	</div>
 	<div className="flex justify-center space-x-4">

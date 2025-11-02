@@ -256,9 +256,9 @@ function SignUpForm() {
                           required
                         />
                         <span className="text-sm">
-                          I agree to all the
+                          Tôi đồng ý với 
                           <a href="/terms" className="mx-1 text-red-600 font-semibold hover:underline">Terms</a>
-                          and
+                          và
                           <a href="/privacy" className="ml-1 text-red-600 font-semibold hover:underline">Privacy Policies</a>
                         </span>
                       </label>

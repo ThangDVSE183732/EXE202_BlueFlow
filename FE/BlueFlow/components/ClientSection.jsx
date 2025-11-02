@@ -1,8 +1,8 @@
 function ClientSection() {
     return (
         <div>
-            <h1 className=" text-3xl font-semibold mb-2">Our Clients</h1>
-            <h6 className="text-sm text-gray-500 mb-7">We have been working with 50+ Clients</h6>
+            <h1 className=" text-3xl font-semibold mb-2">Khách hàng của chúng tôi</h1>
+            <h6 className="text-sm text-gray-500 mb-7">Chúng tôi đã và đang hợp tác với hơn 50 khách hàng.</h6>
             <div className="flex justify-center items-center space-x-25">
                 <img style={{ transform: "scale(0.8)" }} src="/imgs/Logo (1).png" alt="Client 1" />
                 <img style={{ transform: "scale(0.8)" }} src="/imgs/Logo (2).png" alt="Client 2" />

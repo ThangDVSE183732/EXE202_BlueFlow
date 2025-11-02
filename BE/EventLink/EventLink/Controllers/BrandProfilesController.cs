@@ -58,7 +58,7 @@ namespace EventLink.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutBrandProfile(Guid id, UpdateBrandProfileRequest request)
         {
-            var existingProfile = await _brandProfileService.GetByIdAsync(id);
+            var existingProfile = await _brandProfileService.GetByUserIdAsync(id);
             if (existingProfile == null)
             {
                 return NotFound();
