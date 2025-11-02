@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -61,24 +62,14 @@ namespace Eventlink_Services.Service
         {
             var messages = new List<object>();
 
-            // System message with optional knowledge injection
+            // System prompt rút gọn
             var systemContent = @"Bạn là trợ lý AI gợi ý đối tác hợp tác.
-                Cách trả lời bắt buộc:
-                1️. Trả một câu giới thiệu ngắn gọn (chỉ 1 câu).
-                2️. Sau đó, trả ngay danh sách tối đa 3 đối tác tiềm năng ở định dạng JSON chuẩn, không thêm giải thích, không viết văn bản dư thừa.
-                Ví dụ trả lời:
-                Xin chào! Dưới đây là những đối tác phù hợp:
-                [
-                  { 'name': 'Công ty ABC', 'type': 'Nhà tài trợ', 'reason': 'Có kinh nghiệm tổ chức sự kiện tương tự.' },
-                  { 'name': 'Nhà cung cấp XYZ', 'type': 'Nhà cung cấp dịch vụ', 'reason': 'Cung cấp thiết bị âm thanh chuyên nghiệp.' }
-                ]
-                Nếu không có đối tác phù hợp, hãy trả:
-                'Xin lỗi, hiện chưa có đối tác nào phù hợp với yêu cầu này.'";
+    Bắt buộc:
+    - Trả về đúng định dạng: một câu giới thiệu (nếu có) + JSON chuẩn.
+    - Không dùng markdown, không giải thích thêm.";
 
             if (includeSystemKnowledge)
-            {
                 systemContent += "\n\n" + _systemKnowledge;
-            }
 
             messages.Add(new { role = "system", content = systemContent });
             messages.Add(new { role = "user", content = prompt });
@@ -86,27 +77,36 @@ namespace Eventlink_Services.Service
             var body = new
             {
                 model = "llama-3.1-8b-instant",
-                messages = messages,
-                temperature = 0.5
+                messages,
+                temperature = 0.4
             };
 
-            var content = new StringContent(
-                JsonConvert.SerializeObject(body),
-                Encoding.UTF8,
-                "application/json"
-            );
+            var content = new StringContent(JsonConvert.SerializeObject(body), Encoding.UTF8, "application/json");
 
             var response = await _client.PostAsync("chat/completions", content);
-            var json = await response.Content.ReadAsStringAsync();
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var json = Encoding.UTF8.GetString(bytes);
 
             if (!response.IsSuccessStatusCode)
-            {
-                return $"Error: {response.StatusCode} - {json}";
-            }
+                throw new Exception($"Groq API error: {response.StatusCode} - {json}");
 
             dynamic parsed = JsonConvert.DeserializeObject(json);
-            string text = parsed?.choices?[0]?.message?.content?.ToString();
-            return text ?? json;
+            string text = parsed?.choices?[0]?.message?.content?.ToString()?.Trim();
+
+            if (string.IsNullOrWhiteSpace(text))
+                return json;
+
+            var match = System.Text.RegularExpressions.Regex.Match(text, @"```json\s*(\[.*?\])\s*```", System.Text.RegularExpressions.RegexOptions.Singleline);
+            if (match.Success)
+                text = match.Groups[1].Value;
+            else
+            {
+                var altMatch = System.Text.RegularExpressions.Regex.Match(text, @"(\[.*?\])", System.Text.RegularExpressions.RegexOptions.Singleline);
+                if (altMatch.Success)
+                    text = altMatch.Groups[1].Value;
+            }
+
+            return text;
         }
 
         // New method for general questions about the system

@@ -5,8 +5,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace EventLink.Controllers
@@ -27,12 +30,8 @@ namespace EventLink.Controllers
         [HttpPost("query")]
         public async Task<IActionResult> QueryAI(string message)
         {
-            // 1️ Lấy dữ liệu hồ sơ người dùng
             var userProfiles = await _userProfileService.GetAllUserProfilesAsync();
-
-            // 2️ Chỉ chọn các trường cần thiết để AI phân tích
-            var simplifiedProfiles = userProfiles.Select(p => new
-            {
+            var simplifiedProfiles = userProfiles.Select(p => new {
                 p.CompanyName,
                 p.Industry,
                 p.CompanySize,
@@ -43,69 +42,114 @@ namespace EventLink.Controllers
                 p.JobTitle,
                 p.DirectEmail,
                 p.DirectPhone,
-                p.Role,
+                p.Role
             });
 
-            // 3️ Tạo prompt cho AI
             var prompt = $@"
-                Người dùng yêu cầu: {message}
+Người dùng yêu cầu: {message}
 
-                Dưới đây là danh sách các đối tác trong hệ thống:
-                {JsonConvert.SerializeObject(simplifiedProfiles, Formatting.Indented)}
+Danh sách đối tác:
+{JsonConvert.SerializeObject(simplifiedProfiles, Formatting.Indented)}
 
-                Nhiệm vụ:
-                - Phân tích dữ liệu và chọn tối đa 3 đối tác phù hợp nhất với yêu cầu người dùng.
-                - Trả lời đúng định dạng sau:
-                1️⃣ Một câu giới thiệu ngắn gọn.
-                2️⃣ Ngay sau đó là danh sách JSON gồm tối đa 3 đối tác:
-                [
-                  {{
-                    'name': '', 
-                    'role': '', 
-                    'companyName': '', 
-                    'industry': '', 
-                    'country': '', 
-                    'city': '', 
-                    'jobTitle': '', 
-                    'directEmail': '', 
-                    'directPhone': '',
-                    'role': ''    
-                  }}
-                ]
+Trả về ĐÚNG định dạng JSON array (không thêm markdown, không giải thích):
+[
+  {{
+    ""name"": ""Tên người"",
+    ""role"": ""Vai trò"",
+    ""companyName"": ""Tên công ty"",
+    ""industry"": ""Ngành nghề"",
+    ""country"": ""Quốc gia"",
+    ""city"": ""Thành phố"",
+    ""jobTitle"": ""Chức vụ"",
+    ""directEmail"": ""email@example.com"",
+    ""directPhone"": ""+84 xxx xxx xxx""
+  }}
+]
 
-                Không thêm mô tả, không giải thích thừa.  
-                Nếu không có ai phù hợp, hãy trả:
-                'Xin lỗi, hiện chưa có đối tác nào phù hợp với yêu cầu này.'
-                ";
+Nếu không có kết quả, trả: []
+";
 
-            // 4️ Gọi AI service
             var aiResponse = await _openAIService.GetAIResponse(prompt);
 
-            // 5️ Tách phần JSON trong câu trả lời
-            var jsonPart = System.Text.RegularExpressions.Regex
-                .Match(aiResponse, @"\[.*\]", System.Text.RegularExpressions.RegexOptions.Singleline)
-                .Value;
+            Console.WriteLine("========= RAW AI RESPONSE =========");
+            Console.WriteLine(aiResponse);
+            Console.WriteLine("========= END RAW RESPONSE =========");
 
-            object parsedJson = null;
+            // Xử lý response
+            string jsonString = aiResponse.Trim();
+
+            // Loại bỏ markdown nếu có
+            var markdownMatch = Regex.Match(jsonString, @"```(?:json)?\s*([\s\S]*?)\s*```", RegexOptions.Singleline);
+            if (markdownMatch.Success)
+            {
+                jsonString = markdownMatch.Groups[1].Value.Trim();
+            }
+
+            // Tìm JSON array trong text
+            var jsonMatch = Regex.Match(jsonString, @"(\[[\s\S]*?\])", RegexOptions.Singleline);
+            if (jsonMatch.Success)
+            {
+                jsonString = jsonMatch.Groups[1].Value.Trim();
+            }
+
+            Console.WriteLine("========= EXTRACTED JSON =========");
+            Console.WriteLine(jsonString);
+            Console.WriteLine("========= END EXTRACTED JSON =========");
+
+            // Parse JSON CHỈ MỘT LẦN
             try
             {
-                parsedJson = JsonConvert.DeserializeObject(jsonPart);
-            }
-            catch
-            {
-                parsedJson = aiResponse;
-            }
+                // Validate JSON trước
+                var testParse = JToken.Parse(jsonString); // Dùng JToken để validate
 
-            // 6️ Trả kết quả cho frontend
-            return Ok(new
+                if (testParse.Type == JTokenType.Array)
+                {
+                    var resultArray = testParse.ToObject<List<Dictionary<string, object>>>();
+
+                    if (resultArray == null || resultArray.Count == 0)
+                    {
+                        return Ok(new
+                        {
+                            success = true,
+                            message = "Không tìm thấy đối tác phù hợp.",
+                            data = new List<object>()
+                        });
+                    }
+
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "AI query successful.",
+                        data = resultArray
+                    });
+                }
+                else
+                {
+                    return Ok(new
+                    {
+                        success = false,
+                        message = "Response không đúng định dạng array.",
+                        data = new { text = jsonString }
+                    });
+                }
+            }
+            catch (JsonException ex)
             {
-                success = true,
-                message = "AI query successful.",
-                data = parsedJson
-            });
+                Console.WriteLine($"❌ JSON Parse Error: {ex.Message}");
+
+                return Ok(new
+                {
+                    success = false,
+                    message = "Không thể parse JSON response.",
+                    data = new
+                    {
+                        error = ex.Message,
+                        rawText = jsonString
+                    }
+                });
+            }
         }
 
-        // New endpoint for system questions
         [HttpPost("ask")]
         public async Task<IActionResult> AskQuestion([FromBody] QuestionRequest request)
         {
