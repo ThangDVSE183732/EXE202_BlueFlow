@@ -3,17 +3,22 @@ import EventManagement from '../../components/OrganizerComponent/EventManagement
 import PageNav from '../../components/PageNav';
 import styles from './Organizer.module.css';
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import SegmentedControl from '../../components/OrganizerComponent/SegmentedControl';
 import SideBar from '../../components/OrganizerComponent/SideBar';
 import Dashboard from '../../components/OrganizerComponent/DashBoard';
 import SegmentedControlItem from '../../components/OrganizerComponent/SegmentedControlItem';
 import PartnersList from '../../components/OrganizerComponent/PartnersList';
+import PartnersFilterBar from '../../components/OrganizerComponent/PartnersFilterBar';
 import AccountSetting from '../../components/OrganizerComponent/AccountSetting';
 import MessageContent from '../../components/OrganizerComponent/MessageContent';
 import MessagesPage from '../../components/OrganizerComponent/MessagesPage';
 import BrandProfile from '../../components/OrganizerComponent/BrandProfile';
 import EventDetail from '../../components/OrganizerComponent/EventDetail';
 import Chatbot from '../../components/OrganizerComponent/Chatbot';
+import partnershipService from '../../services/partnershipService';
+import toast from 'react-hot-toast';
+import PaymentHistory from '../../components/PaymentHistory';
 
 
 
@@ -63,106 +68,30 @@ const Icon = {
 };
 
 const items = [
-    { key: 'dashboard', label: 'Dashboard', icon: Icon.dashboard },
-    { key: 'discovery', label: 'Discovery', icon: Icon.search },
-    { key: 'projects', label: 'My Projects', icon: Icon.folder },
-    { key: 'messages', label: 'Messages', icon: Icon.message },
-    { key: 'ai', label: 'AI Assistant', icon: Icon.ai },
-    { key: 'profile', label: 'Profile & Settings', icon: Icon.users },
+    { key: 'dashboard', label: 'Bảng điều khiển', icon: Icon.dashboard },
+    { key: 'discovery', label: 'Khám phá', icon: Icon.search },
+    { key: 'projects', label: 'Lịch sử giao dịch', icon: Icon.folder },
+    { key: 'messages', label: 'Tin nhắn', icon: Icon.message },
+    { key: 'ai', label: 'Trợ lý AI', icon: Icon.ai },
+    { key: 'profile', label: 'Hồ sơ & Cài đặt', icon: Icon.users },
 ];
 
-const partnersItem = [
-    {
-    location :"Da Nang",
-    userId: "4602403a-1002-40e4-ade4-86c2c9200a76",
-    logo:"imgs/SaiGon.png",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Music in the park: Summer Concert Series",
-    tags : ["Sponsor", "Financial"],
-    rating: 4.5
-},
-{
-    location :"Da Nang",
-    userId: "f31982d1-4846-4efd-ade9-2c2eede6d5c2",
-    logo:"imgs/creative.jpg",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Club Creative",
-    tags : ["Supplier", "Financial"],
-    rating: 3.5
-},
-{
-    location :"Da Nang",
-    userId:"12345",
-    logo:"imgs/lumire.jpg",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Lumire",
-    tags : ["Sponsor", "Financial"],
-     rating: 2.5
-},
-{
-    location :"Da Nang",
-    logo:"imgs/Rimberio.jpg",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Rimberio",
-    tags : ["Supplier", "Financial"],
-     rating: 5
-},
-{
-    location :"Da Nang",
-    logo:"imgs/Bliss.jpg",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "BlissSprhere",
-    tags : ["Sponsor", "Financial"],
-     rating: 3
-},
-{
-    location :"Da Nang",
-    logo:"imgs/Momentum.jpg",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Momemtum",
-    tags : ["Supplier", "Financial"],
-     rating: 1
-},
-{
-    location :"Da Nang",
-    logo:"imgs/Veloria.jpg",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Veloria",
-    tags : ["Sponsor", "Financial"],
-     rating: 4.5
-},
-{
-    location :"Da Nang",
-    logo:"imgs/lumé.jpg",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Bela Lumiere",
-    tags : ["Supplier", "Financial"],
-     rating: 2.5
-},
-{
-    location :"Da Nang",
-     logo:"imgs/B.I.R.jpg",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "B.I.R",
-    tags : ["Sponsor", "Financial"],
-     rating: 5
-},
-
-
-]
-
-
-
-
-
 function OrganizerPage() {
+    const location = useLocation();
     const [tab, setTab] = useState(() => localStorage.getItem('organizer.tab') || 'dashboard');
     const [active, setActive] = useState(() => localStorage.getItem('organizer.active') || 'dashboard');
     const [subChange, setSubChange] = useState(() => localStorage.getItem('organizer.discoverySub') || ''); // 'find' | 'saved'
-    const [messagePartnerId, setMessagePartnerId] = useState(null);
-    const [messagePartnerName, setMessagePartnerName] = useState(null);
-    const [showEventDetail, setShowEventDetail] = useState(false);
-    const [selectedEvent, setSelectedEvent] = useState(null);
+    const [partnersData, setPartnersData] = useState([]);
+    const [filteredPartnersData, setFilteredPartnersData] = useState([]);
+    const [loadingPartners, setLoadingPartners] = useState(false);
+
+    // Check if redirected from payment pages
+    useEffect(() => {
+        if (location.state?.activeTab === 'projects') {
+            setActive('projects');
+            setTab('projects');
+        }
+    }, [location]);
 
     // Persist to localStorage whenever these change
     useEffect(() => {
@@ -177,26 +106,95 @@ function OrganizerPage() {
         localStorage.setItem('organizer.discoverySub', subChange);
     }, [subChange]);
 
-    // Hàm để navigate đến Messages với partnerId
-    const handleGoToMessages = (partnerId, partnerName) => {
-        setMessagePartnerId(partnerId);
-        setMessagePartnerName(partnerName);
-        setActive('messages');
-    };
+    // Fetch partnerships when discovery tab is active
+    useEffect(() => {
+        const fetchPartnerships = async () => {
+            if (active === 'discovery' && subChange === 'find') {
+                setLoadingPartners(true);
+                try {
+                    const response = await partnershipService.getAllPartnerships();
+                    if (response.success && response.data) {
+                        // Transform API data to match PartnersItems format
+                        const transformedData = response.data.map(partnership => {
+                            // Kiểm tra partnerType để lấy data từ đúng nguồn
+                            const isFromSponsor = partnership.partnerType === 'Sponsor';
+                            
+                            if (isFromSponsor) {
+                                // Lấy từ Partner's BrandProfile khi partnerType = "Sponsor"
+                                const brandProfile = partnership.partner?.brandProfile;
+                                return {
+                                    id: partnership.id,
+                                    partnerType: partnership.partnerType, // Thêm partnerType
+                                    location: brandProfile?.location || 'N/A',
+                                    forcus: brandProfile?.industry || 'N/A',
+                                    title: brandProfile?.brandName || 'Untitled Brand',
+                                    tags: partnership.preferredContactMethod 
+                                        ? partnership.preferredContactMethod.split(',').map(t => t.trim())
+                                        : [],
+                                    rating: null, // null cho Sponsor
+                                    logo: partnership.partnershipImage || brandProfile?.brandLogo || 'imgs/SaiGon.png',
+                                    summaryPoints: (() => {
+                                        const points = [];
+                                        // Thêm serviceDescription nếu có
+                                        if (partnership.serviceDescription) {
+                                            points.push(partnership.serviceDescription);
+                                        }
+                                        // Thêm initialMessage (split bởi dấu ;) nếu có
+                                        if (partnership.initialMessage) {
+                                            const messages = partnership.initialMessage.split(';').map(s => s.trim()).filter(s => s);
+                                            points.push(...messages);
+                                        }
+                                        return points.length > 0 ? points : ['No information available'];
+                                    })(),
+                                    eventHighlights: [],
+                                    targetAudienceList: [],
+                                    focusAreas: brandProfile?.industry ? [brandProfile.industry] : ['General'],
+                                    averageSponsorship: partnership.proposedBudget 
+                                        ? `${partnership.proposedBudget.toLocaleString()} VND`
+                                        : 'N/A',
+                                    pastEvents: [],
+                                    statuses: [partnership.status || 'Pending', 'Chat now']
+                                };
+                            } else {
+                                // Lấy từ Event data khi partnerType = "Organizer" (logic cũ)
+                                return {
+                                    id: partnership.id,
+                                    partnerType: partnership.partnerType, // Thêm partnerType
+                                    location: partnership.event?.location || 'N/A',
+                                    forcus: partnership.event?.eventType || 'N/A',
+                                    title: partnership.event?.title || 'Untitled Event',
+                                    tags: partnership.event?.tags ? JSON.parse(partnership.event.tags) : [],
+                                    rating: 4.8,
+                                    logo: partnership.partnershipImage || 'imgs/SaiGon.png',
+                                    summaryPoints: [
+                                        partnership.serviceDescription || 'No description available'
+                                    ],
+                                    eventHighlights: partnership.event?.eventHighlights ? JSON.parse(partnership.event.eventHighlights) : [],
+                                    targetAudienceList: partnership.event?.targetAudienceList ? JSON.parse(partnership.event.targetAudienceList) : [],
+                                    focusAreas: partnership.event?.category ? [partnership.event.category] : ['General'],
+                                    averageSponsorship: partnership.proposedBudget 
+                                        ? `${partnership.proposedBudget.toLocaleString()} VND`
+                                        : 'N/A',
+                                    pastEvents: [partnership.event?.title || 'N/A'],
+                                    statuses: [partnership.status || 'Pending', 'Chat now']
+                                };
+                            }
+                        });
+                        setPartnersData(transformedData);
+                    }
+                } catch (error) {
+                    console.error('Error fetching partnerships:', error);
+                    toast.error('Không thể tải danh sách partnerships');
+                } finally {
+                    setLoadingPartners(false);
+                }
+            }
+        };
 
-    // Hàm để hiển thị Event Detail
-    const handleViewEventDetail = (event, index) => {
-        setSelectedEvent(event);
-        setShowEventDetail(true);
-        setTab('eventDetail');
-    };
+        fetchPartnerships();
+    }, [active, subChange]);
 
-    // Hàm để quay lại Event Management
-    const handleBackToEventList = () => {
-        setShowEventDetail(false);
-        setSelectedEvent(null);
-        setTab('event');
-    };
+
 
     const renderContent = () => {
     switch (active) {
@@ -216,33 +214,33 @@ function OrganizerPage() {
         return <Dashboard />;
       case "discovery":
         if(subChange === 'find') {
-            return <PartnersList
-            partnersItem={partnersItem}
-            onMessageClick={handleGoToMessages}
-          />;
+            if (loadingPartners) {
+                return <div className="flex justify-center items-center h-64">Đang tải...</div>;
+            }
+            return (
+                <>
+                    <PartnersFilterBar 
+                        data={partnersData} 
+                        onFilter={setFilteredPartnersData}
+                    />
+                    <PartnersList partnersItem={filteredPartnersData} />
+                </>
+            );
         }else if(subChange === 'saved') {
             return;
         }
         return ;
       case "projects":
-        if(subChange === 'pending') {
-            return;
-        }else if(subChange === 'completed') {
-            return;
-        }
-        return ;
+        return <PaymentHistory />;
       case "messages":
-        return <MessagesPage 
-          initialPartnerId={messagePartnerId}
-          initialPartnerName={messagePartnerName}
-        />;
+        return <MessagesPage />;
       case "ai":
-        return <Chatbot/>;
+        return <Chatbot />;
     case "profile":
          if(subChange === 'brand') {
-            return <BrandProfile/>;
+            return <BrandProfile />;
         }else if(subChange === 'account') {
-            return <AccountSetting/>;
+            return <AccountSetting />;
         }else if(subChange === 'marketing') {
             return;
         }

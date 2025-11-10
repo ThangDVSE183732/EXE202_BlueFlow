@@ -1,5 +1,6 @@
 ﻿using EventLink_Repositories.Models;
 using Eventlink_Services.Interface;
+using Eventlink_Services.Response;
 using Eventlink_Services.Service;
 using MailKit;
 using Microsoft.AspNetCore.Authorization;
@@ -19,25 +20,42 @@ namespace EventLink.Controllers
     public class PartnershipsController : ControllerBase
     {
         private readonly IPartnershipService _partnershipService;
-        //private readonly IUserProfileService _userProfileService;
+        private readonly IUserProfileService _userProfileService;
         private readonly OpenAIService _openAIService;
 
-        //public PartnershipsController(IPartnershipService partnershipService, OpenAIService openAIService, IUserProfileService userProfileService)
-        //{
-        //    _partnershipService = partnershipService;
-        //    _openAIService = openAIService;
-        //    _userProfileService = userProfileService;
-        //}
-
-        public PartnershipsController(IPartnershipService partnershipService, OpenAIService openAIService)
+        public PartnershipsController(IPartnershipService partnershipService, OpenAIService openAIService, IUserProfileService userProfileService)
         {
             _partnershipService = partnershipService;
             _openAIService = openAIService;
+            _userProfileService = userProfileService;
         }
 
+        /// <summary>
+        /// GET: api/Partnerships
+        /// Get all partnerships in the system with event and partner details
+        /// </summary>
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<PartnershipResponse>>> GetAllPartnerships()
+        {
+            var partnerships = await _partnershipService.GetAllPartnershipsAsync();
+
+            return Ok(new
+            {
+                success = true,
+                message = "All partnerships retrieved successfully",
+                data = partnerships,
+                count = partnerships.Count()
+            });
+        }
+
+        /// <summary>
+        /// POST: api/Partnerships
+        /// Create partnership with file upload support (FormData)
+        /// </summary>
         [HttpPost]
         //[Authorize(Roles = "Organizer")]
-        public async Task<IActionResult> CreatePartnership([FromBody] CreatePartnershipRequest request)
+        public async Task<IActionResult> CreatePartnership([FromForm] CreatePartnershipFormRequest request)
         {
             var userId = Guid.Parse(User.FindFirst("UserId").Value);
 
@@ -56,11 +74,99 @@ namespace EventLink.Controllers
             });
         }
 
+        /// <summary>
+        /// PUT: api/Partnerships/{eventId}/toggle-status
+        /// Toggle partnership status between Ongoing and Pending by EventId
+        /// </summary>
+        [HttpPut("{eventId}/toggle-status")]
+        public async Task<IActionResult> TogglePartnershipStatus(Guid eventId)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirst("UserId").Value);
+
+                if (userId == Guid.Empty)
+                {
+                    return Unauthorized(new { success = false, message = "User not authenticated" });
+                }
+
+                var result = await _partnershipService.TogglePartnershipStatusByEventAsync(eventId);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = $"Partnership status toggled to {result.Status}",
+                    data = new
+                    {
+                        partnershipId = result.Id,
+                        eventId = result.EventId,
+                        status = result.Status,
+                        previousStatus = result.Status == PartnershipStatus.Ongoing 
+                            ? PartnershipStatus.Pending 
+                            : PartnershipStatus.Ongoing
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new 
+                { 
+                    success = false, 
+                    message = $"Error toggling partnership status: {ex.Message}" 
+                });
+            }
+        }
+
+        /// <summary>
+        /// PUT: api/Partnerships/partner/{partnerId}/toggle-status
+        /// Toggle partnership status between Ongoing and Pending by PartnerId
+        /// ✅ NEW: Toggle status for a specific partner's partnership
+        /// </summary>
+        [HttpPut("partner/{partnerId}/toggle-status")]
+        public async Task<IActionResult> TogglePartnershipStatusByPartner(Guid partnerId)
+        {
+            try
+            {
+                var userId = Guid.Parse(User.FindFirst("UserId").Value);
+
+                if (userId == Guid.Empty)
+                {
+                    return Unauthorized(new { success = false, message = "User not authenticated" });
+                }
+
+                var result = await _partnershipService.TogglePartnershipStatusByPartnerAsync(partnerId);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = $"Partnership status toggled to {result.Status}",
+                    data = new
+                    {
+                        partnershipId = result.Id,
+                        partnerId = result.PartnerId,
+                        eventId = result.EventId,
+                        status = result.Status,
+                        previousStatus = result.Status == PartnershipStatus.Ongoing 
+                            ? PartnershipStatus.Pending 
+                            : PartnershipStatus.Ongoing
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new 
+                { 
+                    success = false, 
+                    message = $"Error toggling partnership status: {ex.Message}" 
+                });
+            }
+        }
+
         [HttpPut("{id}/status")]
         //[Authorize(Roles = "Partner")]
         public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdatePartnershipStatusRequest request)
         {
-            var result = await _partnershipService.UpdateStatusAsync(id, request.Status, request.OrganizerResponse);
+            var result = await _partnershipService.UpdateStatusAsync(id, request);
 
             return Ok(new
             {
@@ -82,10 +188,28 @@ namespace EventLink.Controllers
             });
         }
 
+        /// <summary>
+        /// GET: api/Partnerships/{eventId}/partners
+        /// Get all partnerships with event and partner details for a specific event
+        /// </summary>
         [HttpGet("{eventId}/partners")]
-        public async Task<IEnumerable<User>> GetPartnersByEventAsync(Guid eventId)
+        [AllowAnonymous]
+        public async Task<ActionResult<IEnumerable<PartnershipResponse>>> GetPartnershipsByEventAsync(Guid eventId)
         {
-            return await _partnershipService.GetPartnersByEventAsync(eventId);
+            var partnerships = await _partnershipService.GetPartnershipsByEventAsync(eventId);
+
+            return Ok(new
+            {
+                success = true,
+                message = "Partnerships retrieved successfully",
+                data = partnerships,
+                count = partnerships.Count()
+            });
         }
+
+        
+
+        
+        
     }
 }

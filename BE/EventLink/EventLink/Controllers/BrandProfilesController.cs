@@ -25,7 +25,15 @@ namespace EventLink.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<BrandProfileResponse>>> GetBrandProfiles()
         {
-            return await _brandProfileService.GetAllAsync();
+            var brandProfiles = await _brandProfileService.GetAllAsync();
+            
+            return Ok(new
+            {
+                success = true,
+                message = "Brand profiles retrieved successfully",
+                data = brandProfiles,
+                count = brandProfiles.Count
+            });
         }
 
         // GET: api/BrandProfiles/5
@@ -36,21 +44,41 @@ namespace EventLink.Controllers
 
             if (brandProfile == null)
             {
-                return NotFound();
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Brand profile not found"
+                });
             }
 
-            return brandProfile;
+            return Ok(new
+            {
+                success = true,
+                message = "Brand profile retrieved successfully",
+                data = brandProfile
+            });
         }
 
         [HttpGet("brand_profile_by_userid/{userId}")]
         public async Task<ActionResult<BrandProfileResponse>> GetBrandProfileByUserId(Guid userId)
         {
             var brandProfile = await _brandProfileService.GetByUserIdAsync(userId);
+            
             if (brandProfile == null)
             {
-                return NotFound();
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Brand profile not found for this user"
+                });
             }
-            return brandProfile;
+            
+            return Ok(new
+            {
+                success = true,
+                message = "Brand profile retrieved successfully",
+                data = brandProfile
+            });
         }
 
         // PUT: api/BrandProfiles/5
@@ -58,7 +86,7 @@ namespace EventLink.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutBrandProfile(Guid id, UpdateBrandProfileRequest request)
         {
-            var existingProfile = await _brandProfileService.GetByIdAsync(id);
+            var existingProfile = await _brandProfileService.GetByUserIdAsync(id);
             if (existingProfile == null)
             {
                 return NotFound();
@@ -107,6 +135,121 @@ namespace EventLink.Controllers
                 success = true,
                 data = brandProfile
             });
+        }
+
+        /// <summary>
+        /// PATCH: api/BrandProfiles/{id}/toggle-status
+        /// Toggle BrandProfile visibility status (IsPublic) by BrandProfile ID
+        /// </summary>
+        [HttpPatch("{id}/toggle-status")]
+        public async Task<IActionResult> ToggleBrandProfileStatus(Guid id)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst("UserId")?.Value;
+
+                if (userIdClaim == null || !Guid.TryParse(userIdClaim, out Guid userId))
+                {
+                    return Unauthorized(new 
+                    { 
+                        success = false, 
+                        message = "User not authenticated" 
+                    });
+                }
+
+                // ✅ Check if brand profile exists first
+                var existingProfile = await _brandProfileService.GetByIdAsync(id);
+                if (existingProfile == null)
+                {
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = "Brand profile not found"
+                    });
+                }
+
+                // ✅ Toggle status by brand profile ID
+                var result = await _brandProfileService.ToggleBrandProfileStatusByIdAsync(id);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = $"Brand profile visibility toggled to {(result.IsPublic == true ? "Public" : "Private")}",
+                    data = new
+                    {
+                        brandProfileId = id,
+                        isPublic = result.IsPublic,
+                        previousStatus = !(result.IsPublic ?? false)
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new 
+                { 
+                    success = false, 
+                    message = $"Error toggling brand profile status: {ex.Message}" 
+                });
+            }
+        }
+
+        /// <summary>
+        /// PATCH: api/BrandProfiles/{id}/toggle-all-status
+        /// Toggle both IsPublic and HasPartnership status by BrandProfile ID
+        /// ✅ NEW: Toggle both visibility and partnership status at once
+        /// </summary>
+        [HttpPatch("{id}/toggle-all-status")]
+        public async Task<IActionResult> ToggleBrandProfileAllStatus(Guid id)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst("UserId")?.Value;
+
+                if (userIdClaim == null || !Guid.TryParse(userIdClaim, out Guid userId))
+                {
+                    return Unauthorized(new 
+                    { 
+                        success = false, 
+                        message = "User not authenticated" 
+                    });
+                }
+
+                // ✅ Check if brand profile exists first
+                var existingProfile = await _brandProfileService.GetByIdAsync(id);
+                if (existingProfile == null)
+                {
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = "Brand profile not found"
+                    });
+                }
+
+                // ✅ Toggle both statuses by brand profile ID
+                var result = await _brandProfileService.ToggleBrandProfileAllStatusAsync(id);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Brand profile status toggled successfully",
+                    data = new
+                    {
+                        brandProfileId = id,
+                        isPublic = result.IsPublic,
+                        hasPartnership = result.HasPartnership,
+                        previousIsPublic = !(result.IsPublic ?? false),
+                        previousHasPartnership = !(result.HasPartnership ?? false)
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new 
+                { 
+                    success = false, 
+                    message = $"Error toggling brand profile status: {ex.Message}" 
+                });
+            }
         }
 
         private bool BrandProfileExists(Guid id)

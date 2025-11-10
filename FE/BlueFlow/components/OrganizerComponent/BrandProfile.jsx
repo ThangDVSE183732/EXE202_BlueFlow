@@ -1,21 +1,58 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Edit, Plus, Upload, Check, X } from 'lucide-react';
 import { useBrandProfile } from '../../hooks/useBrandProfile';
+import Loading from '../Loading';
 
 const BrandProfile = () => {
   const { brandData, setBrandData, loading, error, updateBrandProfile } = useBrandProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState(brandData);
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
 
   // Sync editedData với brandData khi brandData thay đổi
   React.useEffect(() => {
     setEditedData(brandData);
   }, [brandData]);
 
+  // Cleanup preview URL on unmount
+  React.useEffect(() => {
+    return () => {
+      if (logoPreview && logoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(logoPreview);
+      }
+    };
+  }, [logoPreview]);
+
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Vui lòng chọn file ảnh');
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Kích thước ảnh không được vượt quá 2MB');
+      return;
+    }
+
+    // Create preview
+    const previewUrl = URL.createObjectURL(file);
+    setLogoPreview(previewUrl);
+    setLogoFile(file);
+  };
+
   const handleSave = async () => {
     try {
-      await updateBrandProfile(editedData);
+      await updateBrandProfile(editedData, logoFile);
       setIsEditing(false);
+      // Clear logo file after save
+      setLogoFile(null);
     } catch (error) {
       console.error('Failed to save:', error);
       
@@ -73,14 +110,7 @@ const BrandProfile = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white p-6 pt-1 overflow-x-hidden flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading brand profile...</p>
-        </div>
-      </div>
-    );
+    return <Loading message="Đang tải thông tin thương hiệu..." />;
   }
 
   // Hiển thị error nếu có
@@ -130,17 +160,31 @@ const BrandProfile = () => {
               Edit
             </button>
           )}
-          <button className="w-6 h-6 flex items-center justify-center text-white hover:bg-white/10 rounded-full transition-colors">
+          <label className="w-6 h-6 flex items-center justify-center text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer" title="Upload logo">
             <Upload size={14} />
-          </button>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoUpload}
+              className="hidden"
+            />
+          </label>
         </div>
 
         {/* Logo and Company Info - Left */}
         <div className="flex items-center space-x-5 mb-6 mt-5 min-w-0 w-full max-w-[calc(100%-8rem)]">
-          <div className="w-26 h-26 bg-white rounded-full flex items-center justify-center flex-shrink-0">
-            <span className="text-2xl font-bold text-gray-800">
-              {editedData.companyName ? editedData.companyName.substring(0, 2).toUpperCase() : 'TC'}
-            </span>
+          <div className="w-26 h-26 bg-white rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {(logoPreview || brandData.brandLogo) ? (
+              <img 
+                src={logoPreview || brandData.brandLogo} 
+                alt="Company Logo" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-2xl font-bold text-gray-800">
+                {editedData.companyName ? editedData.companyName.substring(0, 2).toUpperCase() : 'TC'}
+              </span>
+            )}
           </div>
           <div className='text-left min-w-0 flex-1 overflow-hidden'>
             {isEditing ? (
@@ -157,13 +201,13 @@ const BrandProfile = () => {
             {isEditing ? (
               <input
                 type="text"
-                value={editedData.tagline}
+                value={editedData.companyInfo.industry}
                 onChange={(e) => handleInputChange('tagline', e.target.value)}
                 className="text-white text-sm mb-0.5 bg-transparent border-b border-white/50 focus:outline-none w-full min-w-0"
-                title={editedData.tagline}
+                title={editedData.companyInfo.industry}
               />
             ) : (
-              <p className="text-white text-sm mb-0.5 truncate min-w-0" title={editedData.tagline}>{editedData.tagline}</p>
+              <p className="text-white text-sm mb-0.5 truncate min-w-0" title={editedData.companyInfo.industry}>{editedData.companyInfo.industry}</p>
             )}
             {isEditing ? (
               <input

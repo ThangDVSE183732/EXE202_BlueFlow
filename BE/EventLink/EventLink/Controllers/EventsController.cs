@@ -8,6 +8,8 @@ using Eventlink_Services.Interface;
 using Eventlink_Services.Request;
 using Eventlink_Services.Response;
 using static Eventlink_Services.Request.EventRequest;
+using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
 
 namespace EventLink.Controllers
 {
@@ -17,28 +19,22 @@ namespace EventLink.Controllers
     public class EventsController : ControllerBase
     {
         private readonly IEventService _eventService;
-        private readonly IEventProposalService _eventProposalService;
 
-        public EventsController(
-            IEventService eventService,
-            IEventProposalService eventProposalService)
+        public EventsController(IEventService eventService)
         {
             _eventService = eventService;
-            _eventProposalService = eventProposalService;
         }
 
-        #region Existing Endpoints
+        #region Basic CRUD
 
         /// <summary>
-        /// GET: api/Events
-        /// Get all events (public)
+        /// GET: api/Events - Get all events (Public)
         /// </summary>
         [HttpGet]
         [AllowAnonymous]
         public async Task<ActionResult<IEnumerable<EventResponse>>> GetEvents()
         {
             var events = await _eventService.GetAllEventsAsync();
-
             return Ok(new
             {
                 success = true,
@@ -49,287 +45,38 @@ namespace EventLink.Controllers
         }
 
         /// <summary>
-        /// GET: api/Events/5
-        /// Get single event (basic info)
+        /// GET: api/Events/{id} - Get single event (Public)
         /// </summary>
         [HttpGet("{id}")]
         [AllowAnonymous]
         public async Task<ActionResult<EventResponse>> GetEvent(Guid id)
         {
             var @event = await _eventService.GetEventByIdAsync(id);
-
             if (@event == null)
             {
-                return NotFound(new
-                {
-                    success = false,
-                    message = "Event not found"
-                });
+                return NotFound(new { success = false, message = "Event not found" });
             }
 
-            return Ok(new
-            {
-                success = true,
-                message = "Event retrieved successfully",
-                data = @event
-            });
+            return Ok(new { success = true, message = "Event retrieved successfully", data = @event });
         }
 
-        /// <summary>
-        /// POST: api/Events
-        /// Create event (Organizer only)
-        /// </summary>
-        [HttpPost]
-        [Consumes("multipart/form-data")]
-        [Authorize(Policy = "OrganizerOnly")]
-        public async Task<ActionResult<EventResponse>> PostEvent([FromForm] CreateEventRequest request)
+
+        [HttpGet("{id}/UserId")]
+        [AllowAnonymous]
+        public async Task<ActionResult<EventResponse>> GetEventByUserId(Guid id)
         {
-            try
+            var @event = await _eventService.GetEventsByOrganizerIdAsync(id);
+            if (@event == null)
             {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(new
-                    {
-                        success = false,
-                        message = "Validation failed",
-                        errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
-                    });
-                }
-
-                var userId = GetCurrentUserId();
-                if (!userId.HasValue)
-                {
-                    return Unauthorized(new
-                    {
-                        success = false,
-                        message = "User not authenticated"
-                    });
-                }
-
-                // Validate dates
-                if (request.EndDate < request.EventDate)
-                {
-                    return BadRequest(new
-                    {
-                        success = false,
-                        message = "End date cannot be earlier than start date"
-                    });
-                }
-
-                if (request.EventDate < DateTime.UtcNow)
-                {
-                    return BadRequest(new
-                    {
-                        success = false,
-                        message = "Event date cannot be in the past"
-                    });
-                }
-
-                await _eventService.Create(userId.Value, request);
-
-                return Ok(new
-                {
-                    success = true,
-                    message = "Event created successfully",
-                    data = request
-                });
+                return NotFound(new { success = false, message = "Event not found" });
             }
-            catch (Exception ex)
-            {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = $"Error creating event: {ex.Message}"
-                });
-            }
+
+            return Ok(new { success = true, message = "Event retrieved successfully", data = @event });
         }
 
         /// <summary>
-        /// PUT: api/Events/5
-        /// Update event (Organizer only)
-        /// </summary>
-        [HttpPut("{id}")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> PutEvent(Guid id, [FromForm] UpdateEventRequest request)
-        {
-            try
-            {
-                var userId = GetCurrentUserId();
-                if (!userId.HasValue)
-                {
-                    return Unauthorized(new
-                    {
-                        success = false,
-                        message = "User not authenticated"
-                    });
-                }
-
-                // Check permission
-                var canEdit = await _eventService.CanUserEditEventAsync(id, userId.Value);
-                if (!canEdit)
-                {
-                    return Forbid("Only event organizer can edit this event");
-                }
-
-                var existingEvent = await _eventService.GetEventById(id);
-                if (existingEvent == null)
-                {
-                    return NotFound(new
-                    {
-                        success = false,
-                        message = "Event not found"
-                    });
-                }
-
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(new
-                    {
-                        success = false,
-                        message = "Validation failed",
-                        errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
-                    });
-                }
-
-                await _eventService.Update(id, request);
-
-                return Ok(new
-                {
-                    success = true,
-                    message = "Event updated successfully"
-                });
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFound(new
-                {
-                    success = false,
-                    message = "Event not found"
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = $"Error updating event: {ex.Message}"
-                });
-            }
-        }
-
-        /// <summary>
-        /// PUT: api/Events/5/status
-        /// Update event status (Organizer only)
-        /// </summary>
-        [HttpPut("{id}/status")]
-        public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] string status)
-        {
-            try
-            {
-                var userId = GetCurrentUserId();
-                if (!userId.HasValue)
-                {
-                    return Unauthorized(new
-                    {
-                        success = false,
-                        message = "User not authenticated"
-                    });
-                }
-
-                var canEdit = await _eventService.CanUserEditEventAsync(id, userId.Value);
-                if (!canEdit)
-                {
-                    return Forbid("Only event organizer can update status");
-                }
-
-                var existingEvent = await _eventService.GetEventById(id);
-                if (existingEvent == null)
-                {
-                    return NotFound(new
-                    {
-                        success = false,
-                        message = "Event not found"
-                    });
-                }
-
-                await _eventService.UpdateStatus(id, status);
-
-                return Ok(new
-                {
-                    success = true,
-                    message = "Event status updated successfully"
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = $"Error updating status: {ex.Message}"
-                });
-            }
-        }
-
-        /// <summary>
-        /// DELETE: api/Events/5
-        /// Delete event (Organizer only)
-        /// </summary>
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteEvent(Guid id)
-        {
-            try
-            {
-                var userId = GetCurrentUserId();
-                if (!userId.HasValue)
-                {
-                    return Unauthorized(new
-                    {
-                        success = false,
-                        message = "User not authenticated"
-                    });
-                }
-
-                var canEdit = await _eventService.CanUserEditEventAsync(id, userId.Value);
-                if (!canEdit)
-                {
-                    return Forbid("Only event organizer can delete this event");
-                }
-
-                var @event = await _eventService.GetEventById(id);
-                if (@event == null)
-                {
-                    return NotFound(new
-                    {
-                        success = false,
-                        message = "Event not found"
-                    });
-                }
-
-                _eventService.Remove(@event);
-
-                return Ok(new
-                {
-                    success = true,
-                    message = "Event deleted successfully"
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = $"Error deleting event: {ex.Message}"
-                });
-            }
-        }
-
-        #endregion
-
-        #region New Enhanced Endpoints
-
-        /// <summary>
-        /// GET: api/Events/5/detail
-        /// Get complete event details with timeline and proposals
+        /// GET: api/Events/{id}/detail - Get complete event with timeline & proposals (Public)
+        /// ✅ This returns EventDetailDto with timeline included!
         /// </summary>
         [HttpGet("{id}/detail")]
         [AllowAnonymous]
@@ -349,31 +96,17 @@ namespace EventLink.Controllers
             }
             catch (KeyNotFoundException)
             {
-                return NotFound(new
-                {
-                    success = false,
-                    message = "Event not found"
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = $"Error retrieving event detail: {ex.Message}"
-                });
+                return NotFound(new { success = false, message = "Event not found" });
             }
         }
 
         /// <summary>
-        /// POST: api/Events/with-timeline
-        /// Create event with initial timeline activities (Organizer only)
+        /// POST: api/Events - Create event (FormData with file upload) - Organizer only
+        /// ✅ Changed to accept FormData for CoverImage upload
         /// </summary>
-        [HttpPost("with-timeline")]
-        [Consumes("multipart/form-data")]
+        [HttpPost]
         [Authorize(Policy = "OrganizerOnly")]
-        public async Task<ActionResult<EventDetailDto>> CreateEventWithTimeline(
-            [FromForm] CreateEventWithDetailsRequest request)
+        public async Task<ActionResult> PostEvent([FromForm] CreateEventFormRequest formRequest)
         {
             try
             {
@@ -390,65 +123,49 @@ namespace EventLink.Controllers
                 var userId = GetCurrentUserId();
                 if (!userId.HasValue)
                 {
-                    return Unauthorized(new
-                    {
-                        success = false,
-                        message = "User not authenticated"
-                    });
+                    return Unauthorized(new { success = false, message = "User not authenticated" });
                 }
 
                 // Validate dates
-                if (request.EndDate < request.EventDate)
+                if (formRequest.EndDate < formRequest.EventDate)
                 {
-                    return BadRequest(new
-                    {
-                        success = false,
-                        message = "End date cannot be earlier than start date"
-                    });
+                    return BadRequest(new { success = false, message = "End date cannot be earlier than start date" });
                 }
 
-                var eventDetail = await _eventService.CreateEventWithDetailsAsync(userId.Value, request);
+                if (formRequest.EventDate < DateTime.UtcNow)
+                {
+                    return BadRequest(new { success = false, message = "Event date cannot be in the past" });
+                }
 
-                return CreatedAtAction(
-                    nameof(GetEventDetail),
-                    new { id = eventDetail.Id },
-                    new
-                    {
-                        success = true,
-                        message = "Event with timeline created successfully",
-                        data = eventDetail
-                    });
+                // ✅ Create returns EventResponse with Id
+                var createdEvent = await _eventService.CreateWithFormData(userId.Value, formRequest);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Event created successfully",
+                    data = createdEvent
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = $"Error creating event: {ex.Message}"
-                });
+                return BadRequest(new { success = false, message = $"Error creating event: {ex.Message}" });
             }
         }
 
         /// <summary>
-        /// PUT: api/Events/5/with-timeline
-        /// Update event and replace timeline activities (Organizer only)
+        /// PUT: api/Events/{id} - Update event (FormData with file upload) - Organizer only
+        /// ✅ Changed to accept FormData for CoverImage upload
         /// </summary>
-        [HttpPut("{id}/with-timeline")]
-        [Consumes("multipart/form-data")]
-        public async Task<ActionResult<EventDetailDto>> UpdateEventWithTimeline(
-            Guid id,
-            [FromForm] UpdateEventWithDetailsRequest request)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutEvent(Guid id, [FromForm] UpdateEventFormRequest formRequest)
         {
             try
             {
                 var userId = GetCurrentUserId();
                 if (!userId.HasValue)
                 {
-                    return Unauthorized(new
-                    {
-                        success = false,
-                        message = "User not authenticated"
-                    });
+                    return Unauthorized(new { success = false, message = "User not authenticated" });
                 }
 
                 var canEdit = await _eventService.CanUserEditEventAsync(id, userId.Value);
@@ -457,6 +174,12 @@ namespace EventLink.Controllers
                     return Forbid("Only event organizer can edit this event");
                 }
 
+                var existingEvent = await _eventService.GetEventById(id);
+                if (existingEvent == null)
+                {
+                    return NotFound(new { success = false, message = "Event not found" });
+                }
+
                 if (!ModelState.IsValid)
                 {
                     return BadRequest(new
@@ -467,83 +190,176 @@ namespace EventLink.Controllers
                     });
                 }
 
-                var eventDetail = await _eventService.UpdateEventWithDetailsAsync(id, userId.Value, request);
+                await _eventService.UpdateWithFormData(id, formRequest);
 
-                return Ok(new
-                {
-                    success = true,
-                    message = "Event with timeline updated successfully",
-                    data = eventDetail
-                });
+                return Ok(new { success = true, message = "Event updated successfully" });
             }
             catch (KeyNotFoundException)
             {
-                return NotFound(new
-                {
-                    success = false,
-                    message = "Event not found"
-                });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
+                return NotFound(new { success = false, message = "Event not found" });
             }
             catch (Exception ex)
             {
-                return BadRequest(new
-                {
-                    success = false,
-                    message = $"Error updating event: {ex.Message}"
-                });
+                return BadRequest(new { success = false, message = $"Error updating event: {ex.Message}" });
             }
         }
 
         /// <summary>
-        /// GET: api/Events/5/proposals
-        /// Get all proposals for an event
-        /// Organizer sees all, others see only own proposals
+        /// DELETE: api/Events/{id} - Delete event - Organizer only
         /// </summary>
-        [HttpGet("{id}/proposals")]
-        public async Task<ActionResult<IEnumerable<EventProposalDetailDto>>> GetEventProposals(Guid id)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteEvent(Guid id)
         {
             try
             {
                 var userId = GetCurrentUserId();
                 if (!userId.HasValue)
                 {
-                    return Unauthorized(new
-                    {
-                        success = false,
-                        message = "User not authenticated"
-                    });
+                    return Unauthorized(new { success = false, message = "User not authenticated" });
                 }
 
-                var proposals = await _eventProposalService.GetProposalsByEventIdAsync(id);
-
-                // Check if user is organizer
-                var isOrganizer = await _eventService.CanUserEditEventAsync(id, userId.Value);
-
-                // Filter proposals if not organizer
-                if (!isOrganizer)
+                var canEdit = await _eventService.CanUserEditEventAsync(id, userId.Value);
+                if (!canEdit)
                 {
-                    proposals = proposals.Where(p => p.ProposedBy == userId.Value).ToList();
+                    return Forbid("Only event organizer can delete this event");
                 }
+
+                var existingEvent = await _eventService.GetEventById(id);
+                if (existingEvent == null)
+                {
+                    return NotFound(new { success = false, message = "Event not found" });
+                }
+
+                _eventService.Remove(existingEvent);
+
+                return Ok(new { success = true, message = "Event deleted successfully" });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { success = false, message = "Event not found" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = $"Error deleting event: {ex.Message}" });
+            }
+        }
+
+        /// <summary>
+        /// PATCH: api/Events/{id}/visibility - Toggle event visibility (isPublic) - Organizer only
+        /// Automatically switches between Public and Private
+        /// </summary>
+        [HttpPatch("{id}/visibility")]
+        public async Task<IActionResult> UpdateEventVisibility(Guid id)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                {
+                    return Unauthorized(new { success = false, message = "User not authenticated" });
+                }
+
+                var canEdit = await _eventService.CanUserEditEventAsync(id, userId.Value);
+                if (!canEdit)
+                {
+                    return Forbid("Only event organizer can update event visibility");
+                }
+
+                var existingEvent = await _eventService.GetEventById(id);
+                if (existingEvent == null)
+                {
+                    return NotFound(new { success = false, message = "Event not found" });
+                }
+
+                // ✅ Toggle: Nếu Public → Private, nếu Private → Public
+                var newVisibility = !(existingEvent.IsPublic ?? true);
+                
+                await _eventService.UpdateEventVisibilityAsync(id, newVisibility);
 
                 return Ok(new
                 {
                     success = true,
-                    message = "Proposals retrieved successfully",
-                    data = proposals,
-                    count = proposals.Count
+                    message = $"Event visibility toggled to {(newVisibility ? "Public" : "Private")}",
+                    data = new
+                    {
+                        eventId = id,
+                        isPublic = newVisibility,
+                        previousState = existingEvent.IsPublic ?? true
+                    }
                 });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { success = false, message = "Event not found" });
             }
             catch (Exception ex)
             {
-                return BadRequest(new
+                return BadRequest(new { success = false, message = $"Error updating event visibility: {ex.Message}" });
+            }
+        }
+
+
+
+        
+        /// <summary>
+        /// PATCH: api/Events/{id}/status - Toggle both visibility AND featured status - Organizer only
+        /// Automatically toggles BOTH IsPublic and IsFeatured at the same time
+        /// </summary>
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateEventStatus(Guid id)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
                 {
-                    success = false,
-                    message = $"Error retrieving proposals: {ex.Message}"
+                    return Unauthorized(new { success = false, message = "User not authenticated" });
+                }
+
+                var canEdit = await _eventService.CanUserEditEventAsync(id, userId.Value);
+                if (!canEdit)
+                {
+                    return Forbid("Only event organizer can update event status");
+                }
+
+                var existingEvent = await _eventService.GetEventById(id);
+                if (existingEvent == null)
+                {
+                    return NotFound(new { success = false, message = "Event not found" });
+                }
+
+                // ✅ Toggle BOTH properties
+                var newVisibility = !(existingEvent.IsPublic ?? true);
+                var newFeaturedStatus = !(existingEvent.IsFeatured ?? false);
+
+                // Update both
+                await _eventService.UpdateEventVisibilityAsync(id, newVisibility);
+                await _eventService.UpdateEventFeaturedAsync(id, newFeaturedStatus);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Event status toggled successfully",
+                    data = new
+                    {
+                        eventId = id,
+                        isPublic = newVisibility,
+                        isFeatured = newFeaturedStatus,
+                        changes = new
+                        {
+                            previousVisibility = existingEvent.IsPublic ?? true,
+                            previousFeatured = existingEvent.IsFeatured ?? false
+                        }
+                    }
                 });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { success = false, message = "Event not found" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = $"Error updating event status: {ex.Message}" });
             }
         }
 

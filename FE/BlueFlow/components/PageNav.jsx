@@ -38,25 +38,25 @@ function PageNav() {
   }, []);
 
   return (
-    <nav className="flex bg-white h-18 items-center justify-around" style={{fontFamily: 'Space Grotesk, sans-serif'}}>
+    <nav className="flex bg-white h-18 items-center justify-around border-b-1 border-blue-400" style={{fontFamily: 'Space Grotesk, sans-serif'}}>
       <Logo />
       <SearchBar button={"left-41"}/>
 
       <ul className="flex w-md justify-between">
         <li>
-          <NavLink to="/">About Us</NavLink>
+          <NavLink to="/">Giới thiệu</NavLink>
         </li>
 
         <li>
-          <NavLink to="/">Services</NavLink>
+          <NavLink to="/pricing">Trả phí</NavLink>
         </li>
 
         <li>
-          <NavLink to="/">Contact</NavLink>
+          <NavLink to="/">Liên hệ</NavLink>
         </li>
 
         <li>
-          <NavLink to="/">Help Center</NavLink>
+          <NavLink to="/">Trợ giúp</NavLink>
         </li>
       </ul>
       
@@ -66,9 +66,13 @@ function PageNav() {
             className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
             onClick={() => setShowDropdown(!showDropdown)}
           >
-            <div className="w-10 h-10 bg-blue-400 rounded-full flex items-center justify-center">
-              {user?.avatar ? (
-                <img src={user.avatar} alt="Profile" className="w-full h-full rounded-full object-cover" />
+            <div className="w-10 h-10 bg-blue-400 rounded-full flex items-center justify-center overflow-hidden">
+              {(user?.companyLogoUrl || user?.avatar) ? (
+                <img 
+                  src={user?.companyLogoUrl || user?.avatar} 
+                  alt="Profile" 
+                  className="w-full h-full object-cover" 
+                />
               ) : (
                 <User size={20} className="text-white" />
               )}
@@ -113,10 +117,10 @@ function PageNav() {
       ) : (
         <div className="flex space-x-1">
           <button onClick={handleLoginClick} className="bg-blue-400 text-white rounded-full px-3.5 py-0.5">
-            Login
+            Đăng nhập
           </button>
           <button onClick={handleSignUpClick} className="bg-white text-blue-400 border-1 border-blue-400 rounded-full px-3.5 py-0.5">
-            Sign Up
+            Đăng ký
           </button>
         </div>
       )}

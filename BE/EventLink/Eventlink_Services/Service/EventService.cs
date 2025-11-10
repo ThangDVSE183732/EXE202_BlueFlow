@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using static EventLink_Repositories.Models.Event;
 using static Eventlink_Services.Request.EventRequest;
 
 namespace Eventlink_Services.Service
@@ -83,14 +82,13 @@ namespace Eventlink_Services.Service
             return events.Select(MapToResponse).ToList();
         }
 
-
         public async Task<List<EventResponse>> SearchEvents(string name, string location, DateTime? startDate, DateTime? endDate, string eventType)
         {
             var events = await _eventRepository.SearchEvents(name, location, startDate, endDate, eventType);
             return events.Select(MapToResponse).ToList();
         }
 
-        public async Task Create(Guid userId, CreateEventRequest request)
+        public async Task<EventResponse> Create(Guid userId, CreateEventRequest request)
         {
             var newEvent = new Event
             {
@@ -113,33 +111,45 @@ namespace Eventlink_Services.Service
                 SpecialRequirements = request.SpecialRequirements,
                 IsPublic = true,
                 IsFeatured = false,
-                Status = EventStatus.Draft,
+                Status = "Draft",
                 ViewCount = 0,
                 InterestedCount = 0,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
 
-            // Upload cover image
-            if (request.CoverImageUrl != null)
+            // Set Overview fields
+            if (request.EventHighlights != null && request.EventHighlights.Count > 0)
             {
-                var coverUrl = await _cloudinaryService.UploadImageAsync(request.CoverImageUrl);
-                newEvent.CoverImageUrl = coverUrl;
+                newEvent.EventHighlights = JsonSerializer.Serialize(request.EventHighlights);
             }
 
-            // Upload event images
+            if (request.Tags != null && request.Tags.Count > 0)
+            {
+                newEvent.Tags = JsonSerializer.Serialize(request.Tags);
+            }
+
+            if (request.TargetAudienceList != null && request.TargetAudienceList.Count > 0)
+            {
+                newEvent.TargetAudienceList = JsonSerializer.Serialize(request.TargetAudienceList);
+            }
+
+            // Handle cover image
+            if (!string.IsNullOrEmpty(request.CoverImageUrl))
+            {
+                newEvent.CoverImageUrl = request.CoverImageUrl;
+            }
+
+            // Handle event images
             if (request.EventImages != null && request.EventImages.Any())
             {
-                var urls = new List<string>();
-                foreach (var image in request.EventImages)
-                {
-                    var url = await _cloudinaryService.UploadImageAsync(image);
-                    urls.Add(url);
-                }
-                newEvent.EventImages = JsonSerializer.Serialize(urls);
+                newEvent.EventImages = JsonSerializer.Serialize(request.EventImages);
             }
 
             await _eventRepository.AddAsync(newEvent);
+            
+            // ✅ Return EventResponse with the new Id
+            return MapToResponse(newEvent);
         }
 
         public async Task Update(Guid id, UpdateEventRequest request)
@@ -166,35 +176,49 @@ namespace Eventlink_Services.Service
             existingEvent.SpecialRequirements = request.SpecialRequirements;
             existingEvent.UpdatedAt = DateTime.UtcNow;
 
-            // Handle images
-            var existingImages = new List<string>();
-            if (!string.IsNullOrEmpty(existingEvent.EventImages))
+            // Update Overview fields
+            if (request.EventHighlights != null)
             {
-                try
-                {
-                    existingImages = JsonSerializer.Deserialize<List<string>>(existingEvent.EventImages) ?? new List<string>();
-                }
-                catch
-                {
-                    existingImages = existingEvent.EventImages.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
-                }
+                existingEvent.EventHighlights = JsonSerializer.Serialize(request.EventHighlights);
             }
 
+            if (request.Tags != null)
+            {
+                existingEvent.Tags = JsonSerializer.Serialize(request.Tags);
+            }
+
+            if (request.TargetAudienceList != null)
+            {
+                existingEvent.TargetAudienceList = JsonSerializer.Serialize(request.TargetAudienceList);
+            }
+
+            // Handle cover image
+            if (!string.IsNullOrEmpty(request.CoverImageUrl))
+            {
+                existingEvent.CoverImageUrl = request.CoverImageUrl;
+            }
+
+            // Handle event images
             if (request.NewImages != null && request.NewImages.Any())
             {
-                foreach (var image in request.NewImages)
+                var existingImages = new List<string>();
+                if (!string.IsNullOrEmpty(existingEvent.EventImages))
                 {
-                    var newUrl = await _cloudinaryService.UploadImageAsync(image);
-                    existingImages.Add(newUrl);
+                    try
+                    {
+                        existingImages = JsonSerializer.Deserialize<List<string>>(existingEvent.EventImages) ?? new List<string>();
+                    }
+                    catch
+                    {
+                        existingImages = new List<string>();
+                    }
                 }
+
+                // Add new images
+                existingImages.AddRange(request.NewImages);
+                existingEvent.EventImages = JsonSerializer.Serialize(existingImages);
             }
 
-            if (request.ExistingImages != null && request.ExistingImages.Any())
-            {
-                existingImages = existingImages.Where(img => request.ExistingImages.Contains(img)).ToList();
-            }
-
-            existingEvent.EventImages = JsonSerializer.Serialize(existingImages);
             _eventRepository.Update(existingEvent);
         }
 
@@ -205,272 +229,381 @@ namespace Eventlink_Services.Service
 
         public async Task UpdateStatus(Guid id, string status)
         {
-            var existingEvent = await _eventRepository.GetEventByIdAsync(id);
-            if (existingEvent == null)
+            var @event = await _eventRepository.GetEventByIdAsync(id);
+            if (@event == null)
                 throw new KeyNotFoundException("Event not found");
 
-            existingEvent.Status = status;
-            existingEvent.UpdatedAt = DateTime.UtcNow;
-            _eventRepository.Update(existingEvent);
+            @event.Status = status;
+            @event.UpdatedAt = DateTime.UtcNow;
+            _eventRepository.Update(@event);
         }
 
         #endregion
 
-        #region New Methods for Enhanced Functionality
+        #region FormData Methods (File Upload)
 
         /// <summary>
-        /// Get complete event details with timeline and proposals
+        /// Create event with FormData (supports file upload for CoverImage)
         /// </summary>
-        public async Task<EventDetailDto> GetEventDetailAsync(Guid eventId, Guid? currentUserId = null)
+        public async Task<EventResponse> CreateWithFormData(Guid userId, CreateEventFormRequest formRequest)
         {
             try
             {
-                var @event = await _eventRepository.GetEventByIdAsync(eventId);
-                if (@event == null)
-                    throw new KeyNotFoundException($"Event {eventId} not found");
-
-                var organizer = await _userRepository.FirstOrDefaultAsync(u => u.Id == @event.OrganizerId);
-
-                // Get timeline activities
-                var activities = await _activityRepository.GetActivitiesByEventIdAsync(eventId);
-
-                // Get proposals
-                var proposals = await _proposalRepository.GetProposalsByEventIdAsync(eventId);
-
-                // Filter proposals based on user role
-                List<EventProposal> filteredProposals = proposals;
-                if (currentUserId.HasValue && @event.OrganizerId != currentUserId.Value)
-                {
-                    // Non-organizers can only see their own proposals
-                    filteredProposals = proposals.Where(p => p.ProposedBy == currentUserId.Value).ToList();
-                }
-
-                // Parse event images
-                List<string> eventImages = null;
-                if (!string.IsNullOrEmpty(@event.EventImages))
-                {
-                    try
-                    {
-                        eventImages = JsonSerializer.Deserialize<List<string>>(@event.EventImages);
-                    }
-                    catch
-                    {
-                        eventImages = @event.EventImages.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList();
-                    }
-                }
-
-                return new EventDetailDto
-                {
-                    Id = @event.Id,
-                    OrganizerId = @event.OrganizerId,
-                    OrganizerName = organizer?.FullName ?? "Unknown",
-                    OrganizerEmail = organizer?.Email,
-                    OrganizerPhone = organizer?.PhoneNumber,
-                    Title = @event.Title,
-                    Description = @event.Description,
-                    ShortDescription = @event.ShortDescription,
-                    EventDate = @event.EventDate,
-                    EndDate = @event.EndDate,
-                    Location = @event.Location,
-                    VenueDetails = @event.VenueDetails,
-                    TotalBudget = @event.TotalBudget,
-                    TotalSponsorship = await _proposalRepository.GetTotalApprovedSponsorshipAsync(eventId),
-                    RemainingBudget = @event.TotalBudget - await _proposalRepository.GetTotalApprovedSponsorshipAsync(eventId),
-                    ExpectedAttendees = @event.ExpectedAttendees,
-                    Category = @event.Category,
-                    EventType = @event.EventType,
-                    TargetAudience = @event.TargetAudience,
-                    RequiredServices = @event.RequiredServices,
-                    SponsorshipNeeds = @event.SponsorshipNeeds,
-                    SpecialRequirements = @event.SpecialRequirements,
-                    Status = @event.Status,
-                    IsPublic = @event.IsPublic,
-                    IsFeatured = @event.IsFeatured,
-                    CoverImageUrl = @event.CoverImageUrl,
-                    EventImages = eventImages,
-                    ViewCount = @event.ViewCount,
-                    InterestedCount = @event.InterestedCount,
-                    CreatedAt = @event.CreatedAt,
-                    UpdatedAt = @event.UpdatedAt,
-                    Timeline = activities.Select(MapActivityToDto).ToList(),
-                    Proposals = filteredProposals.Select(MapProposalToDetailDto).ToList()
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error getting event detail for {EventId}", eventId);
-                throw;
-            }
-        }
-
-        /// <summary>
-        /// Create event with initial timeline activities
-        /// </summary>
-        public async Task<EventDetailDto> CreateEventWithDetailsAsync(Guid organizerId, CreateEventWithDetailsRequest request)
-        {
-            try
-            {
-                // Create event first
                 var newEvent = new Event
                 {
                     Id = Guid.NewGuid(),
-                    OrganizerId = organizerId,
-                    Title = request.Title,
-                    Description = request.Description,
-                    ShortDescription = request.ShortDescription,
-                    Location = request.Location,
-                    VenueDetails = request.VenueDetails,
-                    EventDate = request.EventDate,
-                    EndDate = request.EndDate,
-                    EventType = request.EventType,
-                    Category = request.Category,
-                    ExpectedAttendees = request.ExpectedAttendees,
-                    TotalBudget = request.TotalBudget,
-                    TargetAudience = request.TargetAudience,
-                    RequiredServices = request.RequiredServices,
-                    SponsorshipNeeds = request.SponsorshipNeeds,
-                    SpecialRequirements = request.SpecialRequirements,
-                    IsPublic = true,
+                    OrganizerId = userId,
+                    Title = formRequest.Title,
+                    Description = formRequest.Description,
+                    ShortDescription = formRequest.ShortDescription,
+                    Location = formRequest.Location,
+                    VenueDetails = formRequest.VenueDetails,
+                    EventDate = formRequest.EventDate,
+                    EndDate = formRequest.EndDate,
+                    EventType = formRequest.EventType,
+                    Category = formRequest.Category,
+                    ExpectedAttendees = formRequest.ExpectedAttendees,
+                    TotalBudget = formRequest.TotalBudget,
+                    TargetAudience = formRequest.TargetAudience,
+                    RequiredServices = formRequest.RequiredServices,
+                    SponsorshipNeeds = formRequest.SponsorshipNeeds,
+                    SpecialRequirements = formRequest.SpecialRequirements,
+                    IsPublic = false,
                     IsFeatured = false,
-                    Status = EventStatus.Draft,
+                    Status = "Draft",
+                    ViewCount = 0,
+                    InterestedCount = 0,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 };
 
-                // Upload images
-                if (request.CoverImageUrl != null)
+                // ✅ Upload Cover Image if provided
+                if (formRequest.CoverImage != null)
                 {
-                    newEvent.CoverImageUrl = await _cloudinaryService.UploadImageAsync(request.CoverImageUrl);
+                    _logger.LogInformation("Uploading cover image for event");
+                    var coverImageUrl = await _cloudinaryService.UploadImageAsync(formRequest.CoverImage);
+                    newEvent.CoverImageUrl = coverImageUrl;
+                    _logger.LogInformation("Cover image uploaded: {CoverImageUrl}", coverImageUrl);
                 }
 
-                if (request.EventImages != null && request.EventImages.Any())
+                // ✅ Upload Event Images if provided
+                if (formRequest.EventImageFiles != null && formRequest.EventImageFiles.Any())
                 {
-                    var urls = new List<string>();
-                    foreach (var image in request.EventImages)
+                    _logger.LogInformation("Uploading {Count} event images", formRequest.EventImageFiles.Count);
+                    var imageUrls = new List<string>();
+                    
+                    foreach (var imageFile in formRequest.EventImageFiles)
                     {
-                        urls.Add(await _cloudinaryService.UploadImageAsync(image));
+                        var imageUrl = await _cloudinaryService.UploadImageAsync(imageFile);
+                        imageUrls.Add(imageUrl);
                     }
-                    newEvent.EventImages = JsonSerializer.Serialize(urls);
+                    
+                    newEvent.EventImages = JsonSerializer.Serialize(imageUrls);
+                    _logger.LogInformation("Event images uploaded: {Count} files", imageUrls.Count);
+                }
+
+                // ✅ Parse Overview fields from comma-separated strings
+                if (!string.IsNullOrEmpty(formRequest.EventHighlights))
+                {
+                    var highlights = formRequest.EventHighlights
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToList();
+                    newEvent.EventHighlights = JsonSerializer.Serialize(highlights);
+                }
+
+                if (!string.IsNullOrEmpty(formRequest.Tags))
+                {
+                    var tags = formRequest.Tags
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToList();
+                    newEvent.Tags = JsonSerializer.Serialize(tags);
+                }
+
+                if (!string.IsNullOrEmpty(formRequest.TargetAudienceList))
+                {
+                    var targetAudiences = formRequest.TargetAudienceList
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToList();
+                    newEvent.TargetAudienceList = JsonSerializer.Serialize(targetAudiences);
                 }
 
                 await _eventRepository.AddAsync(newEvent);
-
-                // Create initial activities if provided
-                if (request.InitialActivities != null && request.InitialActivities.Any())
-                {
-                    var activities = new List<EventActivity>();
-                    int displayOrder = 0;
-
-                    foreach (var actReq in request.InitialActivities.OrderBy(a => a.StartTime))
-                    {
-                        activities.Add(new EventActivity
-                        {
-                            Id = Guid.NewGuid(),
-                            EventId = newEvent.Id,
-                            ActivityName = actReq.ActivityName,
-                            ActivityDescription = actReq.ActivityDescription,
-                            StartTime = TimeSpan.Parse(actReq.StartTime),
-                            EndTime = TimeSpan.Parse(actReq.EndTime),
-                            Location = actReq.Location,
-                            Speakers = actReq.Speakers,
-                            ActivityType = actReq.ActivityType,
-                            MaxParticipants = actReq.MaxParticipants,
-                            IsPublic = actReq.IsPublic ?? true,
-                            DisplayOrder = displayOrder++,
-                            CreatedAt = DateTime.UtcNow,
-                            UpdatedAt = DateTime.UtcNow
-                        });
-                    }
-
-                    await _activityRepository.BulkInsertActivitiesAsync(activities);
-                }
-
-                _logger.LogInformation("Event {EventId} created with timeline by {OrganizerId}", newEvent.Id, organizerId);
-
-                return await GetEventDetailAsync(newEvent.Id, organizerId);
+                
+                _logger.LogInformation("Event {EventId} created successfully with FormData", newEvent.Id);
+                return MapToResponse(newEvent);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating event with details");
+                _logger.LogError(ex, "Error creating event with FormData");
                 throw;
             }
         }
 
         /// <summary>
-        /// Update event and replace timeline activities
+        /// Update event with FormData (supports file upload for CoverImage)
         /// </summary>
-        public async Task<EventDetailDto> UpdateEventWithDetailsAsync(Guid eventId, Guid organizerId, UpdateEventWithDetailsRequest request)
+        public async Task UpdateWithFormData(Guid id, UpdateEventFormRequest formRequest)
         {
             try
             {
-                var existingEvent = await _eventRepository.GetEventByIdAsync(eventId);
+                var existingEvent = await _eventRepository.GetEventByIdAsync(id);
                 if (existingEvent == null)
                     throw new KeyNotFoundException("Event not found");
 
-                if (existingEvent.OrganizerId != organizerId)
-                    throw new UnauthorizedAccessException("Only event organizer can update event");
+                // Update basic info
+                existingEvent.Title = formRequest.Title;
+                existingEvent.Description = formRequest.Description;
+                existingEvent.ShortDescription = formRequest.ShortDescription;
+                existingEvent.Location = formRequest.Location;
+                existingEvent.VenueDetails = formRequest.VenueDetails;
+                existingEvent.EventDate = formRequest.EventDate;
+                existingEvent.EndDate = formRequest.EndDate;
+                existingEvent.EventType = formRequest.EventType;
+                existingEvent.Category = formRequest.Category;
+                existingEvent.ExpectedAttendees = formRequest.ExpectedAttendees;
+                existingEvent.TotalBudget = formRequest.TotalBudget;
+                existingEvent.TargetAudience = formRequest.TargetAudience;
+                existingEvent.RequiredServices = formRequest.RequiredServices;
+                existingEvent.SponsorshipNeeds = formRequest.SponsorshipNeeds;
+                existingEvent.SpecialRequirements = formRequest.SpecialRequirements;
+                existingEvent.UpdatedAt = DateTime.UtcNow;
 
-                // Update event info
-                await Update(eventId, request);
-
-                // Update timeline if provided
-                if (request.UpdatedActivities != null)
+                // ✅ Update Cover Image if new file provided
+                if (formRequest.CoverImage != null)
                 {
-                    await _activityRepository.DeleteActivitiesByEventIdAsync(eventId);
-
-                    if (request.UpdatedActivities.Any())
+                    _logger.LogInformation("Updating cover image for event {EventId}", id);
+                    
+                    // Delete old image if exists
+                    if (!string.IsNullOrEmpty(existingEvent.CoverImageUrl))
                     {
-                        var activities = new List<EventActivity>();
-                        int displayOrder = 0;
-
-                        foreach (var actReq in request.UpdatedActivities.OrderBy(a => a.StartTime))
+                        try
                         {
-                            activities.Add(new EventActivity
-                            {
-                                Id = Guid.NewGuid(),
-                                EventId = eventId,
-                                ActivityName = actReq.ActivityName,
-                                ActivityDescription = actReq.ActivityDescription,
-                                StartTime = TimeSpan.Parse(actReq.StartTime),
-                                EndTime = TimeSpan.Parse(actReq.EndTime),
-                                Location = actReq.Location,
-                                Speakers = actReq.Speakers,
-                                ActivityType = actReq.ActivityType,
-                                MaxParticipants = actReq.MaxParticipants,
-                                IsPublic = actReq.IsPublic ?? true,
-                                DisplayOrder = displayOrder++,
-                                CreatedAt = DateTime.UtcNow,
-                                UpdatedAt = DateTime.UtcNow
-                            });
+                            await _cloudinaryService.DeleteImageAsync(existingEvent.CoverImageUrl);
                         }
-
-                        await _activityRepository.BulkInsertActivitiesAsync(activities);
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Failed to delete old cover image");
+                        }
                     }
+                    
+                    // Upload new image
+                    var newCoverImageUrl = await _cloudinaryService.UploadImageAsync(formRequest.CoverImage);
+                    existingEvent.CoverImageUrl = newCoverImageUrl;
+                    _logger.LogInformation("Cover image updated: {CoverImageUrl}", newCoverImageUrl);
                 }
 
-                _logger.LogInformation("Event {EventId} updated with timeline by {OrganizerId}", eventId, organizerId);
+                // ✅ Update Event Images
+                if (formRequest.EventImageFiles != null && formRequest.EventImageFiles.Any())
+                {
+                    _logger.LogInformation("Updating event images for event {EventId}", id);
+                    
+                    // Get existing images to keep
+                    var existingImages = new List<string>();
+                    if (!string.IsNullOrEmpty(formRequest.ExistingImages))
+                    {
+                        existingImages = formRequest.ExistingImages
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                            .ToList();
+                    }
+                    
+                    // Upload new images
+                    var newImageUrls = new List<string>();
+                    foreach (var imageFile in formRequest.EventImageFiles)
+                    {
+                        var imageUrl = await _cloudinaryService.UploadImageAsync(imageFile);
+                        newImageUrls.Add(imageUrl);
+                    }
+                    
+                    // Combine existing + new images
+                    existingImages.AddRange(newImageUrls);
+                    existingEvent.EventImages = JsonSerializer.Serialize(existingImages);
+                    _logger.LogInformation("Event images updated: {Count} total images", existingImages.Count);
+                }
 
-                return await GetEventDetailAsync(eventId, organizerId);
+                // ✅ Update Overview fields from comma-separated strings
+                if (!string.IsNullOrEmpty(formRequest.EventHighlights))
+                {
+                    var highlights = formRequest.EventHighlights
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToList();
+                    existingEvent.EventHighlights = JsonSerializer.Serialize(highlights);
+                }
+
+                if (!string.IsNullOrEmpty(formRequest.Tags))
+                {
+                    var tags = formRequest.Tags
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToList();
+                    existingEvent.Tags = JsonSerializer.Serialize(tags);
+                }
+
+                if (!string.IsNullOrEmpty(formRequest.TargetAudienceList))
+                {
+                    var targetAudiences = formRequest.TargetAudienceList
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToList();
+                    existingEvent.TargetAudienceList = JsonSerializer.Serialize(targetAudiences);
+                }
+
+                _eventRepository.Update(existingEvent);
+                
+                _logger.LogInformation("Event {EventId} updated successfully with FormData", id);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating event with details");
+                _logger.LogError(ex, "Error updating event {EventId} with FormData", id);
                 throw;
             }
         }
 
-        /// <summary>
-        /// Check if user can edit event (must be organizer)
-        /// </summary>
+        #endregion
+
+        #region Enhanced Methods
+
+        public async Task<EventDetailDto> GetEventDetailAsync(Guid eventId, Guid? currentUserId = null)
+        {
+            try
+            {
+                var eventEntity = await _eventRepository.GetEventByIdAsync(eventId);
+                if (eventEntity == null)
+                    throw new KeyNotFoundException("Event not found");
+
+                // Get organizer info
+                var organizer = eventEntity.Organizer;
+
+                // Get timeline activities
+                var activities = await _activityRepository.GetActivitiesByEventIdAsync(eventId);
+                var activityDtos = activities.Select(MapActivityToDto).ToList();
+
+                // Get proposals (only if user is organizer)
+                List<EventProposalDetailDto>? proposalDtos = null;
+                if (currentUserId.HasValue && eventEntity.OrganizerId == currentUserId.Value)
+                {
+                    var proposals = await _proposalRepository.GetProposalsByEventIdAsync(eventId);
+                    proposalDtos = proposals.Select(MapProposalToDetailDto).ToList();
+                }
+
+                // Calculate total sponsorship
+                var totalSponsorship = await _proposalRepository.GetTotalApprovedSponsorshipAsync(eventId);
+
+                // Parse EventImages
+                List<string> eventImages = new List<string>();
+                if (!string.IsNullOrEmpty(eventEntity.EventImages))
+                {
+                    try
+                    {
+                        eventImages = JsonSerializer.Deserialize<List<string>>(eventEntity.EventImages) ?? new List<string>();
+                    }
+                    catch { }
+                }
+
+                // Parse Overview fields
+                List<string>? eventHighlights = null;
+                if (!string.IsNullOrEmpty(eventEntity.EventHighlights))
+                {
+                    try
+                    {
+                        eventHighlights = JsonSerializer.Deserialize<List<string>>(eventEntity.EventHighlights);
+                    }
+                    catch { }
+                }
+
+                List<string>? tags = null;
+                if (!string.IsNullOrEmpty(eventEntity.Tags))
+                {
+                    try
+                    {
+                        tags = JsonSerializer.Deserialize<List<string>>(eventEntity.Tags);
+                    }
+                    catch { }
+                }
+
+                List<string>? targetAudienceList = null;
+                if (!string.IsNullOrEmpty(eventEntity.TargetAudienceList))
+                {
+                    try
+                    {
+                        targetAudienceList = JsonSerializer.Deserialize<List<string>>(eventEntity.TargetAudienceList);
+                    }
+                    catch { }
+                }
+
+                // Map to DTO
+                var eventDetailDto = new EventDetailDto
+                {
+                    Id = eventEntity.Id,
+                    OrganizerId = eventEntity.OrganizerId,
+                    OrganizerName = organizer?.FullName ?? string.Empty,
+                    OrganizerEmail = organizer?.Email,
+                    OrganizerPhone = organizer?.PhoneNumber,
+
+                    // Basic info
+                    Title = eventEntity.Title ?? string.Empty,
+                    Description = eventEntity.Description,
+                    ShortDescription = eventEntity.ShortDescription,
+                    EventDate = eventEntity.EventDate,
+                    EndDate = eventEntity.EndDate,
+                    Location = eventEntity.Location,
+                    VenueDetails = eventEntity.VenueDetails,
+
+                    // Budget
+                    TotalBudget = eventEntity.TotalBudget,
+                    TotalSponsorship = totalSponsorship,
+                    RemainingBudget = (eventEntity.TotalBudget ?? 0) - totalSponsorship,
+                    ExpectedAttendees = eventEntity.ExpectedAttendees,
+
+                    // Details
+                    Category = eventEntity.Category,
+                    EventType = eventEntity.EventType,
+                    TargetAudience = eventEntity.TargetAudience,
+                    RequiredServices = eventEntity.RequiredServices,
+                    SponsorshipNeeds = eventEntity.SponsorshipNeeds,
+                    SpecialRequirements = eventEntity.SpecialRequirements,
+
+                    // Overview fields
+                    EventHighlights = eventHighlights,
+                    Tags = tags,
+                    TargetAudienceList = targetAudienceList,
+
+                    // Status
+                    Status = eventEntity.Status,
+                    IsPublic = eventEntity.IsPublic,
+                    IsFeatured = eventEntity.IsFeatured,
+
+                    // Media
+                    CoverImageUrl = eventEntity.CoverImageUrl,
+                    EventImages = eventImages,
+
+                    // Engagement
+                    ViewCount = eventEntity.ViewCount,
+                    InterestedCount = eventEntity.InterestedCount,
+                    AverageRating = eventEntity.AverageRating,
+                    ReviewCount = eventEntity.ReviewCount,
+
+                    // Dates
+                    CreatedAt = eventEntity.CreatedAt,
+                    UpdatedAt = eventEntity.UpdatedAt,
+
+                    // Related data
+                    Timeline = activityDtos,
+                    Proposals = proposalDtos
+                };
+
+                return eventDetailDto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting event detail for event {EventId}", eventId);
+                throw;
+            }
+        }
+
         public async Task<bool> CanUserEditEventAsync(Guid eventId, Guid userId)
         {
             var @event = await _eventRepository.GetEventByIdAsync(eventId);
             return @event != null && @event.OrganizerId == userId;
         }
 
-        /// <summary>
-        /// Update event budget and recalculate remaining budget
-        /// </summary>
         public async Task UpdateEventBudgetAsync(Guid eventId)
         {
             try
@@ -479,10 +612,6 @@ namespace Eventlink_Services.Service
                 if (@event == null) return;
 
                 var totalSponsorship = await _proposalRepository.GetTotalApprovedSponsorshipAsync(eventId);
-
-                // Update event (Note: Cần thêm columns này vào Event model)
-                // event.TotalSponsorship = totalSponsorship;
-                // event.RemainingBudget = event.TotalBudget - totalSponsorship;
 
                 _eventRepository.Update(@event);
                 _logger.LogInformation("Budget updated for event {EventId}", eventId);
@@ -494,12 +623,97 @@ namespace Eventlink_Services.Service
             }
         }
 
+        /// <summary>
+        /// Update event visibility (isPublic property only)
+        /// </summary>
+        public async Task UpdateEventVisibilityAsync(Guid eventId, bool isPublic)
+        {
+            try
+            {
+                var @event = await _eventRepository.GetEventByIdAsync(eventId);
+                if (@event == null)
+                    throw new KeyNotFoundException("Event not found");
+
+                // Only update isPublic property
+                @event.IsPublic = isPublic;
+                @event.UpdatedAt = DateTime.UtcNow;
+
+                _eventRepository.Update(@event);
+                
+                _logger.LogInformation("Event {EventId} visibility updated to {IsPublic}", eventId, isPublic);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating visibility for event {EventId}", eventId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Update event featured status (isFeatured property only)
+        /// </summary>
+        public async Task UpdateEventFeaturedAsync(Guid eventId, bool isFeatured)
+        {
+            try
+            {
+                var @event = await _eventRepository.GetEventByIdAsync(eventId);
+                if (@event == null)
+                    throw new KeyNotFoundException("Event not found");
+
+                // Only update isFeatured property
+                @event.IsFeatured = isFeatured;
+                @event.UpdatedAt = DateTime.UtcNow;
+
+                _eventRepository.Update(@event);
+                
+                _logger.LogInformation("Event {EventId} featured status updated to {IsFeatured}", eventId, isFeatured);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating featured status for event {EventId}", eventId);
+                throw;
+            }
+        }
+
         #endregion
 
         #region Helper Methods
 
         private EventResponse MapToResponse(Event @event)
         {
+            // Parse EventHighlights
+            List<string>? eventHighlights = null;
+            if (!string.IsNullOrEmpty(@event.EventHighlights))
+            {
+                try
+                {
+                    eventHighlights = JsonSerializer.Deserialize<List<string>>(@event.EventHighlights);
+                }
+                catch { }
+            }
+
+            // Parse Tags
+            List<string>? tags = null;
+            if (!string.IsNullOrEmpty(@event.Tags))
+            {
+                try
+                {
+                    tags = JsonSerializer.Deserialize<List<string>>(@event.Tags);
+                }
+                catch { }
+            }
+
+            // Parse TargetAudienceList
+            List<string>? targetAudienceList = null;
+            if (!string.IsNullOrEmpty(@event.TargetAudienceList))
+            {
+                try
+                {
+                    targetAudienceList = JsonSerializer.Deserialize<List<string>>(@event.TargetAudienceList);
+                }
+                catch { }
+            }
+
             return new EventResponse
             {
                 Id = @event.Id,
@@ -527,7 +741,16 @@ namespace Eventlink_Services.Service
                 ViewCount = @event.ViewCount,
                 InterestedCount = @event.InterestedCount,
                 CreatedAt = @event.CreatedAt,
-                UpdatedAt = @event.UpdatedAt
+                UpdatedAt = @event.UpdatedAt,
+                
+                // ✅ NEW FIELDS
+                AverageRating = @event.AverageRating,
+                ReviewCount = @event.ReviewCount,
+                TotalSponsorship = null, // ⚠️ This needs to be calculated separately
+                RemainingBudget = null,  // ⚠️ This needs to be calculated separately
+                EventHighlights = eventHighlights,
+                Tags = tags,
+                TargetAudienceList = targetAudienceList
             };
         }
 
@@ -537,8 +760,9 @@ namespace Eventlink_Services.Service
             {
                 Id = activity.Id,
                 EventId = activity.EventId,
-                ActivityName = activity.ActivityName,
+                ActivityName = activity.ActivityName ?? string.Empty,
                 ActivityDescription = activity.ActivityDescription,
+                // ✅ FIX: StartTime and EndTime are TimeSpan (NOT nullable), so no ? operator
                 StartTime = activity.StartTime.ToString(@"hh\:mm"),
                 EndTime = activity.EndTime.ToString(@"hh\:mm"),
                 Location = activity.Location,
@@ -556,7 +780,7 @@ namespace Eventlink_Services.Service
         private EventProposalDetailDto MapProposalToDetailDto(EventProposal proposal)
         {
             // Parse funding breakdown
-            List<FundingBreakdownItem> breakdown = null;
+            List<FundingBreakdownItem>? breakdown = null;
             if (!string.IsNullOrEmpty(proposal.FundingBreakdown))
             {
                 try
@@ -575,7 +799,7 @@ namespace Eventlink_Services.Service
             }
 
             // Parse benefits
-            List<string> benefits = null;
+            List<string>? benefits = null;
             if (!string.IsNullOrEmpty(proposal.Benefits))
             {
                 try
@@ -589,8 +813,8 @@ namespace Eventlink_Services.Service
             {
                 Id = proposal.Id,
                 EventId = proposal.EventId,
-                ProposalType = proposal.ProposalType,
-                Title = proposal.Title,
+                ProposalType = proposal.ProposalType ?? string.Empty,
+                Title = proposal.Title ?? string.Empty,
                 Description = proposal.Description,
                 Requirements = proposal.Requirements,
                 Budget = proposal.Budget,

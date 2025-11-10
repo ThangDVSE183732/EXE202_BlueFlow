@@ -3,16 +3,21 @@ import EventManagement from '../../components/SupplierComponent/EventManagement'
 import PageNav from '../../components/PageNav';
 import styles from './Supplier.module.css';
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import SegmentedControl from '../../components/SupplierComponent/SegmentedControl';
 import SideBar from '../../components/SupplierComponent/SideBar';
 import Dashboard from '../../components/SupplierComponent/DashBoard';
 import SegmentedControlItem from '../../components/SupplierComponent/SegmentedControlItem';
 import PartnersList from '../../components/SupplierComponent/PartnersList';
+import PartnersFilterBar from '../../components/SupplierComponent/PartnersFilterBar';
 import AccountSetting from '../../components/SupplierComponent/AccountSetting';
 import MessagesPage from '../../components/SupplierComponent/MessagesPage';
 import BrandProfile from '../../components/SupplierComponent/BrandProfile';
 import EventDetail from '../../components/SupplierComponent/EventDetail';
 import Chatbot from '../../components/SupplierComponent/Chatbot';
+import partnershipService from '../../services/partnershipService';
+import toast from 'react-hot-toast';
+import PaymentHistory from '../../components/PaymentHistory';
 
 
 
@@ -64,7 +69,7 @@ const Icon = {
 const items = [
     { key: 'dashboard', label: 'Dashboard', icon: Icon.dashboard },
     { key: 'discovery', label: 'Discovery', icon: Icon.search },
-    { key: 'projects', label: 'My Projects', icon: Icon.folder },
+    { key: 'projects', label: 'Lịch sử giao dịch', icon: Icon.folder },
     { key: 'messages', label: 'Messages', icon: Icon.message },
     { key: 'ai', label: 'AI Assistant', icon: Icon.ai },
     { key: 'profile', label: 'Profile & Settings', icon: Icon.users },
@@ -143,10 +148,21 @@ const partnersItem = [
 
 
 function SupplierPage() {
+    const location = useLocation();
     const [tab, setTab] = useState(() => localStorage.getItem('supplier.tab') || 'dashboard');
     const [active, setActive] = useState(() => localStorage.getItem('supplier.active') || 'dashboard');
     const [subChange, setSubChange] = useState(() => localStorage.getItem('supplier.discoverySub') || ''); // 'find' | 'saved'
-  
+    const [partnersData, setPartnersData] = useState([]);
+    const [filteredPartnersData, setFilteredPartnersData] = useState([]);
+    const [loadingPartners, setLoadingPartners] = useState(false);
+
+    // Check if redirected from payment pages
+    useEffect(() => {
+        if (location.state?.activeTab === 'projects') {
+            setActive('projects');
+            setTab('projects');
+        }
+    }, [location]);
 
     // Persist to localStorage whenever these change
     useEffect(() => {
@@ -161,6 +177,94 @@ function SupplierPage() {
         localStorage.setItem('supplier.discoverySub', subChange);
     }, [subChange]);
 
+    // Fetch partnerships when discovery tab is active
+    useEffect(() => {
+        const fetchPartnerships = async () => {
+            if (active === 'discovery' && subChange === 'find') {
+                setLoadingPartners(true);
+                try {
+                    const response = await partnershipService.getAllPartnerships();
+                    if (response.success && response.data) {
+                        // Transform API data to match PartnersItems format
+                        const transformedData = response.data.map(partnership => {
+                            // Kiểm tra partnerType để lấy data từ đúng nguồn
+                            const isFromSponsor = partnership.partnerType === 'Sponsor';
+                            
+                            if (isFromSponsor) {
+                                // Lấy từ Partner's BrandProfile khi partnerType = "Sponsor"
+                                const brandProfile = partnership.partner?.brandProfile;
+                                return {
+                                    id: partnership.id,
+                                    partnerType: partnership.partnerType, // Thêm partnerType
+                                    location: brandProfile?.location || 'N/A',
+                                    forcus: brandProfile?.industry || 'N/A',
+                                    title: brandProfile?.brandName || 'Untitled Brand',
+                                    tags: partnership.preferredContactMethod 
+                                        ? partnership.preferredContactMethod.split(',').map(t => t.trim())
+                                        : [],
+                                    rating: null, // null cho Sponsor
+                                    logo: partnership.partnershipImage || brandProfile?.brandLogo || 'imgs/SaiGon.png',
+                                    summaryPoints: (() => {
+                                        const points = [];
+                                        // Thêm serviceDescription nếu có
+                                        if (partnership.serviceDescription) {
+                                            points.push(partnership.serviceDescription);
+                                        }
+                                        // Thêm initialMessage (split bởi dấu ;) nếu có
+                                        if (partnership.initialMessage) {
+                                            const messages = partnership.initialMessage.split(';').map(s => s.trim()).filter(s => s);
+                                            points.push(...messages);
+                                        }
+                                        return points.length > 0 ? points : ['No information available'];
+                                    })(),
+                                    eventHighlights: [],
+                                    targetAudienceList: [],
+                                    focusAreas: brandProfile?.industry ? [brandProfile.industry] : ['General'],
+                                    averageSponsorship: partnership.proposedBudget 
+                                        ? `${partnership.proposedBudget.toLocaleString()} VND`
+                                        : 'N/A',
+                                    pastEvents: [],
+                                    statuses: [partnership.status || 'Pending', 'Chat now']
+                                };
+                            } else {
+                                // Lấy từ Event data khi partnerType = "Organizer" (logic cũ)
+                                return {
+                                    id: partnership.id,
+                                    partnerType: partnership.partnerType, // Thêm partnerType
+                                    location: partnership.event?.location || 'N/A',
+                                    forcus: partnership.event?.eventType || 'N/A',
+                                    title: partnership.event?.title || 'Untitled Event',
+                                    tags: partnership.event?.tags ? JSON.parse(partnership.event.tags) : [],
+                                    rating: 4.8,
+                                    logo: partnership.partnershipImage || 'imgs/SaiGon.png',
+                                    summaryPoints: [
+                                        partnership.serviceDescription || 'No description available'
+                                    ],
+                                    eventHighlights: partnership.event?.eventHighlights ? JSON.parse(partnership.event.eventHighlights) : [],
+                                    targetAudienceList: partnership.event?.targetAudienceList ? JSON.parse(partnership.event.targetAudienceList) : [],
+                                    focusAreas: partnership.event?.category ? [partnership.event.category] : ['General'],
+                                    averageSponsorship: partnership.proposedBudget 
+                                        ? `${partnership.proposedBudget.toLocaleString()} VND`
+                                        : 'N/A',
+                                    pastEvents: [partnership.event?.title || 'N/A'],
+                                    statuses: [partnership.status || 'Pending', 'Chat now']
+                                };
+                            }
+                        });
+                        setPartnersData(transformedData);
+                    }
+                } catch (error) {
+                    console.error('Error fetching partnerships:', error);
+                    toast.error('Không thể tải danh sách partnerships');
+                } finally {
+                    setLoadingPartners(false);
+                }
+            }
+        };
+
+        fetchPartnerships();
+    }, [active, subChange]);
+
 
 
     const renderContent = () => {
@@ -172,29 +276,33 @@ function SupplierPage() {
         return <EventDetail />;
       case "discovery":
         if(subChange === 'find') {
-            return <PartnersList
-            partnersItem={partnersItem}
-          />;
+            return (
+                <>
+                    <PartnersFilterBar 
+                        data={partnersData} 
+                        onFilter={setFilteredPartnersData}
+                    />
+                    <PartnersList
+                        partnersItem={filteredPartnersData.length > 0 ? filteredPartnersData : partnersData}
+                        loading={loadingPartners}
+                    />
+                </>
+            );
         }else if(subChange === 'saved') {
             return;
         }
         return ;
       case "projects":
-        if(subChange === 'pending') {
-            return;
-        }else if(subChange === 'completed') {
-            return;
-        }
-        return ;
+        return <PaymentHistory />;
       case "messages":
-        return <MessagesPage/>;
+        return <MessagesPage />;
       case "ai":
-        return <Chatbot/>;
+        return <Chatbot />;
     case "profile":
          if(subChange === 'brand') {
-            return <BrandProfile/>;
+            return <BrandProfile />;
         }else if(subChange === 'account') {
-            return <AccountSetting/>;
+            return <AccountSetting />;
         }else if(subChange === 'marketing') {
             return;
         }

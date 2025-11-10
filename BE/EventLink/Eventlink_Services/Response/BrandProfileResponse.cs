@@ -8,6 +8,9 @@ namespace Eventlink_Services.Response
 {
     public class BrandProfileResponse
     {
+        // ✅ NEW: BrandProfile ID
+        public Guid Id { get; set; }
+        
         public string BrandName { get; set; }
         public string BrandLogo { get; set; }
         public string Location { get; set; }
@@ -20,6 +23,13 @@ namespace Eventlink_Services.Response
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
         public List<string> Tags { get; set; }
+        
+        // ✅ NEW: Visibility status
+        public bool? IsPublic { get; set; }
+        
+        // ✅ NEW: Partnership status indicator
+        public bool? HasPartnership { get; set; }
+        
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { Edit, Search, Pin } from 'lucide-react';
 import { messageService } from '../../services/messageService';
 import signalRService from '../../services/signalRService';
+import EqualizerLoader from '../EqualizerLoader';
 
 const MessagesList = ({ onSelectChat }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -48,6 +50,7 @@ const MessagesList = ({ onSelectChat }) => {
             }) : '',
             avatar: chat.partnerAvatar,
             hasNotification: (chat.unreadCount || 0) > 0,
+            isRead: chat.lastMessage?.isRead,
             unreadCount: chat.unreadCount || 0,
             partnerRole: chat.partnerRole
           }));
@@ -58,6 +61,7 @@ const MessagesList = ({ onSelectChat }) => {
       } catch (err) {
         console.error('Error loading partner list chat:', err);
         setError('Failed to load chats');
+        toast.error('Không thể tải danh sách đối tác. Vui lòng thử lại.');
       } finally {
         setLoading(false);
       }
@@ -137,13 +141,29 @@ const MessagesList = ({ onSelectChat }) => {
     chat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleChatClick = (chat) => {
+    // Update chat to mark as read immediately in UI
+    setAllChats(prevChats => 
+      prevChats.map(c => 
+        c.id === chat.id 
+          ? { ...c, isRead: true, hasNotification: false, unreadCount: 0 } 
+          : c
+      )
+    );
+    
+    // Call parent handler
+    if (onSelectChat) {
+      onSelectChat(chat);
+    }
+  };
+
   const renderChatItem = (chat, showNotification = true) => {
     const isPinned = pinnedChats.some(c => c.id === chat.id);
     
     return (
       <div
         key={chat.id}
-        onClick={() => onSelectChat && onSelectChat(chat)}
+        onClick={() => handleChatClick(chat)}
         className="flex items-center space-x-3 p-3 hover:bg-gray-50 cursor-pointer rounded-lg transition-colors"
       >
         <div className="relative flex-shrink-0">
@@ -152,9 +172,9 @@ const MessagesList = ({ onSelectChat }) => {
               {chat.name.charAt(0)}
             </span>
           </div>
-          {showNotification && chat.hasNotification && (
+          {showNotification && chat.hasNotification && chat.isRead === false && (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-              <span className="text-xs text-white font-bold">!</span>
+              <span className="text-xs text-white font-bold">{chat.unreadCount}</span>
             </div>
           )}
         </div>
@@ -251,7 +271,9 @@ const MessagesList = ({ onSelectChat }) => {
           </div>
           
           {loading ? (
-            <div className="text-center text-gray-500 py-4">Loading chats...</div>
+            <div className="py-8">
+              <EqualizerLoader message="Đang tải danh sách chat..." />
+            </div>
           ) : error ? (
             <div className="text-center text-red-500 py-4">{error}</div>
           ) : filteredAllChats.length === 0 ? (

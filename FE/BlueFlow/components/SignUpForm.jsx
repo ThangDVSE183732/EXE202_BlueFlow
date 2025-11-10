@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import {validateRegistrationForm} from '../utils/validation';
-import {useToast} from '../hooks/useToast';
-import ToastContainer from './ToastContainer';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { authService } from '../services/userService';
@@ -21,7 +20,6 @@ function SignUpForm() {
         confirmPassword: '',
         agree: false
     });
-        const { toasts, showToast, removeToast } = useToast();
         const navigate = useNavigate();
 
 
@@ -42,11 +40,7 @@ function SignUpForm() {
             const errorCount = Object.keys(validation.errors).length;
             const firstError = Object.values(validation.errors)[0];
             
-            showToast({
-                type: 'error',
-                title: 'Validation Error',
-                message: `${firstError}${errorCount > 1 ? ` (and ${errorCount - 1} more error${errorCount > 2 ? 's' : ''})` : ''}`
-            });
+            toast.error(`${firstError}${errorCount > 1 ? ` (and ${errorCount - 1} more error${errorCount > 2 ? 's' : ''})` : ''}`);
             return;
         }
 
@@ -63,11 +57,7 @@ function SignUpForm() {
                         });
             
                         if (response.success) {
-                            showToast({
-                                type: 'success',
-                                title: 'Success!',
-                                message: response.message || 'OTP has been sent to your email!'
-                            });
+                            toast.success(response.message || 'OTP has been sent to your email!');
             
                             // Chuyển đến trang verify OTP với email và profile data
                             navigate('/verify-code', { 
@@ -86,28 +76,19 @@ function SignUpForm() {
                                 }
                             });
                         } else {
-                            showToast({
-                                type: 'error',
-                                title: 'Register Failed',
-                                message: response.message || 'Register failed. Please try again.'
-                            });
+                            toast.error(response.message || 'Register failed. Please try again.');
                         }
 
         }catch (error) {
 			console.error('Register error:', error);
             
-            showToast({
-                type: 'error',
-                title: 'Register Failed',
-                message: error.message || 'Register failed. Please try again.'
-            });
+            toast.error(error.message || 'Register failed. Please try again.');
 		} 
         
     };
 
     return(
         <>
-        <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
         <div className="bg-white w-[60%] h-full overflow-auto rounded-2xl ">
             <h1 className="text-4xl text-blue-400 font-semibold mt-12 mb-11">Registration</h1>
             <form onSubmit={handleSubmit}>
@@ -256,9 +237,9 @@ function SignUpForm() {
                           required
                         />
                         <span className="text-sm">
-                          I agree to all the
+                          Tôi đồng ý với 
                           <a href="/terms" className="mx-1 text-red-600 font-semibold hover:underline">Terms</a>
-                          and
+                          và
                           <a href="/privacy" className="ml-1 text-red-600 font-semibold hover:underline">Privacy Policies</a>
                         </span>
                       </label>

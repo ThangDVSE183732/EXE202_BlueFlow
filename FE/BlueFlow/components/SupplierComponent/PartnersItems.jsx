@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 function PartnersItems({ partnersItem }) {
     const {
+        partnerType, // Thêm partnerType
         location,
         forcus,
         title,
@@ -14,6 +15,8 @@ function PartnersItems({ partnersItem }) {
             'Provides financial support for tech and startup-related events in Vietnam.',
             'Sponsored over 50 events from 2019 to 2025.'
         ],
+        eventHighlights = [],
+        targetAudienceList = [],
         focusAreas = ['Tech', 'Green startups', 'Educational events'],
         averageSponsorship = '50M – 500M VND',
         pastEvents = ['GreenFest', 'StartUp Next', 'EduInnovate'],
@@ -89,7 +92,7 @@ function PartnersItems({ partnersItem }) {
                 </div>
                 <div className="flex-1 mt-2">
                     <div className="flex flex-wrap items-center gap-1 mb-1">
-                        {tags.map(t => (
+                        {tags.slice(0, 3).map(t => (
                             <span
                                 key={t}
                                 className="px-1.5 py-0.5 rounded-full border border-sky-300 text-[9px] font-medium text-sky-500"
@@ -97,6 +100,11 @@ function PartnersItems({ partnersItem }) {
                                 {t}
                             </span>
                         ))}
+                        {tags.length > 2 && (
+                            <span className="px-1.5 py-0.5 rounded-full border border-sky-300 text-[9px] font-medium text-sky-500">
+                                +{tags.length - 2}
+                            </span>
+                        )}
                     </div>
                     <h6 className="text-sm font-semibold text-left text-gray-800 line-clamp-2 leading-snug mt-1">
                         {title}
@@ -107,14 +115,16 @@ function PartnersItems({ partnersItem }) {
                             <span>{location}</span>
                         </div>
                         <div className="flex items-center gap-2 text-gray-800 min-w-0">
-                         <TagIcon className="w-4 h-4 text-sky-500" aria-hidden="true" />
+                         <TagIcon className="w-4 h-4 text-sky-500 flex-shrink-0" aria-hidden="true" />
 
-                            <span className="flex-1 truncate">{`${forcus}`}</span>
+                            <span className="flex-1 truncate whitespace-nowrap overflow-hidden text-left">{`${forcus}`}</span>
                         </div>
-                        <div className="flex items-center gap-2 text-gray-800">
-                            <StarSolid className="w-4 h-4 text-yellow-400" />
-                            <span>{`${rating}/5`}</span>
-                        </div>
+                        {rating !== null && (
+                            <div className="flex items-center gap-2 text-gray-800">
+                                <StarSolid className="w-4 h-4 text-yellow-400" />
+                                <span>{`${rating}/5`}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
                 <div className="mt-1 flex space-x-1 text-[11px] font-medium">
@@ -132,39 +142,84 @@ function PartnersItems({ partnersItem }) {
                         </div>
                         <div className="flex-1 min-w-0">
                             <h3 className="font-semibold text-left text-gray-800 text-sm ">{title}</h3>
-                            <div className="mt-1 flex flex-wrap gap-1">
-                                {tags.slice(0, 3).map(t => (
-                                    <span key={t} className="px-2 py-0.5 rounded-full border border-sky-300 text-[10px] font-medium text-sky-600 bg-sky-50">{t}</span>
-                                ))}
-                                {tags.length > 3 && <span className="text-[10px] text-slate-500">+{tags.length - 3}</span>}
+                            <div className="mt-1 flex flex-wrap items-center gap-1">
+                                {partnerType === 'Sponsor' 
+                                    ? (
+                                        <>
+                                            {tags.slice(0, 3).map(t => (
+                                                <span key={t} className="px-2 py-0.5 rounded-full border border-sky-300 text-[10px] font-medium text-sky-600 bg-sky-50">{t}</span>
+                                            ))}
+                                            {tags.length > 3 && (
+                                                <span className="px-2 py-0.5 rounded-full border border-sky-300 text-[10px] font-medium text-sky-600 bg-sky-50">
+                                                    +{tags.length - 3}
+                                                </span>
+                                            )}
+                                        </>
+                                    )
+                                    : tags.map(t => (
+                                        <span key={t} className="px-2 py-0.5 rounded-full border border-sky-300 text-[10px] font-medium text-sky-600 bg-sky-50">{t}</span>
+                                    ))
+                                }
                             </div>
-                            <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-600">
-                                <StarSolid className="w-4 h-4 text-yellow-400" />
-                                <span>{`${rating}/5`}</span>
-                            </div>
+                            {rating !== null && (
+                                <div className="mt-1 flex items-center gap-1 text-[11px] text-slate-600">
+                                    <StarSolid className="w-4 h-4 text-yellow-400" />
+                                    <span>{`${rating}/5`}</span>
+                                </div>
+                            )}
                         </div>
                     </div>
-                    <ul className="mt-3  space-y-1 text-[11px] text-slate-700 list-disc ml-5 text-left">
-                        {summaryPoints.map((p, i) => (
-                            <li key={i} className="leading-snug">{p}</li>
-                        ))}
+                    
+                    <ul className="mt-3 space-y-1 text-[11px] text-slate-700 list-disc ml-5 text-left">
+                        {partnerType === 'Sponsor' 
+                            ? summaryPoints.slice(0, 2).map((p, i) => (
+                                <li key={i} className="leading-snug">
+                                    {p}
+                                    {i === 1 && summaryPoints.length > 2 && <span className="text-slate-500"> ...</span>}
+                                </li>
+                            ))
+                            : summaryPoints.map((p, i) => (
+                                <li key={i} className="leading-snug">{p}</li>
+                            ))
+                        }
                     </ul>
-                    <div className="mt-3 space-y-2 text-[11px]">
-                        <div className="flex items-start gap-2">
-                            <LinkIcon className="w-4 h-4 text-sky-500 mt-0.5" />
-                            <div className="flex flex-wrap gap-x-2 gap-y-1">
-                                {focusAreas.map(a => <span key={a} className="text-sky-600 hover:underline cursor-pointer">{a}</span>)}
+                    
+                    {eventHighlights && eventHighlights.length > 0 && (
+                        <div className="mt-3">
+                            <h4 className="text-sm font-semibold text-left text-slate-800 mb-2">What to Expect:</h4>
+                            <ul className="space-y-1 text-[11px] text-slate-700 list-disc ml-5 text-left">
+                                {eventHighlights.slice(0, 1).map((highlight, i) => (
+                                    <li key={i} className="leading-snug">
+                                        {highlight}
+                                        {eventHighlights.length > 1 && <span className="text-slate-500"> ...</span>}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                    
+                    {targetAudienceList && targetAudienceList.length > 0 && (
+                        <div className="mt-3">
+                            <h4 className="text-sm font-semibold text-left text-slate-800 mb-2">Target Audience:</h4>
+                            <ul className="space-y-1 text-[11px] text-slate-700 list-disc ml-5 text-left">
+                                {targetAudienceList.slice(0, 1).map((audience, i) => (
+                                    <li key={i} className="leading-snug">
+                                        {audience}
+                                        {targetAudienceList.length > 1 && <span className="text-slate-500"> ...</span>}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                    
+                    {partnerType !== 'Sponsor' && (
+                        <div className="mt-3 space-y-2 text-[11px]">
+                            <div className="flex items-center gap-2">
+                                <CurrencyDollarIcon className="w-4 h-4 text-sky-500 flex-shrink-0" />
+                                <span className="text-slate-700"><span className="text-sky-600 font-medium">{averageSponsorship}</span></span>
                             </div>
                         </div>
-                        <div className="flex items-start gap-2">
-                            <CurrencyDollarIcon className="w-4 h-4 text-sky-500 mt-0.5" />
-                            <span className="text-slate-700">Average sponsorship: <span className="text-sky-600 font-medium">{averageSponsorship}</span></span>
-                        </div>
-                        <div className="flex items-start gap-2 min-w-0">
-                            <TagIcon className="w-4 h-4 text-sky-500 mt-0.5" />
-                            <span className="truncate flex-1 text-slate-700">Past sponsored events: {pastEvents.join(', ')}</span>
-                        </div>
-                    </div>
+                    )}
                     {/* <div className="mt-4 flex gap-2">
                         {statuses.map(s => (
                             <button

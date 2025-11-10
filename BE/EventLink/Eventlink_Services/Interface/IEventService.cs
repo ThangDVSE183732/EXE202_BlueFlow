@@ -10,7 +10,7 @@ namespace Eventlink_Services.Interface
 {
     public interface IEventService
     {
-        // Existing methods
+        // ✅ EXISTING METHODS - KEEP
         Task<List<EventResponse>> GetAllEventsAsync();
         Task<EventResponse> GetEventByIdAsync(Guid id);
         Task<Event> GetEventById(Guid id);
@@ -19,8 +19,15 @@ namespace Eventlink_Services.Interface
         Task<List<EventResponse>> GetEventsByLocationAsync(string location);
         Task<List<EventResponse>> GetEventsByTypeAsync(string eventType);
         Task<List<EventResponse>> SearchEvents(string name, string location, DateTime? startDate, DateTime? endDate, string eventType);
-        Task Create(Guid userId, CreateEventRequest request);
+        
+        // ✅ JSON methods (keep for backward compatibility)
+        Task<EventResponse> Create(Guid userId, CreateEventRequest request);
         Task Update(Guid id, UpdateEventRequest request);
+        
+        // ✅ NEW: FormData methods with file upload
+        Task<EventResponse> CreateWithFormData(Guid userId, CreateEventFormRequest formRequest);
+        Task UpdateWithFormData(Guid id, UpdateEventFormRequest formRequest);
+        
         void Remove(Event @event);
         Task UpdateStatus(Guid id, string status);
 
@@ -31,16 +38,6 @@ namespace Eventlink_Services.Interface
         Task<EventDetailDto> GetEventDetailAsync(Guid eventId, Guid? currentUserId = null);
 
         /// <summary>
-        /// Create event with initial timeline activities
-        /// </summary>
-        Task<EventDetailDto> CreateEventWithDetailsAsync(Guid organizerId, CreateEventWithDetailsRequest request);
-
-        /// <summary>
-        /// Update event and replace timeline activities
-        /// </summary>
-        Task<EventDetailDto> UpdateEventWithDetailsAsync(Guid eventId, Guid organizerId, UpdateEventWithDetailsRequest request);
-
-        /// <summary>
         /// Check if user can edit event (must be organizer)
         /// </summary>
         Task<bool> CanUserEditEventAsync(Guid eventId, Guid userId);
@@ -49,38 +46,17 @@ namespace Eventlink_Services.Interface
         /// Update event budget and recalculate remaining budget
         /// </summary>
         Task UpdateEventBudgetAsync(Guid eventId);
+
+        /// <summary>
+        /// Update event visibility (isPublic property only)
+        /// </summary>
+        Task UpdateEventVisibilityAsync(Guid eventId, bool isPublic);
+
+        /// <summary>
+        /// Update event featured status (isFeatured property only)
+        /// </summary>
+        Task UpdateEventFeaturedAsync(Guid eventId, bool isFeatured);
     }
 
-    public interface IEventActivityService
-    {
-        /// <summary>
-        /// Get all activities for an event
-        /// </summary>
-        Task<List<EventActivityDto>> GetActivitiesByEventIdAsync(Guid eventId);
-
-        /// <summary>
-        /// Get single activity
-        /// </summary>
-        Task<EventActivityDto> GetActivityByIdAsync(Guid activityId);
-
-        /// <summary>
-        /// Create new activity (Organizer only)
-        /// </summary>
-        Task<EventActivityDto> CreateActivityAsync(Guid eventId, Guid organizerId, EventActivityRequest request);
-
-        /// <summary>
-        /// Update activity (Organizer only)
-        /// </summary>
-        Task<EventActivityDto> UpdateActivityAsync(Guid activityId, Guid organizerId, EventActivityRequest request);
-
-        /// <summary>
-        /// Delete activity (Organizer only)
-        /// </summary>
-        Task<bool> DeleteActivityAsync(Guid activityId, Guid organizerId);
-
-        /// <summary>
-        /// Bulk update activities for an event
-        /// </summary>
-        Task<List<EventActivityDto>> BulkUpdateActivitiesAsync(Guid eventId, Guid organizerId, List<EventActivityRequest> activities);
-    }
+    
 }

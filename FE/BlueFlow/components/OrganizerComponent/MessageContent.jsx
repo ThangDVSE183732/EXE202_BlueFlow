@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { Send, Paperclip, Search, MoreHorizontal } from 'lucide-react';
 import { messageService } from '../../services/messageService';
 import signalRService from '../../services/signalRService';
+import EqualizerLoader from '../EqualizerLoader';
 
 const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
   const [newMessage, setNewMessage] = useState('');
@@ -42,10 +44,14 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
             isRead: msg.isRead
           }));
           setMessages(formattedMessages);
+          
+          // Mark conversation as read
+          await messageService.markConversationAsRead(partnerId);
         }
       } catch (err) {
         console.error('Error loading messages:', err);
         setError('Failed to load messages');
+        toast.error('Không thể tải tin nhắn. Vui lòng thử lại.');
       } finally {
         setLoading(false);
       }
@@ -193,6 +199,8 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
       } catch (err) {
         console.error('Error sending message:', err);
         setError('Failed to send message');
+        toast.error('Không thể gửi tin nhắn. Vui lòng thử lại.');
+        
         // Remove optimistic message on error
         setMessages(prev => prev.filter(msg => msg.id !== optimisticMessageId));
       }
@@ -243,7 +251,7 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-gray-500">Loading messages...</div>
+            <EqualizerLoader message="Đang tải tin nhắn..." />
           </div>
         ) : error ? (
           <div className="flex items-center justify-center h-full">

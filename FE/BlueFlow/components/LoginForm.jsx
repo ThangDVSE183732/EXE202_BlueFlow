@@ -1,8 +1,7 @@
 import FloatingInput from "./FloatingInput";
 import { useState } from "react";
 import { validateLoginForm } from "../utils/validation";
-import {useToast} from '../hooks/useToast';
-import ToastContainer from './ToastContainer';
+import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
@@ -21,7 +20,6 @@ function LoginForm() {
         }));
     };
 
-     const { toasts, showToast, removeToast } = useToast();
      const navigate = useNavigate();
      const { login } = useAuth();
 
@@ -34,11 +32,7 @@ function LoginForm() {
             const errorCount = Object.keys(validation.errors).length;
             const firstError = Object.values(validation.errors)[0];
             
-            showToast({
-                type: 'error',
-                title: 'Validation Error',
-                message: `${firstError}${errorCount > 1 ? ` (and ${errorCount - 1} more error${errorCount > 2 ? 's' : ''})` : ''}`
-            });
+            toast.error(`${firstError}${errorCount > 1 ? ` (and ${errorCount - 1} more error${errorCount > 2 ? 's' : ''})` : ''}`);
             return;
         }
 
@@ -52,51 +46,39 @@ function LoginForm() {
                 // Lưu thông tin user vào AuthContext
                 login(response.data.user);
 
-                showToast({
-                    type: 'success',
-                    title: 'Success!',
-                    message: response.message || 'Login successful!'
-                });
+                toast.success(response.message || 'Login successful!');
 
                 // Chuyển đến trang dashboard tương ứng với role
                 const userRole = response.data?.user?.role?.toLowerCase() || 'organizer';
+                const userRole = response.data?.user?.role?.toLowerCase() || 'organizer';
                 
                 setTimeout(() => {
-                     if (userRole === 'admin') {
-                         navigate('/admin');
-                     } else if (userRole === 'organizer') {
-                         navigate('/organizer');
-                     } else if (userRole === 'sponsor') {
-                         navigate('/sponsor');
-                     } else if (userRole === 'supplier') {
-                         navigate('/supplier');
-                     } else {
+                    if (userRole === 'admin') {
+                        navigate('/admin');
+                    } else if (userRole === 'organizer') {
+                        navigate('/organizer');
+                    } else if (userRole === 'sponsor') {
+                        navigate('/sponsor');
+                    } else if (userRole === 'supplier') {
+                        navigate('/supplier');
+                    } else {
                         navigate('/organizer'); // Default to organizer
-                     }
+                    }
                 }, 1000);
             } else {
-                showToast({
-                    type: 'error',
-                    title: 'Login Failed',
-                    message: response.message || 'Login failed. Please try again.'
-                });
+                toast.error(response.message || 'Login failed. Please try again.');
             }
 		}catch (error) {
 			console.error('Login error:', error);
             
-            showToast({
-                type: 'error',
-                title: 'Login Failed',
-                message: error.response?.data?.message || error.message || 'Login failed. Please try again.'
-            });
+            toast.error(error.response?.data?.message || error.message || 'Login failed. Please try again.');
 		} 
 		};
 
   return (
 	<>
-	<ToastContainer toasts={toasts} onRemoveToast={removeToast} />
     <div className="w-full max-w-md p-8 pt-20 space-y-3 rounded-xl text-black ml-20">
-	<h1 className="text-2xl font-bold ml-3 text-center mb-15">Welcome</h1>
+	<h1 className="text-2xl font-bold ml-3 text-center mb-15">Chào mừng</h1>
 	<form onSubmit={handleSubmit} >
 		<div className="space-y-1 text-sm mb-6">
 			<FloatingInput 
@@ -116,17 +98,17 @@ function LoginForm() {
 					onChange={(value) => handleInputChange('password', value)}
 				/>
 			<div className="flex justify-end text-xs text-red-600 font-medium">
-				<Link rel="noopener noreferrer" to="/forgot-password">Forgot Password?</Link>
+				<Link rel="noopener noreferrer" to="/forgot-password">Quên mật khẩu?</Link>
 			</div>
 		</div>
-		<button type="submit" className="block mb-2 w-full p-3 text-center rounded-lg font-medium text-gray-50 bg-blue-400">Sign in</button>
-		<p className="text-xs font-medium text-center sm:px-6 text-gray-600">Don't have an account?
-		<Link rel="noopener noreferrer" to="/signup" className="text-red-600"> Sign up</Link>
+		<button type="submit" className="block mb-2 w-full p-3 text-center rounded-lg font-medium text-gray-50 bg-blue-400">Đăng nhập</button>
+		<p className="text-xs font-medium text-center sm:px-6 text-gray-600">Bạn chưa có tài khoản?
+		<Link rel="noopener noreferrer" to="/signup" className="text-red-600"> Đăng ký</Link>
 	</p>
 	</form>
 	<div className="flex items-center pt-4 space-x-1">
 		<div className="flex-1 h-px sm:w-16 bg-gray-300"></div>
-		<p className="px-3 text-sm text-gray-600">Login with social accounts</p>
+		<p className="px-3 text-sm text-gray-600">Đăng nhập bằng tài khoản mạng xã hội</p>
 		<div className="flex-1 h-px sm:w-16 bg-gray-300"></div>
 	</div>
 	<div className="flex justify-center space-x-4">

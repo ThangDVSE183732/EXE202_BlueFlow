@@ -37,6 +37,8 @@ namespace Eventlink_Services.Service
                 Email = request.Email,
                 PhoneNumber = request.PhoneNumber,
                 Tags = request.Tags,
+                IsPublic = request.IsPublic ?? false, // ✅ Default to false (private)
+                HasPartnership = request.HasPartnership ?? false, // ✅ NEW: Default to false (no partnership)
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -69,6 +71,7 @@ namespace Eventlink_Services.Service
 
             var result = brandProfiles.Select(p => new BrandProfileResponse
             {
+                Id = p.Id,  // ✅ Map BrandProfile ID
                 BrandName = p.BrandName,
                 BrandLogo = p.BrandLogo,
                 Industry = p.Industry,
@@ -81,6 +84,8 @@ namespace Eventlink_Services.Service
                 Email = p.Email,
                 PhoneNumber = p.PhoneNumber,
                 Tags = p.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
+                IsPublic = p.IsPublic,
+                HasPartnership = p.HasPartnership, // ✅ NEW
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt
             }).ToList();
@@ -94,6 +99,7 @@ namespace Eventlink_Services.Service
 
             var result = new BrandProfileResponse
             {
+                Id = brandProfile.Id,  // ✅ Map BrandProfile ID
                 BrandName = brandProfile.BrandName,
                 BrandLogo = brandProfile.BrandLogo,
                 Industry = brandProfile.Industry,
@@ -106,6 +112,8 @@ namespace Eventlink_Services.Service
                 Email = brandProfile.Email,
                 PhoneNumber = brandProfile.PhoneNumber,
                 Tags = brandProfile.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
+                IsPublic = brandProfile.IsPublic,
+                HasPartnership = brandProfile.HasPartnership, // ✅ NEW
                 CreatedAt = brandProfile.CreatedAt,
                 UpdatedAt = brandProfile.UpdatedAt
             };
@@ -124,6 +132,7 @@ namespace Eventlink_Services.Service
 
             var result = new BrandProfileResponse
             {
+                Id = brandProfile.Id,  // ✅ Map BrandProfile ID
                 BrandName = brandProfile.BrandName,
                 BrandLogo = brandProfile.BrandLogo,
                 Industry = brandProfile.Industry,
@@ -136,6 +145,8 @@ namespace Eventlink_Services.Service
                 Email = brandProfile.Email,
                 PhoneNumber = brandProfile.PhoneNumber,
                 Tags = brandProfile.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
+                IsPublic = brandProfile.IsPublic,
+                HasPartnership = brandProfile.HasPartnership, // ✅ NEW
                 CreatedAt = brandProfile.CreatedAt,
                 UpdatedAt = brandProfile.UpdatedAt
             };
@@ -145,7 +156,7 @@ namespace Eventlink_Services.Service
 
         public async Task UpdateAsync(Guid id, UpdateBrandProfileRequest request)
         {
-            var existingProfile = await _brandProfileRepository.GetByIdAsync(id);
+            var existingProfile = await _brandProfileRepository.GetByUserIdAsync(id);
 
             if (existingProfile == null)
             {
@@ -163,6 +174,8 @@ namespace Eventlink_Services.Service
             existingProfile.Email = request.Email;
             existingProfile.PhoneNumber = request.PhoneNumber;
             existingProfile.Tags = request.Tags;
+            existingProfile.IsPublic = request.IsPublic ?? false;
+            existingProfile.HasPartnership = request.HasPartnership ?? false; // ✅ NEW: Update HasPartnership
             existingProfile.UpdatedAt = DateTime.UtcNow;
             existingProfile.CreatedAt = DateTime.UtcNow;
             existingProfile.UpdatedAt = DateTime.UtcNow;
@@ -188,6 +201,50 @@ namespace Eventlink_Services.Service
             }
 
             _brandProfileRepository.Update(existingProfile);
+        }
+
+        /// <summary>
+        /// Toggle BrandProfile visibility status (IsPublic) by BrandProfile ID
+        /// ✅ SIMPLE: Only updates IsPublic field, no side effects
+        /// </summary>
+        public async Task<BrandProfile> ToggleBrandProfileStatusByIdAsync(Guid brandProfileId)
+        {
+            var brandProfile = await _brandProfileRepository.GetByIdAsync(brandProfileId);
+
+            if (brandProfile == null)
+                throw new Exception("Brand profile not found.");
+
+            // ✅ Toggle logic: true ↔ false
+            var currentStatus = brandProfile.IsPublic ?? false;
+            var newStatus = !currentStatus;
+
+            // ✅ ONLY update IsPublic
+            brandProfile.IsPublic = newStatus;
+
+            _brandProfileRepository.Update(brandProfile);
+            return brandProfile;
+        }
+
+        /// <summary>
+        /// Toggle both IsPublic and HasPartnership status by BrandProfile ID
+        /// ✅ NEW: Toggle both visibility and partnership status at once
+        /// </summary>
+        public async Task<BrandProfile> ToggleBrandProfileAllStatusAsync(Guid brandProfileId)
+        {
+            var brandProfile = await _brandProfileRepository.GetByIdAsync(brandProfileId);
+
+            if (brandProfile == null)
+                throw new Exception("Brand profile not found.");
+
+            // ✅ Toggle both properties
+            var currentIsPublic = brandProfile.IsPublic ?? false;
+            var currentHasPartnership = brandProfile.HasPartnership ?? false;
+            
+            brandProfile.IsPublic = !currentIsPublic;
+            brandProfile.HasPartnership = !currentHasPartnership;
+
+            _brandProfileRepository.Update(brandProfile);
+            return brandProfile;
         }
     }
 }

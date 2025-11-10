@@ -1,38 +1,22 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import PartnersItems from "./PartnersItems";
-import PartnerFilters from "./PartnersFilterBar";
 import Pagination from "./Pagination";
 
-function PartnersList({ partnersItem = [], onMessageClick }) {
-  const [filtered, setFiltered] = useState(partnersItem);
+function PartnersList({ partnersItem = [] }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
 
-  // Đồng bộ khi data gốc đổi
+  // Reset page khi data thay đổi
   useEffect(() => {
-    setFiltered(partnersItem);
     setPage(1);
   }, [partnersItem]);
 
-  // Callback ổn định với guard
-  const handleFilterResult = useCallback((res) => {
-    setFiltered(prev => {
-      if (prev === res) return prev; // cùng reference
-      setPage(1);
-      return res;
-    });
-  }, []);
-
-  const total = filtered.length;
+  const total = partnersItem.length;
   const start = (page - 1) * pageSize;
-  const pageItems = filtered.slice(start, start + pageSize);
+  const pageItems = partnersItem.slice(start, start + pageSize);
 
   return (
     <div className="w-full">
-      <PartnerFilters data={partnersItem} onFilter={handleFilterResult} />
-
-      
-
       <div className="grid grid-cols-3 gap-8 ml-4 mb-10 w-11/12">
         {pageItems.map((item, i) => (
           <PartnersItems 

@@ -39,6 +39,14 @@ builder.Configuration["CLOUDINARY_API_KEY"] = Environment.GetEnvironmentVariable
 builder.Configuration["CLOUDINARY_API_SECRET"] = Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET");
 builder.Configuration["GROQ_API_KEY"] = Environment.GetEnvironmentVariable("GROQ_API_KEY");
 
+builder.Configuration["PayOS:ClientId"] = Environment.GetEnvironmentVariable("PAYOS_CLIENT_ID");
+builder.Configuration["PayOS:ApiKey"] = Environment.GetEnvironmentVariable("PAYOS_API_KEY");
+builder.Configuration["PayOS:ChecksumKey"] = Environment.GetEnvironmentVariable("PAYOS_CHECKSUM_KEY");
+builder.Configuration["PayOS:ReturnUrl"] = Environment.GetEnvironmentVariable("PAYOS_RETURN_URL");
+builder.Configuration["PayOS:CancelUrl"] = Environment.GetEnvironmentVariable("PAYOS_CANCEL_URL");
+builder.Configuration["PremiumPricing:MonthlyPrice"] = Environment.GetEnvironmentVariable("PREMIUM_MONTHLY_PRICE");
+builder.Configuration["PremiumPricing:YearlyPrice"] = Environment.GetEnvironmentVariable("PREMIUM_YEARLY_PRICE");
+
 // Add services to the container
 builder.Services.AddControllers();
 
@@ -108,7 +116,7 @@ builder.Services.AddSignalR();
 
 // ✅ Register SignalR notification service (từ EventLink.Services namespace)
 builder.Services.AddScoped<INotificationService, SignalRNotificationService>();
-
+builder.Services.AddHttpClient();
 
 // Repository Registration
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
@@ -121,7 +129,12 @@ builder.Services.AddScoped<IEventProposalRepository, EventProposalRepository>();
 builder.Services.AddScoped<IPartnershipRepository, PartnershipRepository>();
 builder.Services.AddScoped<ISupplierServiceRepository, SupplierServiceRepository>();
 builder.Services.AddScoped<IEventActivityRepository, EventActivityRepository>();
+builder.Services.AddScoped<IEventActivityRepository, EventActivityRepository>();
+builder.Services.AddScoped<IEventProposalRepository, EventProposalRepository>();
 builder.Services.AddScoped<IBrandProfileRepository, BrandProfileRepository>();
+
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<IUserSubscriptionRepository, UserSubscriptionRepository>();
 
 // Service Registration
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -132,11 +145,17 @@ builder.Services.AddScoped<ISponsorPackageService, SponsorPackageService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IEventService, EventService>();
+builder.Services.AddScoped<IEventActivityService, EventActivityService>(); // ✅ Add this
 builder.Services.AddScoped<IEventProposalService, EventProposalService>();
 builder.Services.AddScoped<IPartnershipService, PartnershipService>();
 builder.Services.AddScoped<ISupplierServiceService, SupplierServiceService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
+builder.Services.AddScoped<IEventProposalService, EventProposalService>();
 builder.Services.AddScoped<IBrandProfileService, BrandProfileService>();
+builder.Services.AddScoped<IPayOSService, PayOSService>();
+//builder.Services.AddScoped<IPayOSService, PayOSHttpService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
 builder.Services.AddSingleton<CloudinaryService>();
 builder.Services.AddSingleton<OpenAIService>();

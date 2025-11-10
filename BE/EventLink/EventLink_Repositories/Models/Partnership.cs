@@ -9,31 +9,40 @@ public partial class Partnership
 {
     public Guid Id { get; set; }
 
-    public Guid EventId { get; set; }
+    // ✅ CHANGED: Make EventId nullable
+    public Guid? EventId { get; set; }
 
     public Guid PartnerId { get; set; }
 
     public string PartnerType { get; set; }
 
-    public string InitialMessage { get; set; }
+    // ✅ Explicitly nullable
+    public string? InitialMessage { get; set; }
 
-    public string OrganizerResponse { get; set; }
+    // ✅ Explicitly nullable
+    public string? OrganizerResponse { get; set; }
 
     public decimal? ProposedBudget { get; set; }
 
     public decimal? AgreedBudget { get; set; }
 
-    public string ServiceDescription { get; set; }
+    // ✅ Explicitly nullable
+    public string? ServiceDescription { get; set; }
 
-    public string Status { get; set; }
+    // ✅ Explicitly nullable
+    public string? Status { get; set; }
 
-    public string OrganizerContactInfo { get; set; }
+    // ✅ Explicitly nullable
+    public string? OrganizerContactInfo { get; set; }
 
-    public string PartnerContactInfo { get; set; }
+    // ✅ Explicitly nullable
+    public string? PartnerContactInfo { get; set; }
 
-    public string PreferredContactMethod { get; set; }
+    // ✅ Explicitly nullable
+    public string? PreferredContactMethod { get; set; }
 
-    public string ExternalWorkspaceUrl { get; set; }
+    // ✅ Explicitly nullable
+    public string? ExternalWorkspaceUrl { get; set; }
 
     public DateTime? StartDate { get; set; }
 
@@ -41,17 +50,21 @@ public partial class Partnership
 
     public DateTime? CompletionDate { get; set; }
 
-    public string OrganizerNotes { get; set; }
+    // ✅ Explicitly nullable
+    public string? OrganizerNotes { get; set; }
 
-    public string PartnerNotes { get; set; }
+    // ✅ Explicitly nullable (already updated before)
+    public string? PartnershipImage { get; set; }
 
-    public string SharedNotes { get; set; }
+    // ✅ Boolean nullable (changed from SharedNotes)
+    public bool? IsMark { get; set; }
 
     public DateTime? CreatedAt { get; set; }
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual Event Event { get; set; }
+    // ✅ CHANGED: Event navigation property is now nullable
+    public virtual Event? Event { get; set; }
 
     public virtual ICollection<Message> Messages { get; set; } = new List<Message>();
 
@@ -60,19 +73,24 @@ public partial class Partnership
     public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
 }
 
+/// <summary>
+/// Partnership Status - Workflow states
+/// ✅ UPDATED: New status flow
+/// </summary>
 public static class PartnershipStatus
 {
-    public const string Pending = "Pending";       
-    public const string Accepted = "Accepted";      
-    public const string Rejected = "Rejected";      
-    public const string Completed = "Completed";    
-    public const string Cancelled = "Cancelled";    
+
+    public const string Pending = "Pending";
+    public const string Ongoing = "Ongoing";
+    public const string Completed = "Completed";
+    public const string Cancelled = "Cancelled";
 }
 
 public static class PartnerType
 {
     public const string Sponsor = "Sponsor";       
     public const string Supplier = "Supplier";     
+    public const string Organizer = "Organizer";   
 }
 
 public static class ContactMethod
