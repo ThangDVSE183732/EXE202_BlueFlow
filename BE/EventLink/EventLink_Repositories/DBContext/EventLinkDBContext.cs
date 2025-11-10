@@ -200,8 +200,9 @@ public partial class EventLinkDBContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
 
+            // ✅ Properly configure relationship with Event.EventActivities collection
             entity.HasOne(d => d.Event)
-                .WithMany()
+                .WithMany(p => p.EventActivities)  // ✅ Point to EventActivities collection
                 .HasForeignKey(d => d.EventId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_EventActivities_Events");

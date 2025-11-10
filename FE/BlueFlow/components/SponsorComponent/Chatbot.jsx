@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { X, RotateCcw } from 'lucide-react';
 import { chatbotService } from '../../services/chatbotService';
 import { parseChatbotResponse } from '../../utils/chatbotUtils';
@@ -75,6 +76,9 @@ const Chatbot = () => {
     } catch (err) {
       console.error('Error sending message:', err);
       setError('Failed to get response from AI');
+      
+      // Show error toast
+      toast.error('Không thể nhận phản hồi từ trợ lý AI. Vui lòng thử lại.');
       
       // Add error message
       const errorMessage = {

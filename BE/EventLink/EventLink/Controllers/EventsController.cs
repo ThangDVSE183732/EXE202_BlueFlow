@@ -8,6 +8,8 @@ using Eventlink_Services.Interface;
 using Eventlink_Services.Request;
 using Eventlink_Services.Response;
 using static Eventlink_Services.Request.EventRequest;
+using Microsoft.AspNetCore.Http;
+using System.ComponentModel.DataAnnotations;
 
 namespace EventLink.Controllers
 {
@@ -17,12 +19,10 @@ namespace EventLink.Controllers
     public class EventsController : ControllerBase
     {
         private readonly IEventService _eventService;
-        // ❌ REMOVED: IEventActivityService _eventActivityService;
 
         public EventsController(IEventService eventService)
         {
             _eventService = eventService;
-            // ❌ REMOVED: _eventActivityService = eventActivityService;
         }
 
         #region Basic CRUD
@@ -60,6 +60,20 @@ namespace EventLink.Controllers
             return Ok(new { success = true, message = "Event retrieved successfully", data = @event });
         }
 
+
+        [HttpGet("{id}/UserId")]
+        [AllowAnonymous]
+        public async Task<ActionResult<EventResponse>> GetEventByUserId(Guid id)
+        {
+            var @event = await _eventService.GetEventsByOrganizerIdAsync(id);
+            if (@event == null)
+            {
+                return NotFound(new { success = false, message = "Event not found" });
+            }
+
+            return Ok(new { success = true, message = "Event retrieved successfully", data = @event });
+        }
+
         /// <summary>
         /// GET: api/Events/{id}/detail - Get complete event with timeline & proposals (Public)
         /// ✅ This returns EventDetailDto with timeline included!
@@ -87,11 +101,12 @@ namespace EventLink.Controllers
         }
 
         /// <summary>
-        /// POST: api/Events - Create event (JSON body) - Organizer only
+        /// POST: api/Events - Create event (FormData with file upload) - Organizer only
+        /// ✅ Changed to accept FormData for CoverImage upload
         /// </summary>
         [HttpPost]
         [Authorize(Policy = "OrganizerOnly")]
-        public async Task<ActionResult> PostEvent([FromBody] CreateEventRequest request)
+        public async Task<ActionResult> PostEvent([FromForm] CreateEventFormRequest formRequest)
         {
             try
             {
@@ -112,23 +127,24 @@ namespace EventLink.Controllers
                 }
 
                 // Validate dates
-                if (request.EndDate < request.EventDate)
+                if (formRequest.EndDate < formRequest.EventDate)
                 {
                     return BadRequest(new { success = false, message = "End date cannot be earlier than start date" });
                 }
 
-                if (request.EventDate < DateTime.UtcNow)
+                if (formRequest.EventDate < DateTime.UtcNow)
                 {
                     return BadRequest(new { success = false, message = "Event date cannot be in the past" });
                 }
 
-                await _eventService.Create(userId.Value, request);
+                // ✅ Create returns EventResponse with Id
+                var createdEvent = await _eventService.CreateWithFormData(userId.Value, formRequest);
 
                 return Ok(new
                 {
                     success = true,
                     message = "Event created successfully",
-                    data = request
+                    data = createdEvent
                 });
             }
             catch (Exception ex)
@@ -138,10 +154,11 @@ namespace EventLink.Controllers
         }
 
         /// <summary>
-        /// PUT: api/Events/{id} - Update event (JSON body) - Organizer only
+        /// PUT: api/Events/{id} - Update event (FormData with file upload) - Organizer only
+        /// ✅ Changed to accept FormData for CoverImage upload
         /// </summary>
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutEvent(Guid id, [FromBody] UpdateEventRequest request)
+        public async Task<IActionResult> PutEvent(Guid id, [FromForm] UpdateEventFormRequest formRequest)
         {
             try
             {
@@ -173,7 +190,7 @@ namespace EventLink.Controllers
                     });
                 }
 
-                await _eventService.Update(id, request);
+                await _eventService.UpdateWithFormData(id, formRequest);
 
                 return Ok(new { success = true, message = "Event updated successfully" });
             }
@@ -227,18 +244,12 @@ namespace EventLink.Controllers
             }
         }
 
-        #endregion
-
-        #region Timeline Management
-        // ⚠️ TEMPORARILY COMMENTED OUT - Implement EventActivityService later
-        /*
         /// <summary>
-        /// POST: api/Events/{id}/timeline/initialize - Create initial activities (JSON body)
-        /// Separate API to initialize timeline after event creation
+        /// PATCH: api/Events/{id}/visibility - Toggle event visibility (isPublic) - Organizer only
+        /// Automatically switches between Public and Private
         /// </summary>
-        [HttpPost("{id}/timeline/initialize")]
-        [Authorize(Policy = "OrganizerOnly")]
-        public async Task<ActionResult> InitializeTimeline(Guid id, [FromBody] InitializeTimelineRequest request)
+        [HttpPatch("{id}/visibility")]
+        public async Task<IActionResult> UpdateEventVisibility(Guid id)
         {
             try
             {
@@ -251,41 +262,51 @@ namespace EventLink.Controllers
                 var canEdit = await _eventService.CanUserEditEventAsync(id, userId.Value);
                 if (!canEdit)
                 {
-                    return Forbid("Only event organizer can edit timeline");
+                    return Forbid("Only event organizer can update event visibility");
                 }
 
-                if (!ModelState.IsValid)
+                var existingEvent = await _eventService.GetEventById(id);
+                if (existingEvent == null)
                 {
-                    return BadRequest(new
-                    {
-                        success = false,
-                        message = "Validation failed",
-                        errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
-                    });
+                    return NotFound(new { success = false, message = "Event not found" });
                 }
 
-                var activities = await _eventActivityService.BulkUpdateActivitiesAsync(
-                    id, userId.Value, request.Activities);
+                // ✅ Toggle: Nếu Public → Private, nếu Private → Public
+                var newVisibility = !(existingEvent.IsPublic ?? true);
+                
+                await _eventService.UpdateEventVisibilityAsync(id, newVisibility);
 
                 return Ok(new
                 {
                     success = true,
-                    message = $"{activities.Count} activities initialized successfully",
-                    data = activities
+                    message = $"Event visibility toggled to {(newVisibility ? "Public" : "Private")}",
+                    data = new
+                    {
+                        eventId = id,
+                        isPublic = newVisibility,
+                        previousState = existingEvent.IsPublic ?? true
+                    }
                 });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { success = false, message = "Event not found" });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { success = false, message = $"Error initializing timeline: {ex.Message}" });
+                return BadRequest(new { success = false, message = $"Error updating event visibility: {ex.Message}" });
             }
         }
 
+
+
+        
         /// <summary>
-        /// PUT: api/Events/{id}/timeline - Replace entire timeline (JSON body)
+        /// PATCH: api/Events/{id}/status - Toggle both visibility AND featured status - Organizer only
+        /// Automatically toggles BOTH IsPublic and IsFeatured at the same time
         /// </summary>
-        [HttpPut("{id}/timeline")]
-        [Authorize(Policy = "OrganizerOnly")]
-        public async Task<ActionResult> ReplaceTimeline(Guid id, [FromBody] ReplaceTimelineRequest request)
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateEventStatus(Guid id)
         {
             try
             {
@@ -298,35 +319,50 @@ namespace EventLink.Controllers
                 var canEdit = await _eventService.CanUserEditEventAsync(id, userId.Value);
                 if (!canEdit)
                 {
-                    return Forbid("Only event organizer can edit timeline");
+                    return Forbid("Only event organizer can update event status");
                 }
 
-                if (!ModelState.IsValid)
+                var existingEvent = await _eventService.GetEventById(id);
+                if (existingEvent == null)
                 {
-                    return BadRequest(new
-                    {
-                        success = false,
-                        message = "Validation failed",
-                        errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
-                    });
+                    return NotFound(new { success = false, message = "Event not found" });
                 }
 
-                var activities = await _eventActivityService.BulkUpdateActivitiesAsync(
-                    id, userId.Value, request.Activities);
+                // ✅ Toggle BOTH properties
+                var newVisibility = !(existingEvent.IsPublic ?? true);
+                var newFeaturedStatus = !(existingEvent.IsFeatured ?? false);
+
+                // Update both
+                await _eventService.UpdateEventVisibilityAsync(id, newVisibility);
+                await _eventService.UpdateEventFeaturedAsync(id, newFeaturedStatus);
 
                 return Ok(new
                 {
                     success = true,
-                    message = "Timeline replaced successfully",
-                    data = activities
+                    message = "Event status toggled successfully",
+                    data = new
+                    {
+                        eventId = id,
+                        isPublic = newVisibility,
+                        isFeatured = newFeaturedStatus,
+                        changes = new
+                        {
+                            previousVisibility = existingEvent.IsPublic ?? true,
+                            previousFeatured = existingEvent.IsFeatured ?? false
+                        }
+                    }
                 });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { success = false, message = "Event not found" });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { success = false, message = $"Error replacing timeline: {ex.Message}" });
+                return BadRequest(new { success = false, message = $"Error updating event status: {ex.Message}" });
             }
         }
-        */
+
         #endregion
 
         #region Helper Methods
@@ -338,18 +374,5 @@ namespace EventLink.Controllers
         }
 
         #endregion
-    }
-
-    /// <summary>
-    /// Request DTOs for timeline management (for future use)
-    /// </summary>
-    public class InitializeTimelineRequest
-    {
-        public List<EventActivityRequest> Activities { get; set; }
-    }
-
-    public class ReplaceTimelineRequest
-    {
-        public List<EventActivityRequest> Activities { get; set; }
     }
 }

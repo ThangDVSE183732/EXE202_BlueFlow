@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { useAccountSettings } from '../../hooks/useAccountSettings';
 import { validateForm, validateField, validateFile, DROPDOWN_OPTIONS, FORM_FIELDS } from '../../utils/accountValidation';
+import MiniEqualizerLoader from '../MiniEqualizerLoader';
 
 // Helper component for form inputs
 const FormInput = ({ 
@@ -97,7 +99,7 @@ const FormTextarea = ({
   </div>
 );
 
-const AccountSetting = ({ showToast }) => {
+const AccountSetting = () => {
   // Custom hook for account settings management
   const {
     loading,
@@ -106,34 +108,36 @@ const AccountSetting = ({ showToast }) => {
     success,
     fetchAccountData,
     saveAccountData,
-    uploadLogo,
     deleteLogo,
     clearMessages
-  } = useAccountSettings(showToast);
+  } = useAccountSettings();
 
   // Form state
   const [formData, setFormData] = useState({
     companyName: '',
+    companyLogoUrl: '',
     industry: '',
     companySize: '',
     foundedYear: '',
-    website: '',
+    socialProfile: '',
     linkedinProfile: '',
     companyDescription: '',
     officialEmail: '',
-    province: '',
-    country: '',
+    stateProvince: '',
+    countryRegion: '',
     city: '',
-    fullAddress: '',
-    contactFullName: '',
-    contactJobTitle: '',
-    contactDirectEmail: '',
-    contactDirectPhone: '',
-    companyLogo: null
-  });
+    streetAddress: '',
+    fullName: '',
+    jobTitle: '',
+    directEmail: '',
+    directPhone: ''
+    });
 
   // Form validation errors
   const [errors, setErrors] = useState({});
+
+  // Preview URL for logo
+  const [logoPreview, setLogoPreview] = useState(null);
 
   // Load initial data
   useEffect(() => {
@@ -141,12 +145,25 @@ const AccountSetting = ({ showToast }) => {
       try {
         const data = await fetchAccountData();
         setFormData(data);
+        // Set logo preview from API if exists (Cloudinary URL)
+        if (data.companyLogoUrl) {
+          setLogoPreview(data.companyLogoUrl);
+        }
       } catch (err) {
         console.error('Failed to load account data:', err);
       }
     };
     loadData();
   }, [fetchAccountData]);
+
+  // Cleanup preview URL on unmount (only for local file previews)
+  useEffect(() => {
+    return () => {
+      if (logoPreview && logoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(logoPreview);
+      }
+    };
+  }, [logoPreview]);
 
   // Handle input changes with validation
   const handleInputChange = (e) => {
@@ -167,7 +184,7 @@ const AccountSetting = ({ showToast }) => {
   };
 
   // Handle file upload with validation
-  const handleFileUpload = async (e) => {
+  const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -178,25 +195,33 @@ const AccountSetting = ({ showToast }) => {
       return;
     }
 
-    try {
-      // Clear any previous errors
-      setErrors(prev => ({ ...prev, companyLogo: '' }));
-      
-      // Upload logo
-      const result = await uploadLogo(file);
-      if (result.success) {
-        setFormData(prev => ({ ...prev, companyLogo: file }));
-      }
-    } catch (err) {
-      setErrors(prev => ({ ...prev, companyLogo: err.message }));
-    }
+    // Clear any previous errors
+    setErrors(prev => ({ ...prev, companyLogo: '' }));
+    
+    // Create preview URL for immediate display (local only, không gọi API)
+    const previewUrl = URL.createObjectURL(file);
+    setLogoPreview(previewUrl);
+    
+    // Save file object to formData (sẽ gửi lên khi nhấn Save)
+    setFormData(prev => ({ 
+      ...prev, 
+      companyLogoFile: file // Lưu file, sẽ upload khi Save
+    }));
+    
+    // Clear success message when user makes changes
+    if (success) clearMessages();
   };
 
   // Handle logo removal
   const handleLogoRemove = async () => {
     try {
       await deleteLogo();
-      setFormData(prev => ({ ...prev, companyLogo: null }));
+      setFormData(prev => ({ ...prev, companyLogoUrl: null }));
+      // Clear preview (only revoke if it's a blob URL)
+      if (logoPreview && logoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(logoPreview);
+      }
+      setLogoPreview(null);
     } catch (err) {
       setErrors(prev => ({ ...prev, companyLogo: err.message }));
     }
@@ -260,24 +285,18 @@ const AccountSetting = ({ showToast }) => {
       </div>
       <div className="h-px w-full bg-gray-300 mx-1 mb-5 mt-2" />
 
-      {/* Success Message */}
-      {success && (
-        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
-          ✅ Account settings updated successfully!
-        </div>
-      )}
-
-      {/* Error Message */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm">
-          ❌ {error}
-        </div>
-      )}
-
       <div className="bg-white rounded-2xl shadow-2xl border border-gray-200 p-8">
         <div className="flex items-start gap-8 pb-8 border-b border-gray-200 mb-8">
-          <div className="w-27 h-27 bg-gradient-to-br from-cyan-400 to-cyan-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-            TC
+          <div className="w-27 h-27 bg-gradient-to-br from-cyan-400 to-cyan-500 rounded-full flex items-center justify-center text-white text-2xl font-bold overflow-hidden">
+            {logoPreview ? (
+              <img 
+                src={logoPreview} 
+                alt="Company Logo" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              formData.companyName ? formData.companyName.substring(0, 2).toUpperCase() : 'TC'
+            )}
           </div>
           <div className="flex-1">
             <h3 className="text-lg text-left font-semibold text-gray-900 mb-1">Company Logo</h3>
@@ -352,11 +371,11 @@ const AccountSetting = ({ showToast }) => {
           <div className="grid grid-cols-2 gap-6">
             <FormInput
               label="Social Profile"
-              name="website"
+              name="socialProfile"
               type="url"
-              value={formData.website}
+              value={formData.socialProfile}
               onChange={handleInputChange}
-              error={errors.website}
+              error={errors.socialProfile}
             />
             <FormInput
               label="LinkedIn Profile"
@@ -396,7 +415,7 @@ const AccountSetting = ({ showToast }) => {
               label="State/Province"
               name="province"
               type="tel"
-              value={formData.province}
+              value={formData.stateProvince}
               onChange={handleInputChange}
               required
               error={errors.province}
@@ -406,8 +425,8 @@ const AccountSetting = ({ showToast }) => {
           <div className="grid grid-cols-2 gap-6">
             <FormSelect
               label="Country/Region"
-              name="country"
-              value={formData.country}
+              name="countryRegion"
+              value={formData.countryRegion}
               onChange={handleInputChange}
               options={DROPDOWN_OPTIONS.COUNTRIES}
               required
@@ -426,11 +445,11 @@ const AccountSetting = ({ showToast }) => {
 
           <FormInput
             label="Street Address"
-            name="fullAddress"
+            name="streetAddress"
             type="text"
-            value={formData.fullAddress}
+            value={formData.streetAddress}
             onChange={handleInputChange}
-            error={errors.fullAddress}
+            error={errors.streetAddress}
           />
         </div>
       </div>
@@ -441,42 +460,42 @@ const AccountSetting = ({ showToast }) => {
           <div className="grid grid-cols-2 gap-6">
             <FormInput
               label="Full Name"
-              name="contactFullName"
+              name="fullName"
               type="text"
-              value={formData.contactFullName}
+              value={formData.fullName}
               onChange={handleInputChange}
               required
-              error={errors.contactFullName}
+              error={errors.fullName}
             />
             <FormInput
               label="Job Title"
-              name="contactJobTitle"
+              name="jobTitle"
               type="text"
-              value={formData.contactJobTitle}
+              value={formData.jobTitle}
               onChange={handleInputChange}
               required
-              error={errors.contactJobTitle}
+              error={errors.jobTitle}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-6">
             <FormInput
               label="Direct Email"
-              name="contactDirectEmail"
+              name="directEmail"
               type="email"
-              value={formData.contactDirectEmail}
+              value={formData.directEmail}
               onChange={handleInputChange}
               required
-              error={errors.contactDirectEmail}
+              error={errors.directEmail}
             />
             <FormInput
               label="Direct Phone"
-              name="contactDirectPhone"
+              name="directPhone"
               type="tel"
-              value={formData.contactDirectPhone}
+              value={formData.directPhone}
               onChange={handleInputChange}
               required
-              error={errors.contactDirectPhone}
+              error={errors.directPhone}
             />
           </div>
         </div>
@@ -499,10 +518,9 @@ const AccountSetting = ({ showToast }) => {
           className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
         >
           {saving && (
-            <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+            <div className="mr-2">
+              <MiniEqualizerLoader />
+            </div>
           )}
           {saving ? 'Saving...' : 'Save Changes'}
         </button>

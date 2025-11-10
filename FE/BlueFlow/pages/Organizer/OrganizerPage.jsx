@@ -8,14 +8,15 @@ import SideBar from '../../components/OrganizerComponent/SideBar';
 import Dashboard from '../../components/OrganizerComponent/DashBoard';
 import SegmentedControlItem from '../../components/OrganizerComponent/SegmentedControlItem';
 import PartnersList from '../../components/OrganizerComponent/PartnersList';
+import PartnersFilterBar from '../../components/OrganizerComponent/PartnersFilterBar';
 import AccountSetting from '../../components/OrganizerComponent/AccountSetting';
 import MessageContent from '../../components/OrganizerComponent/MessageContent';
 import MessagesPage from '../../components/OrganizerComponent/MessagesPage';
 import BrandProfile from '../../components/OrganizerComponent/BrandProfile';
 import EventDetail from '../../components/OrganizerComponent/EventDetail';
 import Chatbot from '../../components/OrganizerComponent/Chatbot';
-import { useToast } from '../../hooks/useToast';
-import Toast from '../../components/Toast';
+import partnershipService from '../../services/partnershipService';
+import toast from 'react-hot-toast';
 
 
 
@@ -73,83 +74,13 @@ const items = [
     { key: 'profile', label: 'Hồ sơ & Cài đặt', icon: Icon.users },
 ];
 
-const partnersItem = [
-    {
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Music in the park: Summer Concert Series",
-    tags : ["Sponsor", "Financial"],
-    rating: 4.5
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Club Creative",
-    tags : ["Sponsor", "Financial"],
-    rating: 3.5
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Lumire",
-    tags : ["Sponsor", "Financial"],
-     rating: 2.5
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Rimberio",
-    tags : ["Sponsor", "Financial"],
-     rating: 5
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "BlissSprhere",
-    tags : ["Sponsor", "Financial"],
-     rating: 3
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Momemtum",
-    tags : ["Sponsor", "Financial"],
-     rating: 1
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Veloria",
-    tags : ["Sponsor", "Financial"],
-     rating: 4.5
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Bela Lumiere",
-    tags : ["Sponsor", "Financial"],
-     rating: 2.5
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "B.I.R",
-    tags : ["Sponsor", "Financial"],
-     rating: 5
-},
-
-
-]
-
-
-
-
-
 function OrganizerPage() {
     const [tab, setTab] = useState(() => localStorage.getItem('organizer.tab') || 'dashboard');
     const [active, setActive] = useState(() => localStorage.getItem('organizer.active') || 'dashboard');
     const [subChange, setSubChange] = useState(() => localStorage.getItem('organizer.discoverySub') || ''); // 'find' | 'saved'
-    const { toasts, showToast, removeToast } = useToast();
+    const [partnersData, setPartnersData] = useState([]);
+    const [filteredPartnersData, setFilteredPartnersData] = useState([]);
+    const [loadingPartners, setLoadingPartners] = useState(false);
 
     // Persist to localStorage whenever these change
     useEffect(() => {
@@ -164,6 +95,94 @@ function OrganizerPage() {
         localStorage.setItem('organizer.discoverySub', subChange);
     }, [subChange]);
 
+    // Fetch partnerships when discovery tab is active
+    useEffect(() => {
+        const fetchPartnerships = async () => {
+            if (active === 'discovery' && subChange === 'find') {
+                setLoadingPartners(true);
+                try {
+                    const response = await partnershipService.getAllPartnerships();
+                    if (response.success && response.data) {
+                        // Transform API data to match PartnersItems format
+                        const transformedData = response.data.map(partnership => {
+                            // Kiểm tra partnerType để lấy data từ đúng nguồn
+                            const isFromSponsor = partnership.partnerType === 'Sponsor';
+                            
+                            if (isFromSponsor) {
+                                // Lấy từ Partner's BrandProfile khi partnerType = "Sponsor"
+                                const brandProfile = partnership.partner?.brandProfile;
+                                return {
+                                    id: partnership.id,
+                                    partnerType: partnership.partnerType, // Thêm partnerType
+                                    location: brandProfile?.location || 'N/A',
+                                    forcus: brandProfile?.industry || 'N/A',
+                                    title: brandProfile?.brandName || 'Untitled Brand',
+                                    tags: partnership.preferredContactMethod 
+                                        ? partnership.preferredContactMethod.split(',').map(t => t.trim())
+                                        : [],
+                                    rating: null, // null cho Sponsor
+                                    logo: partnership.partnershipImage || brandProfile?.brandLogo || 'imgs/SaiGon.png',
+                                    summaryPoints: (() => {
+                                        const points = [];
+                                        // Thêm serviceDescription nếu có
+                                        if (partnership.serviceDescription) {
+                                            points.push(partnership.serviceDescription);
+                                        }
+                                        // Thêm initialMessage (split bởi dấu ;) nếu có
+                                        if (partnership.initialMessage) {
+                                            const messages = partnership.initialMessage.split(';').map(s => s.trim()).filter(s => s);
+                                            points.push(...messages);
+                                        }
+                                        return points.length > 0 ? points : ['No information available'];
+                                    })(),
+                                    eventHighlights: [],
+                                    targetAudienceList: [],
+                                    focusAreas: brandProfile?.industry ? [brandProfile.industry] : ['General'],
+                                    averageSponsorship: partnership.proposedBudget 
+                                        ? `${partnership.proposedBudget.toLocaleString()} VND`
+                                        : 'N/A',
+                                    pastEvents: [],
+                                    statuses: [partnership.status || 'Pending', 'Chat now']
+                                };
+                            } else {
+                                // Lấy từ Event data khi partnerType = "Organizer" (logic cũ)
+                                return {
+                                    id: partnership.id,
+                                    partnerType: partnership.partnerType, // Thêm partnerType
+                                    location: partnership.event?.location || 'N/A',
+                                    forcus: partnership.event?.eventType || 'N/A',
+                                    title: partnership.event?.title || 'Untitled Event',
+                                    tags: partnership.event?.tags ? JSON.parse(partnership.event.tags) : [],
+                                    rating: 4.8,
+                                    logo: partnership.partnershipImage || 'imgs/SaiGon.png',
+                                    summaryPoints: [
+                                        partnership.serviceDescription || 'No description available'
+                                    ],
+                                    eventHighlights: partnership.event?.eventHighlights ? JSON.parse(partnership.event.eventHighlights) : [],
+                                    targetAudienceList: partnership.event?.targetAudienceList ? JSON.parse(partnership.event.targetAudienceList) : [],
+                                    focusAreas: partnership.event?.category ? [partnership.event.category] : ['General'],
+                                    averageSponsorship: partnership.proposedBudget 
+                                        ? `${partnership.proposedBudget.toLocaleString()} VND`
+                                        : 'N/A',
+                                    pastEvents: [partnership.event?.title || 'N/A'],
+                                    statuses: [partnership.status || 'Pending', 'Chat now']
+                                };
+                            }
+                        });
+                        setPartnersData(transformedData);
+                    }
+                } catch (error) {
+                    console.error('Error fetching partnerships:', error);
+                    toast.error('Không thể tải danh sách partnerships');
+                } finally {
+                    setLoadingPartners(false);
+                }
+            }
+        };
+
+        fetchPartnerships();
+    }, [active, subChange]);
+
 
 
     const renderContent = () => {
@@ -175,9 +194,18 @@ function OrganizerPage() {
         return <EventDetail />;
       case "discovery":
         if(subChange === 'find') {
-            return <PartnersList
-            partnersItem={partnersItem}
-          />;
+            if (loadingPartners) {
+                return <div className="flex justify-center items-center h-64">Đang tải...</div>;
+            }
+            return (
+                <>
+                    <PartnersFilterBar 
+                        data={partnersData} 
+                        onFilter={setFilteredPartnersData}
+                    />
+                    <PartnersList partnersItem={filteredPartnersData} />
+                </>
+            );
         }else if(subChange === 'saved') {
             return;
         }
@@ -190,14 +218,14 @@ function OrganizerPage() {
         }
         return ;
       case "messages":
-        return <MessagesPage showToast={showToast} />;
+        return <MessagesPage />;
       case "ai":
-        return <Chatbot showToast={showToast} />;
+        return <Chatbot />;
     case "profile":
          if(subChange === 'brand') {
-            return <BrandProfile showToast={showToast} />;
+            return <BrandProfile />;
         }else if(subChange === 'account') {
-            return <AccountSetting showToast={showToast} />;
+            return <AccountSetting />;
         }else if(subChange === 'marketing') {
             return;
         }
@@ -229,20 +257,6 @@ function OrganizerPage() {
 
             </div>
             <Footer/>
-            
-            {/* Toast Notifications */}
-            {toasts.map((toast) => (
-                <Toast
-                    key={toast.id}
-                    isVisible={toast.isVisible}
-                    type={toast.type}
-                    title={toast.title}
-                    message={toast.message}
-                    duration={toast.duration}
-                    position={toast.position}
-                    onClose={() => removeToast(toast.id)}
-                />
-            ))}
         </div>
     )
 }

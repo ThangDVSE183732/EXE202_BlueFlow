@@ -134,6 +134,7 @@ builder.Services.AddScoped<ISponsorPackageService, SponsorPackageService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IEventService, EventService>();
+builder.Services.AddScoped<IEventActivityService, EventActivityService>(); // ✅ Add this
 builder.Services.AddScoped<IEventProposalService, EventProposalService>();
 builder.Services.AddScoped<IPartnershipService, PartnershipService>();
 builder.Services.AddScoped<ISupplierServiceService, SupplierServiceService>();

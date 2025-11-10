@@ -91,5 +91,42 @@ export const brandService = {
         errors: error.response?.data?.errors || []
       };
     }
+  },
+
+  // PATCH /api/BrandProfiles/{id}/toggle-status - Toggle trạng thái Public/Private
+  toggleBrandProfileStatus: async (id) => {
+    try {
+      const response = await api.patch(`/BrandProfiles/${id}/toggle-status`);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Brand profile status toggled successfully'
+      };
+    } catch (error) {
+      console.error('Toggle brand profile status error:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to toggle brand profile status',
+        errors: error.response?.data?.errors || []
+      };
+    }
+  },
+  toggleBrandProfileAllStatus: async (id) => {
+    try {
+      const response = await api.patch(`/BrandProfiles/${id}/toggle-all-status`);
+      return {
+        success: true,
+        data: response.data,
+        message: 'Brand profile all status toggled successfully'
+      };
+    } catch (error) {
+      console.error('Toggle brand profile all status error:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to toggle brand profile status',
+        errors: error.response?.data?.errors || []
+      };
+    }
   }
+
 }

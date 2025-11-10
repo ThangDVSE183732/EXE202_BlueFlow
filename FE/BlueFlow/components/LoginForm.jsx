@@ -1,8 +1,7 @@
 import FloatingInput from "./FloatingInput";
 import { useState } from "react";
 import { validateLoginForm } from "../utils/validation";
-import {useToast} from '../hooks/useToast';
-import ToastContainer from './ToastContainer';
+import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
@@ -21,7 +20,6 @@ function LoginForm() {
         }));
     };
 
-     const { toasts, showToast, removeToast } = useToast();
      const navigate = useNavigate();
      const { login } = useAuth();
 
@@ -34,11 +32,7 @@ function LoginForm() {
             const errorCount = Object.keys(validation.errors).length;
             const firstError = Object.values(validation.errors)[0];
             
-            showToast({
-                type: 'error',
-                title: 'Validation Error',
-                message: `${firstError}${errorCount > 1 ? ` (and ${errorCount - 1} more error${errorCount > 2 ? 's' : ''})` : ''}`
-            });
+            toast.error(`${firstError}${errorCount > 1 ? ` (and ${errorCount - 1} more error${errorCount > 2 ? 's' : ''})` : ''}`);
             return;
         }
 
@@ -52,11 +46,7 @@ function LoginForm() {
                 // Lưu thông tin user vào AuthContext
                 login(response.data.user);
 
-                showToast({
-                    type: 'success',
-                    title: 'Success!',
-                    message: response.message || 'Login successful!'
-                });
+                toast.success(response.message || 'Login successful!');
 
                 // Chuyển đến trang dashboard tương ứng với role
                 const userRole = response.data?.user?.role?.toLowerCase() || 'organizer';
@@ -75,26 +65,17 @@ function LoginForm() {
                     }
                 }, 1000);
             } else {
-                showToast({
-                    type: 'error',
-                    title: 'Login Failed',
-                    message: response.message || 'Login failed. Please try again.'
-                });
+                toast.error(response.message || 'Login failed. Please try again.');
             }
 		}catch (error) {
 			console.error('Login error:', error);
             
-            showToast({
-                type: 'error',
-                title: 'Login Failed',
-                message: error.response?.data?.message || error.message || 'Login failed. Please try again.'
-            });
+            toast.error(error.response?.data?.message || error.message || 'Login failed. Please try again.');
 		} 
 		};
 
   return (
 	<>
-	<ToastContainer toasts={toasts} onRemoveToast={removeToast} />
     <div className="w-full max-w-md p-8 pt-20 space-y-3 rounded-xl text-black ml-20">
 	<h1 className="text-2xl font-bold ml-3 text-center mb-15">Chào mừng</h1>
 	<form onSubmit={handleSubmit} >

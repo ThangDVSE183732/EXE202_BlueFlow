@@ -13,11 +13,39 @@ import ForgotPassword from "../pages/ForgotPassword";
 import OrganizerPage from "../pages/Organizer/OrganizerPage";
 import SponsorPage from "../pages/Sponsor/SponsorPage";
 import SupplierPage from "../pages/Supplier/SupplierPage";
+import ProgressBar from "../components/ProgressBar";
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <ProgressBar />
+        <Toaster 
+          position="top-right"
+          reverseOrder={false}
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+            success: {
+              duration: 3000,
+              iconTheme: {
+                primary: '#00A6F4',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              duration: 4000,
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
+          }}
+        />
         <Routes>
           {/* Public routes */}
           <Route path="/login" element={<Login />} />

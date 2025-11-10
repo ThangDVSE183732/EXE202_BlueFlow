@@ -26,7 +26,9 @@ const MessagesPage = () => {
       </div>
       
       {/* Messages Sidebar */}
-      <MessagesList onSelectChat={handleSelectChat} />
+      <MessagesList 
+        onSelectChat={handleSelectChat}
+      />
     </div>
   );
 };

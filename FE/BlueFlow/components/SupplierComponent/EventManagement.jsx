@@ -1,7 +1,64 @@
+import { useState } from "react";
+import toast from "react-hot-toast";
 import SearchBar from "../SearchBar";
 import EventList from "./EventList";
+import EventCreate from "./EventCreate";
+import EventDetail from "./EventDetail";
+import { useEvent } from "../../hooks/useEvent";
+import Loading from "../Loading";
 
 function EventManagement() {
+    const [showCreateForm, setShowCreateForm] = useState(false);
+    const [selectedEventId, setSelectedEventId] = useState(null);
+    const [newEventId, setNewEventId] = useState(null);
+    const [isVerifying, setIsVerifying] = useState(false);
+    const { getEventById } = useEvent();
+
+    const handleBackFromCreate = async (eventId) => {
+        if (eventId) {
+            setIsVerifying(true);
+            try {
+                // Call API to get the newly created event to ensure data is synced
+                const result = await getEventById(eventId);
+                
+                if (result.success) {
+                    // Only navigate back and update list after successfully fetching the event
+                    setNewEventId(eventId);
+                    setShowCreateForm(false);
+                } else {
+                    // If fetch fails, still navigate back but show warning
+                    toast('Event đã tạo nhưng không thể tải lại dữ liệu', { icon: '⚠️' });
+                    setShowCreateForm(false);
+                }
+            } finally {
+                setIsVerifying(false);
+            }
+        } else {
+            // No eventId means user cancelled
+            setShowCreateForm(false);
+        }
+    };
+
+    const handleViewDetail = (eventId) => {
+        setSelectedEventId(eventId);
+    };
+
+    const handleBackFromDetail = () => {
+        setSelectedEventId(null);
+    };
+
+    if (showCreateForm) {
+        return <EventCreate onBack={handleBackFromCreate} />;
+    }
+
+    if (selectedEventId) {
+        return <EventDetail eventId={selectedEventId} onBack={handleBackFromDetail} />;
+    }
+
+    if (isVerifying) {
+        return <Loading message="Đang xác thực dữ liệu..." />;
+    }
+
     return(
         <div>
             <div className="space-y-1 text-left">
@@ -18,10 +75,18 @@ function EventManagement() {
             </div>
             <div className="flex justify-between mt-6">
                 <SearchBar sizeClass="w-65" button={"left-57"} input={"w-full rounded-xl py-0.5"}/>
-                <button className="text-white  bg-sky-500 px-8 rounded-full py-1 text-base font-semibold">Event list</button>
+                <button 
+                    onClick={() => setShowCreateForm(true)}
+                    className="text-white bg-sky-500 hover:bg-sky-600 px-8 rounded-full py-1 text-base font-semibold transition-colors"
+                >
+                    Add new event
+                </button>
             </div>
             <div className="mt-10 mb-15">
-                <EventList />
+                <EventList 
+                    newEventId={newEventId}
+                    onViewDetail={handleViewDetail}
+                />
             </div>
         </div>
     )

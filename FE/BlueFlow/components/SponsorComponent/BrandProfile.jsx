@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Edit, Plus, Upload, Check, X } from 'lucide-react';
 import { useBrandProfile } from '../../hooks/useBrandProfile';
+import { useAuth } from '../../contexts/AuthContext';
+import { usePartnership } from '../../hooks/usePartnership';
+import partnershipService from '../../services/partnershipService';
+import Loading from '../Loading';
 
-const BrandProfile = ({ showToast }) => {
-  const { brandData, setBrandData, loading, error, updateBrandProfile } = useBrandProfile(showToast);
+const BrandProfile = () => {
+  const { brandData, setBrandData, loading, error, brandProfileId, updateBrandProfile, toggleBrandProfileStatus, toggleBrandProfileAllStatus } = useBrandProfile();
+  const { updatePartnershipStatusByPartner } = usePartnership();
+  const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState(brandData);
   const [logoPreview, setLogoPreview] = useState(null);
   const [logoFile, setLogoFile] = useState(null);
 
-  // Sync editedData with brandData when brandData changes
+  // Sync editedData với brandData khi brandData thay đổi
   React.useEffect(() => {
+    console.log('🔄 Syncing brandData to editedData:', brandData);
     setEditedData(brandData);
   }, [brandData]);
 
@@ -29,27 +37,13 @@ const BrandProfile = ({ showToast }) => {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      if (showToast) {
-        showToast({
-          type: 'error',
-          title: 'Lỗi!',
-          message: 'Vui lòng chọn file ảnh',
-          duration: 3000
-        });
-      }
+      toast.error('Vui lòng chọn file ảnh');
       return;
     }
 
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      if (showToast) {
-        showToast({
-          type: 'error',
-          title: 'Lỗi!',
-          message: 'Kích thước ảnh không được vượt quá 2MB',
-          duration: 3000
-        });
-      }
+      toast.error('Kích thước ảnh không được vượt quá 2MB');
       return;
     }
 
@@ -59,37 +53,141 @@ const BrandProfile = ({ showToast }) => {
     setLogoFile(file);
   };
 
-  const [oldEditedData] = useState({
-    companyName: 'TechCorp Solutions',
-    tagline: 'Technology & Innovation Sponsor',
-    location: 'Ho Chi Minh City, Vietnam',
-    eventsSponsored: 45,
-    activePartnerships: 12,
-    satisfactionRate: 98,
-    aboutUs: 'TechCorp Solutions is a leading technology company specializing in innovative software solutions and digital transformation services. We are passionate about supporting the tech community through strategic event sponsorships and partnerships.',
-    mission: [
-      'Expertise in digital transformation and software innovation',
-      'Strong commitment to industry collaboration and ecosystem building',
-      'Focused on fostering innovation within the Vietnamese tech community',
-      'Proven record in successful partnerships and event sponsorships'
-    ],
-    companyInfo: {
-      industry: 'Technology & Software',
-      companySize: '500-1000 employees',
-      founded: '2018',
-      website: 'www.techcorp.vn',
-      email: 'techcorpsolution@gmail.com',
-      phone: '+84 949xxxxxx'
-    },
-    industries: [
-      'Artificial Intelligence',
-      'Machine Learning',
-      'Blockchain',
-      'Startups',
-      'Innovation',
-      'Networking'
-    ]
-  });
+  const handlePublicPrivateChange = async (e) => {
+    const newValue = e.target.value; // 'public' hoặc 'private'
+    const isChangingToPublic = newValue === 'public';
+    const hasPartnership = editedData.hasPartnership; // Kiểm tra có partnership không
+    
+    // Check if brandProfileId exists
+    if (!brandProfileId) {
+      toast.error('Brand profile ID not found. Please try again.');
+      return;
+    }
+
+    try {
+      // ============ KHI NHẤN PUBLIC ============
+      if (isChangingToPublic) {
+        if (hasPartnership === true) {
+          // Đã có partnership, gọi toggle + update partnership status
+          const toggleResult = await toggleBrandProfileStatus();
+          
+          if (!toggleResult.success) {
+            toast.error('Failed to change profile status');
+            return;
+          }
+
+          const partnershipResult = await updatePartnershipStatusByPartner(user.id);
+          
+          if (partnershipResult.success) {
+            toast.success('Profile and partnership status updated to Public');
+            // Cập nhật cả brandData và editedData
+            const updatedData = { isPublic: true };
+            setBrandData(prev => ({ ...prev, ...updatedData }));
+            setEditedData(prev => ({ ...prev, ...updatedData }));
+          } else {
+            toast.error('Profile updated but failed to update partnership');
+            // Vẫn cập nhật isPublic vì toggleBrandProfileStatus đã thành công
+            const updatedData = { isPublic: true };
+            setBrandData(prev => ({ ...prev, ...updatedData }));
+            setEditedData(prev => ({ ...prev, ...updatedData }));
+          }
+        } else {
+          // Chưa có partnership, tạo mới + toggle all status
+          // 1. Create partnership with brand data
+          const formData = new FormData();
+          
+          // Required fields theo yêu cầu
+          formData.append('EventId', ''); // null
+          formData.append('PartnerId', user.id); // User ID
+          formData.append('PartnerType', user.role); // User role
+          formData.append('InitialMessage', Array.isArray(editedData.mission) ? editedData.mission.join('; ') : editedData.mission || '');
+          formData.append('ProposedBudget', ''); // empty
+          formData.append('ServiceDescription', editedData.aboutUs || '');
+          formData.append('PreferredContactMethod', Array.isArray(editedData.tagline) ? editedData.tagline.join('; ') : editedData.tagline || '');
+          formData.append('OrganizerContactInfo', editedData.companyInfo?.phone || '');
+          formData.append('StartDate', ''); // null
+          formData.append('DeadlineDate', ''); // null
+          
+          // Handle brand logo
+          if (logoFile) {
+            formData.append('PartnershipImageFile', logoFile);
+          } else if (editedData.brandLogo) {
+            formData.append('PartnershipImageFile', editedData.brandLogo);
+          }
+
+          try {
+            const partnershipResult = await partnershipService.createPartnership(formData);
+            
+            if (partnershipResult) {
+              // 2. Toggle all status (brand profile + partnership)
+              const toggleResult = await toggleBrandProfileAllStatus();
+              
+              if (toggleResult.success) {
+                toast.success('Partnership created and profile set to Public!');
+                // Cập nhật cả brandData và editedData với isPublic và hasPartnership
+                const updatedData = { isPublic: true, hasPartnership: true };
+                setBrandData(prev => ({ ...prev, ...updatedData }));
+                setEditedData(prev => ({ ...prev, ...updatedData }));
+              } else {
+                toast.error('Partnership created but failed to update profile status');
+                // Vẫn cập nhật hasPartnership vì partnership đã tạo thành công
+                const updatedData = { hasPartnership: true };
+                setBrandData(prev => ({ ...prev, ...updatedData }));
+                setEditedData(prev => ({ ...prev, ...updatedData }));
+              }
+            }
+          } catch (partnershipError) {
+            console.error('Partnership creation error:', partnershipError);
+            toast.error('Failed to create partnership');
+          }
+        }
+      } 
+      // ============ KHI NHẤN PRIVATE ============
+      else {
+        if (hasPartnership === true) {
+          // Có partnership, gọi toggle + update partnership status
+          const toggleResult = await toggleBrandProfileStatus();
+          
+          if (!toggleResult.success) {
+            toast.error('Failed to change profile status');
+            return;
+          }
+
+          const partnershipResult = await updatePartnershipStatusByPartner(user.id);
+          
+          if (partnershipResult.success) {
+            toast.success('Profile and partnership status updated to Private');
+            // Cập nhật cả brandData và editedData
+            const updatedData = { isPublic: false };
+            setBrandData(prev => ({ ...prev, ...updatedData }));
+            setEditedData(prev => ({ ...prev, ...updatedData }));
+          } else {
+            toast.error('Profile updated but failed to update partnership');
+            // Vẫn cập nhật isPublic vì toggleBrandProfileStatus đã thành công
+            const updatedData = { isPublic: false };
+            setBrandData(prev => ({ ...prev, ...updatedData }));
+            setEditedData(prev => ({ ...prev, ...updatedData }));
+          }
+        } else {
+          // Không có partnership, chỉ gọi toggle
+          const toggleResult = await toggleBrandProfileStatus();
+          
+          if (toggleResult.success) {
+            toast.success('Profile set to Private');
+            // Cập nhật cả brandData và editedData
+            const updatedData = { isPublic: false };
+            setBrandData(prev => ({ ...prev, ...updatedData }));
+            setEditedData(prev => ({ ...prev, ...updatedData }));
+          } else {
+            toast.error('Failed to change profile status');
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error changing public/private status:', error);
+      toast.error(error.message || 'Failed to update profile status');
+    }
+  };
 
   const handleSave = async () => {
     try {
@@ -100,7 +198,7 @@ const BrandProfile = ({ showToast }) => {
     } catch (error) {
       console.error('Failed to save:', error);
       
-      // Display detailed error from backend
+      // Hiển thị lỗi chi tiết từ backend
       if (error.errorMessages && error.errorMessages.length > 0) {
         alert(`Failed to save:\n\n${error.errorMessages.join('\n')}`);
       } else {
@@ -110,7 +208,7 @@ const BrandProfile = ({ showToast }) => {
   };
 
   const handleCancel = () => {
-    setEditedData(brandData); // Reset to original data
+    setEditedData(brandData); // Reset về dữ liệu gốc
     setIsEditing(false);
   };
 
@@ -153,7 +251,14 @@ const BrandProfile = ({ showToast }) => {
     }));
   };
 
+  if (loading) {
+    return <Loading message="Đang tải thông tin thương hiệu..." />;
+  }
 
+  // Hiển thị error nếu có
+  if (error) {
+    console.warn('Brand profile error:', error);
+  }
 
   return (
     <div className="min-h-screen bg-white p-6 pt-1 overflow-x-hidden">
@@ -197,6 +302,14 @@ const BrandProfile = ({ showToast }) => {
               Edit
             </button>
           )}
+          <select 
+            value={editedData.isPublic ? 'public' : 'private'}
+            onChange={handlePublicPrivateChange}
+            className="px-3 py-1 rounded-full text-xs font-medium bg-green-500 text-white hover:bg-green-600 focus:outline-none cursor-pointer transition-all"
+          >
+            <option value="private">Private</option>
+            <option value="public">Public</option>
+          </select>
           <label className="w-6 h-6 flex items-center justify-center text-white hover:bg-white/10 rounded-full transition-colors cursor-pointer" title="Upload logo">
             <Upload size={14} />
             <input
@@ -211,17 +324,27 @@ const BrandProfile = ({ showToast }) => {
         {/* Logo and Company Info - Left */}
         <div className="flex items-center space-x-5 mb-6 mt-5 min-w-0 w-full max-w-[calc(100%-8rem)]">
           <div className="w-26 h-26 bg-white rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden">
-            {(logoPreview || brandData.brandLogo) ? (
-              <img 
-                src={logoPreview || brandData.brandLogo} 
-                alt="Company Logo" 
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-2xl font-bold text-gray-800">
-                {editedData.companyName ? editedData.companyName.substring(0, 2).toUpperCase() : 'TC'}
-              </span>
-            )}
+            {(() => {
+              console.log('🖼️ Logo check:', {
+                logoPreview,
+                brandLogo: editedData.brandLogo,
+                hasLogo: !!(logoPreview || editedData.brandLogo)
+              });
+              return (logoPreview || editedData.brandLogo) ? (
+                <img 
+                  src={logoPreview || editedData.brandLogo} 
+                  alt="Company Logo" 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error('❌ Logo load error:', e.target.src);
+                  }}
+                />
+              ) : (
+                <span className="text-2xl font-bold text-gray-800">
+                  {editedData.companyName ? editedData.companyName.substring(0, 2).toUpperCase() : 'TC'}
+                </span>
+              );
+            })()}
           </div>
           <div className='text-left min-w-0 flex-1 overflow-hidden'>
             {isEditing ? (
@@ -238,13 +361,13 @@ const BrandProfile = ({ showToast }) => {
             {isEditing ? (
               <input
                 type="text"
-                value={editedData.tagline}
+                value={editedData.companyInfo.industry}
                 onChange={(e) => handleInputChange('tagline', e.target.value)}
                 className="text-white text-sm mb-0.5 bg-transparent border-b border-white/50 focus:outline-none w-full min-w-0"
-                title={editedData.tagline}
+                title={editedData.companyInfo.industry}
               />
             ) : (
-              <p className="text-white text-sm mb-0.5 truncate min-w-0" title={editedData.tagline}>{editedData.tagline}</p>
+              <p className="text-white text-sm mb-0.5 truncate min-w-0" title={editedData.companyInfo.industry}>{editedData.companyInfo.industry}</p>
             )}
             {isEditing ? (
               <input

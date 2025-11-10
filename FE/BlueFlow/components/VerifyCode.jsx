@@ -1,7 +1,6 @@
 import FloatingInput from "./FloatingInput";
 import { Link, useLocation } from "react-router-dom";
-import {useToast} from '../hooks/useToast';
-import ToastContainer from './ToastContainer';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useState } from "react";
 import { validateVerifyForm } from "../utils/validation";
@@ -20,7 +19,6 @@ function VerifyCode() {
         }));
     };
 
-     const { toasts, showToast, removeToast } = useToast();
      const navigate = useNavigate();
      const { login } = useAuth();
      const location = useLocation();
@@ -60,20 +58,12 @@ function VerifyCode() {
       const errorCount = Object.keys(validation.errors).length;
       const firstError = Object.values(validation.errors)[0];
 
-      showToast({
-        type: 'error',
-        title: 'Validation Error',
-        message: `${firstError}${errorCount > 1 ? ` (and ${errorCount - 1} more error${errorCount > 2 ? 's' : ''})` : ''}`
-      });
+      toast.error(`${firstError}${errorCount > 1 ? ` (and ${errorCount - 1} more error${errorCount > 2 ? 's' : ''})` : ''}`);
       return;
     }
 
     if (!email) {
-      showToast({
-        type: 'error',
-        title: 'Error',
-        message: 'Email not found. Please start from login page.'
-      });
+      toast.error('Email not found. Please start from login page.');
       console.log('Email not found in state');
       navigate('/login');
       return;
@@ -119,11 +109,7 @@ function VerifyCode() {
       }
 
       if (response.success) {
-        showToast({
-          type: 'success',
-          title: 'Success!',
-          message: response.message || 'OTP verified successfully!'
-        });
+        toast.success(response.message || 'OTP verified successfully!');
 
         // Lưu thông tin user vào context
         if (response.data?.user) {
@@ -144,27 +130,18 @@ function VerifyCode() {
           });
         }
       } else {
-        showToast({
-          type: 'error',
-          title: 'Verification Failed',
-          message: response.message || 'Invalid verification code.'
-        });
+        toast.error(response.message || 'Invalid verification code.');
       }
     } catch (error) {
       console.error('Verify OTP error:', error);
       
-      showToast({
-        type: 'error',
-        title: 'Verification Failed',
-        message: error.message || 'Verification failed. Please try again.'
-      });
+      toast.error(error.message || 'Verification failed. Please try again.');
     } 
   };
 
 
     return (
     <>
-      <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
       <div className="text-left w-full max-w-md px-8 pt-8 pl-12 text-black">
         <Link
           to="/forgot-password"

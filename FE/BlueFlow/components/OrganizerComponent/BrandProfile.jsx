@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Edit, Plus, Upload, Check, X } from 'lucide-react';
 import { useBrandProfile } from '../../hooks/useBrandProfile';
+import Loading from '../Loading';
 
-const BrandProfile = ({ showToast }) => {
-  const { brandData, setBrandData, loading, error, updateBrandProfile } = useBrandProfile(showToast);
+const BrandProfile = () => {
+  const { brandData, setBrandData, loading, error, updateBrandProfile } = useBrandProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState(brandData);
   const [logoPreview, setLogoPreview] = useState(null);
@@ -29,27 +31,13 @@ const BrandProfile = ({ showToast }) => {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      if (showToast) {
-        showToast({
-          type: 'error',
-          title: 'Lỗi!',
-          message: 'Vui lòng chọn file ảnh',
-          duration: 3000
-        });
-      }
+      toast.error('Vui lòng chọn file ảnh');
       return;
     }
 
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      if (showToast) {
-        showToast({
-          type: 'error',
-          title: 'Lỗi!',
-          message: 'Kích thước ảnh không được vượt quá 2MB',
-          duration: 3000
-        });
-      }
+      toast.error('Kích thước ảnh không được vượt quá 2MB');
       return;
     }
 
@@ -122,14 +110,7 @@ const BrandProfile = ({ showToast }) => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white p-6 pt-1 overflow-x-hidden flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-500">Loading brand profile...</p>
-        </div>
-      </div>
-    );
+    return <Loading message="Đang tải thông tin thương hiệu..." />;
   }
 
   // Hiển thị error nếu có

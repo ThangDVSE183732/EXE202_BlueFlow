@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import { Edit, Search, Pin } from 'lucide-react';
 import { messageService } from '../../services/messageService';
 import signalRService from '../../services/signalRService';
+import EqualizerLoader from '../EqualizerLoader';
 
-const MessagesList = ({ onSelectChat, showToast }) => {
+const MessagesList = ({ onSelectChat }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [allChats, setAllChats] = useState([]);
   const [pinnedChats, setPinnedChats] = useState([]);
@@ -59,23 +61,14 @@ const MessagesList = ({ onSelectChat, showToast }) => {
       } catch (err) {
         console.error('Error loading partner list chat:', err);
         setError('Failed to load chats');
-        
-        // Show error toast
-        if (showToast) {
-          showToast({
-            type: 'error',
-            title: 'Lỗi tải danh sách!',
-            message: 'Không thể tải danh sách đối tác. Vui lòng thử lại.',
-            duration: 4000
-          });
-        }
+        toast.error('Không thể tải danh sách đối tác. Vui lòng thử lại.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchPartnerListChat();
-  }, [showToast]);
+  }, []);
 
   // Setup SignalR for online/offline status (backend không có ReceiveMessage broadcast)
   useEffect(() => {
@@ -107,7 +100,6 @@ const MessagesList = ({ onSelectChat, showToast }) => {
                 }) : '',
                 avatar: chat.partnerAvatar,
                 hasNotification: (chat.unreadCount || 0) > 0,
-                isRead: chat.lastMessage?.isRead,
                 unreadCount: chat.unreadCount || 0,
                 partnerRole: chat.partnerRole
               }));
@@ -279,7 +271,9 @@ const MessagesList = ({ onSelectChat, showToast }) => {
           </div>
           
           {loading ? (
-            <div className="text-center text-gray-500 py-4">Loading chats...</div>
+            <div className="py-8">
+              <EqualizerLoader message="Đang tải danh sách chat..." />
+            </div>
           ) : error ? (
             <div className="text-center text-red-500 py-4">{error}</div>
           ) : filteredAllChats.length === 0 ? (
