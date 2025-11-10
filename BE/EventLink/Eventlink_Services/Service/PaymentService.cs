@@ -438,7 +438,10 @@ namespace Eventlink_Services.Service
                 PaymentType = p.PaymentType,
                 PaymentDate = p.PaymentDate,
                 Description = p.Description,
-                OrderCode = long.Parse(p.PayOsorderId ?? "0")
+                OrderCode = long.Parse(p.PayOsorderId ?? "0"),
+                // ✅ NEW: Include CreatedAt and UpdatedAt
+                CreatedAt = p.CreatedAt,
+                UpdatedAt = p.UpdatedAt
             }).ToList();
         }
 

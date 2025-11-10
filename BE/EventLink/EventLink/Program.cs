@@ -39,11 +39,11 @@ builder.Configuration["CLOUDINARY_API_KEY"] = Environment.GetEnvironmentVariable
 builder.Configuration["CLOUDINARY_API_SECRET"] = Environment.GetEnvironmentVariable("CLOUDINARY_API_SECRET");
 builder.Configuration["GROQ_API_KEY"] = Environment.GetEnvironmentVariable("GROQ_API_KEY");
 
-builder.Configuration["PayOSSettings:ClientId"] = Environment.GetEnvironmentVariable("PAYOS_CLIENT_ID");
-builder.Configuration["PayOSSettings:ApiKey"] = Environment.GetEnvironmentVariable("PAYOS_API_KEY");
-builder.Configuration["PayOSSettings:ChecksumKey"] = Environment.GetEnvironmentVariable("PAYOS_CHECKSUM_KEY");
-builder.Configuration["PayOSSettings:ReturnUrl"] = Environment.GetEnvironmentVariable("PAYOS_RETURN_URL");
-builder.Configuration["PayOSSettings:CancelUrl"] = Environment.GetEnvironmentVariable("PAYOS_CANCEL_URL");
+builder.Configuration["PayOS:ClientId"] = Environment.GetEnvironmentVariable("PAYOS_CLIENT_ID");
+builder.Configuration["PayOS:ApiKey"] = Environment.GetEnvironmentVariable("PAYOS_API_KEY");
+builder.Configuration["PayOS:ChecksumKey"] = Environment.GetEnvironmentVariable("PAYOS_CHECKSUM_KEY");
+builder.Configuration["PayOS:ReturnUrl"] = Environment.GetEnvironmentVariable("PAYOS_RETURN_URL");
+builder.Configuration["PayOS:CancelUrl"] = Environment.GetEnvironmentVariable("PAYOS_CANCEL_URL");
 builder.Configuration["PremiumPricing:MonthlyPrice"] = Environment.GetEnvironmentVariable("PREMIUM_MONTHLY_PRICE");
 builder.Configuration["PremiumPricing:YearlyPrice"] = Environment.GetEnvironmentVariable("PREMIUM_YEARLY_PRICE");
 

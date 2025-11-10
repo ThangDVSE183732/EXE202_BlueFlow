@@ -13,8 +13,11 @@ import ForgotPassword from "../pages/ForgotPassword";
 import OrganizerPage from "../pages/Organizer/OrganizerPage";
 import SponsorPage from "../pages/Sponsor/SponsorPage";
 import SupplierPage from "../pages/Supplier/SupplierPage";
+import Pricing from "../pages/Pricing";
 import ProgressBar from "../components/ProgressBar";
 import { Toaster } from 'react-hot-toast';
+import PaymentSuccessful from "../components/PaymentSuccessfull";
+import PaymentFailed from "../components/PaymentFailed";
 
 function App() {
   return (
@@ -55,6 +58,9 @@ function App() {
           <Route path="/verify-code" element={<VerifyOtpCode />} />
           <Route path="/set-password" element={<SetNewPassword />} />
           <Route path="/password-changed" element={<PasswordChangedSuccessfully />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/success" element={<PaymentSuccessful />} />
+          <Route path="/failed" element={<PaymentFailed />} />
           <Route path="/organizer" element={<OrganizerPage />} />
           <Route path="/sponsor" element={<SponsorPage />} />
           <Route path="/supplier" element={<SupplierPage />} />

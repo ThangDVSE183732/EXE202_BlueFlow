@@ -3,6 +3,7 @@ import EventManagement from '../../components/OrganizerComponent/EventManagement
 import PageNav from '../../components/PageNav';
 import styles from './Organizer.module.css';
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import SegmentedControl from '../../components/OrganizerComponent/SegmentedControl';
 import SideBar from '../../components/OrganizerComponent/SideBar';
 import Dashboard from '../../components/OrganizerComponent/DashBoard';
@@ -17,6 +18,7 @@ import EventDetail from '../../components/OrganizerComponent/EventDetail';
 import Chatbot from '../../components/OrganizerComponent/Chatbot';
 import partnershipService from '../../services/partnershipService';
 import toast from 'react-hot-toast';
+import PaymentHistory from '../../components/PaymentHistory';
 
 
 
@@ -68,19 +70,28 @@ const Icon = {
 const items = [
     { key: 'dashboard', label: 'Bảng điều khiển', icon: Icon.dashboard },
     { key: 'discovery', label: 'Khám phá', icon: Icon.search },
-    { key: 'projects', label: 'Dự án của tôi', icon: Icon.folder },
+    { key: 'projects', label: 'Lịch sử giao dịch', icon: Icon.folder },
     { key: 'messages', label: 'Tin nhắn', icon: Icon.message },
     { key: 'ai', label: 'Trợ lý AI', icon: Icon.ai },
     { key: 'profile', label: 'Hồ sơ & Cài đặt', icon: Icon.users },
 ];
 
 function OrganizerPage() {
+    const location = useLocation();
     const [tab, setTab] = useState(() => localStorage.getItem('organizer.tab') || 'dashboard');
     const [active, setActive] = useState(() => localStorage.getItem('organizer.active') || 'dashboard');
     const [subChange, setSubChange] = useState(() => localStorage.getItem('organizer.discoverySub') || ''); // 'find' | 'saved'
     const [partnersData, setPartnersData] = useState([]);
     const [filteredPartnersData, setFilteredPartnersData] = useState([]);
     const [loadingPartners, setLoadingPartners] = useState(false);
+
+    // Check if redirected from payment pages
+    useEffect(() => {
+        if (location.state?.activeTab === 'projects') {
+            setActive('projects');
+            setTab('projects');
+        }
+    }, [location]);
 
     // Persist to localStorage whenever these change
     useEffect(() => {
@@ -211,12 +222,7 @@ function OrganizerPage() {
         }
         return ;
       case "projects":
-        if(subChange === 'pending') {
-            return;
-        }else if(subChange === 'completed') {
-            return;
-        }
-        return ;
+        return <PaymentHistory />;
       case "messages":
         return <MessagesPage />;
       case "ai":

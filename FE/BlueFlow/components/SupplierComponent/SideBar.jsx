@@ -98,33 +98,6 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                 )}
 
 
-                                {/* Projects sub-items when selected */}
-                                {it.key === 'projects' && selected && (
-                                    <div className="ml-2 mt-2 flex flex-col gap-2">
-                                        <button type="button" onClick={() => onSubChange && onSubChange('pending')} className="flex items-center gap-3 text-left">
-                                            <span className={[
-                                                'h-6 w-1 rounded-full',
-                                                subChange === 'pending' ? 'bg-sky-500' : 'bg-transparent'
-                                            ].join(' ')} />
-                                            <span className={[
-                                                'text-sm',
-                                                subChange === 'pending' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Pending Projects</span>
-                                        </button>
-                                        <button type="button" onClick={() => onSubChange && onSubChange('completed')} className="flex items-center gap-3 text-left">
-                                            <span className={[
-                                                'h-6 w-1 rounded-full',
-                                                subChange === 'completed' ? 'bg-sky-500' : 'bg-transparent'
-                                            ].join(' ')} />
-                                            <span className={[
-                                                'text-sm',
-                                                subChange === 'completed' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Completed Projects</span>
-                                        </button>
-                                    </div>
-                                )}
-
-
                                  {/* Profile and setting sub-items when selected */}
                                 {it.key === 'profile' && selected && (
                                     <div className="ml-2 mt-2 flex flex-col gap-2">

@@ -82,5 +82,9 @@ namespace Eventlink_Services.Response
         public DateTime? PaymentDate { get; set; }
         public string Description { get; set; }
         public long OrderCode { get; set; }
+        
+        // ✅ NEW: Track payment creation and updates
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }

@@ -3,6 +3,7 @@ import EventManagement from '../../components/SponsorComponent/EventManagement';
 import PageNav from '../../components/PageNav';
 import styles from './Sponsor.module.css';
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import SegmentedControl from '../../components/SponsorComponent/SegmentedControl';
 import SideBar from '../../components/SponsorComponent/SideBar';
 import Dashboard from '../../components/SponsorComponent/DashBoard';
@@ -17,6 +18,7 @@ import EventDetail from '../../components/SponsorComponent/EventDetail';
 import Chatbot from '../../components/SponsorComponent/Chatbot';
 import partnershipService from '../../services/partnershipService';
 import toast from 'react-hot-toast';
+import PaymentHistory from '../../components/PaymentHistory';
 
 
 
@@ -68,7 +70,7 @@ const Icon = {
 const items = [
     { key: 'dashboard', label: 'Dashboard', icon: Icon.dashboard },
     { key: 'discovery', label: 'Discovery', icon: Icon.search },
-    { key: 'projects', label: 'My Projects', icon: Icon.folder },
+    { key: 'projects', label: 'Lịch sử giao dịch', icon: Icon.folder },
     { key: 'messages', label: 'Messages', icon: Icon.message },
     { key: 'ai', label: 'AI Assistant', icon: Icon.ai },
     { key: 'profile', label: 'Profile & Settings', icon: Icon.users },
@@ -147,12 +149,21 @@ const partnersItem = [
 
 
 function SponsorPage() {
+    const location = useLocation();
     const [tab, setTab] = useState(() => localStorage.getItem('sponsor.tab') || 'dashboard');
     const [active, setActive] = useState(() => localStorage.getItem('sponsor.active') || 'dashboard');
     const [subChange, setSubChange] = useState(() => localStorage.getItem('sponsor.discoverySub') || ''); // 'find' | 'saved'
     const [partnersData, setPartnersData] = useState([]);
     const [filteredPartnersData, setFilteredPartnersData] = useState([]);
     const [loadingPartners, setLoadingPartners] = useState(false);
+
+    // Check if redirected from payment pages
+    useEffect(() => {
+        if (location.state?.activeTab === 'projects') {
+            setActive('projects');
+            setTab('projects');
+        }
+    }, [location]);
 
     // Persist to localStorage whenever these change
     useEffect(() => {
@@ -283,12 +294,7 @@ function SponsorPage() {
         }
         return ;
       case "projects":
-        if(subChange === 'pending') {
-            return;
-        }else if(subChange === 'completed') {
-            return;
-        }
-        return ;
+        return <PaymentHistory />;
       case "messages":
         return <MessagesPage />;
       case "ai":

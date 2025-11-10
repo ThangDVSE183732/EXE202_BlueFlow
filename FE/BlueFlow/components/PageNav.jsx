@@ -48,7 +48,7 @@ function PageNav() {
         </li>
 
         <li>
-          <NavLink to="/">Dịch vụ</NavLink>
+          <NavLink to="/pricing">Trả phí</NavLink>
         </li>
 
         <li>
