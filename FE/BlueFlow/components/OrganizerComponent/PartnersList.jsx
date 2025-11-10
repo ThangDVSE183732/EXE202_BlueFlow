@@ -19,7 +19,11 @@ function PartnersList({ partnersItem = [] }) {
     <div className="w-full">
       <div className="grid grid-cols-3 gap-8 ml-4 mb-10 w-11/12">
         {pageItems.map((item, i) => (
-          <PartnersItems key={start + i} partnersItem={item} />
+          <PartnersItems 
+            key={start + i} 
+            partnersItem={item} 
+            onMessageClick={onMessageClick}
+          />
         ))}
         {total === 0 && (
           <div className="col-span-full text-center text-sm text-slate-500 py-10">

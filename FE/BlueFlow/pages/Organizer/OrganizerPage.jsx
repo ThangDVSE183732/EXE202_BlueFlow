@@ -200,9 +200,18 @@ function OrganizerPage() {
     switch (active) {
       case "dashboard":
         if(tab === 'event') {
-            return <EventManagement />;
+            return <EventManagement 
+              onViewDetail={handleViewEventDetail}
+              onMessage={handleGoToMessages}
+            />;
         }
-        return <EventDetail />;
+        if(tab === 'eventDetail') {
+            return <EventDetail 
+              event={selectedEvent}
+              onBack={handleBackToEventList}
+            />;
+        }
+        return <Dashboard />;
       case "discovery":
         if(subChange === 'find') {
             if (loadingPartners) {

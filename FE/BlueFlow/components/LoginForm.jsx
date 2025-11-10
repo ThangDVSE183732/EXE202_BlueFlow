@@ -50,6 +50,7 @@ function LoginForm() {
 
                 // Chuyển đến trang dashboard tương ứng với role
                 const userRole = response.data?.user?.role?.toLowerCase() || 'organizer';
+                const userRole = response.data?.user?.role?.toLowerCase() || 'organizer';
                 
                 setTimeout(() => {
                     if (userRole === 'admin') {
