@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import PartnersItems from "./PartnersItems";
 import Pagination from "./Pagination";
 
-function PartnersList({ partnersItem = [] }) {
+function PartnersList({ partnersItem = [], onMessageClick }) {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(6);
 

@@ -84,6 +84,22 @@ function OrganizerPage() {
     const [partnersData, setPartnersData] = useState([]);
     const [filteredPartnersData, setFilteredPartnersData] = useState([]);
     const [loadingPartners, setLoadingPartners] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState(null);
+
+    // Handler functions
+    const handleViewEventDetail = (event) => {
+        setSelectedEvent(event);
+        setTab('eventDetail');
+    };
+
+    const handleBackToEventList = () => {
+        setSelectedEvent(null);
+        setTab('event');
+    };
+
+    const handleGoToMessages = () => {
+        setActive('messages');
+    };
 
     // Check if redirected from payment pages
     useEffect(() => {

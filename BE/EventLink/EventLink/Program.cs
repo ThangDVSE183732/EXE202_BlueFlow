@@ -1,5 +1,6 @@
 ﻿using DotNetEnv;
 using EventLink.Hubs;
+using EventLink.Services; // ✅ Add this for BackgroundService
 using EventLink_Repositories.DBContext;
 using EventLink_Repositories.Interface;
 using EventLink_Repositories.Repository;
@@ -161,6 +162,9 @@ builder.Services.AddSingleton<CloudinaryService>();
 builder.Services.AddSingleton<OpenAIService>();
 
 builder.Services.AddMemoryCache();
+
+// ✅ Background Services - Auto deactivate expired subscriptions
+builder.Services.AddHostedService<SubscriptionExpiryHostedService>();
 
 // CORS Configuration
 builder.Services.AddCors(options =>
