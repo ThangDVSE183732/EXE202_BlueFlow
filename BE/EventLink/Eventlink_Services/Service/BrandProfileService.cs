@@ -71,7 +71,7 @@ namespace Eventlink_Services.Service
 
             var result = brandProfiles.Select(p => new BrandProfileResponse
             {
-                Id = p.Id,  // ✅ Map BrandProfile ID
+                Id = p.Id,
                 BrandName = p.BrandName,
                 BrandLogo = p.BrandLogo,
                 Industry = p.Industry,
@@ -79,13 +79,19 @@ namespace Eventlink_Services.Service
                 FoundedYear = p.FoundedYear,
                 Location = p.Location,
                 AboutUs = p.AboutUs,
-                OurMission = p.OurMission.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
+                // ✅ FIX: Handle null OurMission
+                OurMission = !string.IsNullOrEmpty(p.OurMission) 
+                    ? p.OurMission.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() 
+                    : new List<string>(),
                 Website = p.Website,
                 Email = p.Email,
                 PhoneNumber = p.PhoneNumber,
-                Tags = p.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
+                // ✅ FIX: Handle null Tags
+                Tags = !string.IsNullOrEmpty(p.Tags) 
+                    ? p.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() 
+                    : new List<string>(),
                 IsPublic = p.IsPublic,
-                HasPartnership = p.HasPartnership, // ✅ NEW
+                HasPartnership = p.HasPartnership,
                 CreatedAt = p.CreatedAt,
                 UpdatedAt = p.UpdatedAt
             }).ToList();
@@ -99,7 +105,7 @@ namespace Eventlink_Services.Service
 
             var result = new BrandProfileResponse
             {
-                Id = brandProfile.Id,  // ✅ Map BrandProfile ID
+                Id = brandProfile.Id,
                 BrandName = brandProfile.BrandName,
                 BrandLogo = brandProfile.BrandLogo,
                 Industry = brandProfile.Industry,
@@ -107,13 +113,19 @@ namespace Eventlink_Services.Service
                 FoundedYear = brandProfile.FoundedYear,
                 Location = brandProfile.Location,
                 AboutUs = brandProfile.AboutUs,
-                OurMission = brandProfile.OurMission.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
+                // ✅ FIX: Handle null OurMission
+                OurMission = !string.IsNullOrEmpty(brandProfile.OurMission) 
+                    ? brandProfile.OurMission.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() 
+                    : new List<string>(),
                 Website = brandProfile.Website,
                 Email = brandProfile.Email,
                 PhoneNumber = brandProfile.PhoneNumber,
-                Tags = brandProfile.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
+                // ✅ FIX: Handle null Tags
+                Tags = !string.IsNullOrEmpty(brandProfile.Tags) 
+                    ? brandProfile.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() 
+                    : new List<string>(),
                 IsPublic = brandProfile.IsPublic,
-                HasPartnership = brandProfile.HasPartnership, // ✅ NEW
+                HasPartnership = brandProfile.HasPartnership,
                 CreatedAt = brandProfile.CreatedAt,
                 UpdatedAt = brandProfile.UpdatedAt
             };
@@ -132,7 +144,7 @@ namespace Eventlink_Services.Service
 
             var result = new BrandProfileResponse
             {
-                Id = brandProfile.Id,  // ✅ Map BrandProfile ID
+                Id = brandProfile.Id,
                 BrandName = brandProfile.BrandName,
                 BrandLogo = brandProfile.BrandLogo,
                 Industry = brandProfile.Industry,
@@ -140,13 +152,19 @@ namespace Eventlink_Services.Service
                 FoundedYear = brandProfile.FoundedYear,
                 Location = brandProfile.Location,
                 AboutUs = brandProfile.AboutUs,
-                OurMission = brandProfile.OurMission.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
+                // ✅ FIX: Handle null OurMission
+                OurMission = !string.IsNullOrEmpty(brandProfile.OurMission) 
+                    ? brandProfile.OurMission.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() 
+                    : new List<string>(),
                 Website = brandProfile.Website,
                 Email = brandProfile.Email,
                 PhoneNumber = brandProfile.PhoneNumber,
-                Tags = brandProfile.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
+                // ✅ FIX: Handle null Tags
+                Tags = !string.IsNullOrEmpty(brandProfile.Tags) 
+                    ? brandProfile.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() 
+                    : new List<string>(),
                 IsPublic = brandProfile.IsPublic,
-                HasPartnership = brandProfile.HasPartnership, // ✅ NEW
+                HasPartnership = brandProfile.HasPartnership,
                 CreatedAt = brandProfile.CreatedAt,
                 UpdatedAt = brandProfile.UpdatedAt
             };
@@ -156,7 +174,9 @@ namespace Eventlink_Services.Service
 
         public async Task UpdateAsync(Guid id, UpdateBrandProfileRequest request)
         {
-            var existingProfile = await _brandProfileRepository.GetByUserIdAsync(id);
+            // ✅ FIX: Use GetByIdAsync instead of GetByUserIdAsync
+            // id parameter is BrandProfileId, not UserId
+            var existingProfile = await _brandProfileRepository.GetByIdAsync(id);
 
             if (existingProfile == null)
             {
@@ -175,9 +195,8 @@ namespace Eventlink_Services.Service
             existingProfile.PhoneNumber = request.PhoneNumber;
             existingProfile.Tags = request.Tags;
             existingProfile.IsPublic = request.IsPublic ?? false;
-            existingProfile.HasPartnership = request.HasPartnership ?? false; // ✅ NEW: Update HasPartnership
-            existingProfile.UpdatedAt = DateTime.UtcNow;
-            existingProfile.CreatedAt = DateTime.UtcNow;
+            existingProfile.HasPartnership = request.HasPartnership ?? false;
+            // ✅ FIX: Remove duplicate CreatedAt assignment
             existingProfile.UpdatedAt = DateTime.UtcNow;
 
             if (request.BrandLogo != null)

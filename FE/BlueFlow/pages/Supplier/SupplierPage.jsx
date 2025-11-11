@@ -67,12 +67,12 @@ const Icon = {
 };
 
 const items = [
-    { key: 'dashboard', label: 'Dashboard', icon: Icon.dashboard },
-    { key: 'discovery', label: 'Discovery', icon: Icon.search },
+    { key: 'dashboard', label: 'Bảng điều khiển', icon: Icon.dashboard },
+    { key: 'discovery', label: 'Khám phá', icon: Icon.search },
     { key: 'projects', label: 'Lịch sử giao dịch', icon: Icon.folder },
-    { key: 'messages', label: 'Messages', icon: Icon.message },
-    { key: 'ai', label: 'AI Assistant', icon: Icon.ai },
-    { key: 'profile', label: 'Profile & Settings', icon: Icon.users },
+    { key: 'messages', label: 'Tin nhắn', icon: Icon.message },
+    { key: 'ai', label: 'Trợ lý AI', icon: Icon.ai },
+    { key: 'profile', label: 'Hồ sơ & Cài đặt', icon: Icon.users },
 ];
 
 const partnersItem = [

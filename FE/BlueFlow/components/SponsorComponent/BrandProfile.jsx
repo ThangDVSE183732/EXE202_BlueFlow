@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { Edit, Plus, Upload, Check, X } from 'lucide-react';
 import { useBrandProfile } from '../../hooks/useBrandProfile';
@@ -8,7 +8,15 @@ import partnershipService from '../../services/partnershipService';
 import Loading from '../Loading';
 
 const BrandProfile = () => {
-  const { brandData, setBrandData, loading, error, brandProfileId, updateBrandProfile, toggleBrandProfileStatus, toggleBrandProfileAllStatus } = useBrandProfile();
+  const showToast = useCallback((options) => {
+    if (options.type === 'success') {
+      toast.success(options.message, { duration: options.duration || 3000 });
+    } else if (options.type === 'error') {
+      toast.error(options.message, { duration: options.duration || 4000 });
+    }
+  }, []);
+
+  const { brandData, setBrandData, loading, error, brandProfileId, updateBrandProfile, toggleBrandProfileStatus, toggleBrandProfileAllStatus } = useBrandProfile(showToast);
   const { updatePartnershipStatusByPartner } = usePartnership();
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);

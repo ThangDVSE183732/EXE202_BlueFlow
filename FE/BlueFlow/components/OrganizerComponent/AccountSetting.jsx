@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { useAccountSettings } from '../../hooks/useAccountSettings';
 import { validateForm, validateField, validateFile, DROPDOWN_OPTIONS, FORM_FIELDS } from '../../utils/accountValidation';
@@ -100,17 +100,25 @@ const FormTextarea = ({
 );
 
 const AccountSetting = () => {
+  // Toast notification helper - memoized để tránh re-render
+  const showToast = useCallback((options) => {
+    if (options.type === 'success') {
+      toast.success(options.message, { duration: options.duration || 3000 });
+    } else if (options.type === 'error') {
+      toast.error(options.message, { duration: options.duration || 4000 });
+    }
+  }, []);
+
   // Custom hook for account settings management
   const {
     loading,
     saving,
-    error,
     success,
     fetchAccountData,
     saveAccountData,
     deleteLogo,
     clearMessages
-  } = useAccountSettings();
+  } = useAccountSettings(showToast);
 
   // Form state
   const [formData, setFormData] = useState({
