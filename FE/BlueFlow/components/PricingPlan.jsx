@@ -1,13 +1,24 @@
 import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { usePayment } from '../hooks/usePayment';
+import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 const PricingPlan = () => {
   const [loading, setLoading] = useState(false);
   const { createPremiumPayment } = usePayment();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const handleSelectPlan = async (planType) => {
+    // Kiểm tra đăng nhập
+    if (!isAuthenticated) {
+      toast.error('Vui lòng đăng nhập để chọn gói');
+      navigate('/login');
+      return;
+    }
+
     if (loading) return;
     
     setLoading(true);
@@ -313,13 +324,24 @@ const PricingPlan = () => {
 
               {/* Button - Always show to maintain height */}
               <div className="relative z-10 h-10 flex items-center">
-                {plan.price !== '0' && (
+                {plan.price !== '0' && isAuthenticated && (
                   <button
                     onClick={() => handleSelectPlan(plan.planType)}
                     disabled={loading}
                     className={`w-full py-2 px-5 rounded-full font-bold text-sm transition-all duration-300 transform hover:scale-105 ${plan.buttonColor} shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {loading ? 'Đang xử lý...' : plan.buttonText}
+                  </button>
+                )}
+                {plan.price !== '0' && !isAuthenticated && (
+                  <button
+                    onClick={() => {
+                      toast.error('Vui lòng đăng nhập để chọn gói');
+                      navigate('/login');
+                    }}
+                    className={`w-full py-2 px-5 rounded-full font-bold text-sm transition-all duration-300 transform hover:scale-105 ${plan.buttonColor} shadow-md hover:shadow-lg`}
+                  >
+                    Đăng nhập để chọn gói
                   </button>
                 )}
               </div>
