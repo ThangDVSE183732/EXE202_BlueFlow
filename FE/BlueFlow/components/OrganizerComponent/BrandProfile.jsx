@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { Edit, Plus, Upload, Check, X } from 'lucide-react';
 import { useBrandProfile } from '../../hooks/useBrandProfile';
 import Loading from '../Loading';
 
 const BrandProfile = () => {
-  const { brandData, setBrandData, loading, error, updateBrandProfile } = useBrandProfile();
+  // Toast notification helper - memoized để tránh re-render
+  const showToast = useCallback((options) => {
+    if (options.type === 'success') {
+      toast.success(options.message, { duration: options.duration || 3000 });
+    } else if (options.type === 'error') {
+      toast.error(options.message, { duration: options.duration || 4000 });
+    }
+  }, []);
+
+  const { brandData, setBrandData, loading, error, updateBrandProfile } = useBrandProfile(showToast);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState(brandData);
   const [logoPreview, setLogoPreview] = useState(null);

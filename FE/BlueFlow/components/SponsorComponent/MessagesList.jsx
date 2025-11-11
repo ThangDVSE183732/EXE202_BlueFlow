@@ -8,22 +8,34 @@ import EqualizerLoader from '../EqualizerLoader';
 const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [allChats, setAllChats] = useState([]);
-  const [pinnedChats, setPinnedChats] = useState([]);
+  const [pinnedChatIds, setPinnedChatIds] = useState(() => {
+    // Load pinned chat IDs from localStorage
+    const saved = localStorage.getItem('pinnedChats_sponsor');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Save pinned chat IDs to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('pinnedChats_sponsor', JSON.stringify(pinnedChatIds));
+  }, [pinnedChatIds]);
 
   // Toggle pin/unpin chat
   const togglePinChat = (e, chat) => {
     e.stopPropagation(); // Prevent triggering onSelectChat
     
-    const isPinned = pinnedChats.some(c => c.id === chat.id);
+    const isPinned = pinnedChatIds.includes(chat.id);
     
     if (isPinned) {
       // Unpin
-      setPinnedChats(pinnedChats.filter(c => c.id !== chat.id));
+      setPinnedChatIds(pinnedChatIds.filter(id => id !== chat.id));
+      toast.success(`Đã bỏ ghim "${chat.name}"`);
     } else {
       // Pin
-      setPinnedChats([...pinnedChats, chat]);
+      setPinnedChatIds([...pinnedChatIds, chat.id]);
+      toast.success(`Đã ghim "${chat.name}"`);
     }
   };
 
@@ -116,13 +128,17 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
         signalRService.onUserOnline((userId) => {
           if (!isSubscribed) return;
           console.log('🟢 User online:', userId);
-          // TODO: Update UI to show user is online
+          setOnlineUsers(prev => new Set([...prev, userId]));
         });
 
         signalRService.onUserOffline((userId) => {
           if (!isSubscribed) return;
           console.log('🔴 User offline:', userId);
-          // TODO: Update UI to show user is offline
+          setOnlineUsers(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(userId);
+            return newSet;
+          });
         });
 
       } catch (err) {
@@ -146,6 +162,10 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
     chat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Separate pinned and unpinned chats
+  const pinnedChats = filteredAllChats.filter(chat => pinnedChatIds.includes(chat.id));
+  const unpinnedChats = filteredAllChats.filter(chat => !pinnedChatIds.includes(chat.id));
+
   const handleChatClick = (chat) => {
     // Update chat to mark as read immediately in UI
     setAllChats(prevChats => 
@@ -163,7 +183,7 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
   };
 
   const renderChatItem = (chat, showNotification = true) => {
-    const isPinned = pinnedChats.some(c => c.id === chat.id);
+    const isPinned = pinnedChatIds.includes(chat.id);
     
     return (
       <div
@@ -177,6 +197,11 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
               {chat.name.charAt(0)}
             </span>
           </div>
+          {/* Online/Offline indicator */}
+          <div className={`absolute -bottom-1 -right-1 w-3 h-3 border-2 border-white rounded-full ${
+            onlineUsers.has(chat.id) ? 'bg-green-500' : 'bg-gray-400'
+          }`}></div>
+          {/* Unread count badge */}
           {showNotification && chat.hasNotification && chat.isRead === false && (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
               <span className="text-xs text-white font-bold">{chat.unreadCount}</span>
@@ -222,17 +247,28 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
           </div>
         </div>
 
-        {/* Online Users */}
-        <div className="flex space-x-3 mb-4">
-          {[1, 2, 3, 4].map((user, index) => (
-            <div key={index} className="relative">
-              <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-600">U</span>
+        {/* Pinned Users - Only show if there are pinned chats */}
+        {pinnedChats.length > 0 && (
+          <div className="flex space-x-3 mb-4">
+            {pinnedChats.slice(0, 4).map((chat) => (
+              <div 
+                key={chat.id} 
+                className="relative cursor-pointer hover:opacity-80 transition-opacity"
+                onClick={(e) => togglePinChat(e, chat)}
+                title={`Click to unpin ${chat.name}`}
+              >
+                <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium text-gray-600">
+                    {chat.name.charAt(0)}
+                  </span>
+                </div>
+                <div className={`absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full ${
+                  onlineUsers.has(chat.id) ? 'bg-green-500' : 'bg-gray-400'
+                }`}></div>
               </div>
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Search */}
@@ -251,8 +287,8 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
 
       {/* Messages List */}
       <div className="flex-1 overflow-y-auto">
-        {/* Pinned Messages */}
-        {pinnedChats.length > 0 && (
+        {/* Pinned Messages - Only show when more than 4 pinned chats */}
+        {pinnedChats.length > 4 && (
           <div className="px-4 py-2">
             <div className="flex items-center space-x-2 text-xs text-gray-500 mb-3">
               <div className="w-4 h-4 rounded bg-gray-200 flex items-center justify-center">
@@ -281,10 +317,10 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
             </div>
           ) : error ? (
             <div className="text-center text-red-500 py-4">{error}</div>
-          ) : filteredAllChats.length === 0 ? (
+          ) : unpinnedChats.length === 0 && pinnedChats.length === 0 ? (
             <div className="text-center text-gray-400 py-4">No chats found</div>
           ) : (
-            filteredAllChats.map(chat => renderChatItem(chat))
+            unpinnedChats.map(chat => renderChatItem(chat))
           )}
         </div>
       </div>

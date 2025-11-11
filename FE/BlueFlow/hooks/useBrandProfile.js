@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { brandService } from '../services/brandService';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../services/axios';
 
 export const useBrandProfile = (showToast = null) => {
   const { user } = useAuth();
@@ -219,7 +218,8 @@ export const useBrandProfile = (showToast = null) => {
 
           if (createResponse.success && createResponse.data) {
             console.log('✅ Brand profile created successfully');
-            setBrandProfileId(user?.id);
+            console.log('✅ Created Brand Profile ID:', createResponse.data.id);
+            setBrandProfileId(createResponse.data.id); // ✅ SỬA: Dùng brandProfile.id từ response
             setBrandData(mapApiToUI(createResponse.data));
             
             // Show success toast
