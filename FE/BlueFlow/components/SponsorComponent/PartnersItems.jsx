@@ -2,9 +2,13 @@ import { BookmarkIcon as BookmarkOutline, TagIcon, CurrencyDollarIcon, LinkIcon 
 import { BookmarkIcon as BookmarkSolid } from '@heroicons/react/24/solid';
 import { StarIcon as StarSolid } from '@heroicons/react/24/solid';
 import { useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 
-function PartnersItems({ partnersItem }) {
+function PartnersItems({ partnersItem, onMessageClick }) {
+    const { user } = useAuth();
     const {
+        partnerId,
+        partnerName,
         partnerType, // Thêm partnerType
         location,
         forcus,
@@ -26,6 +30,29 @@ function PartnersItems({ partnersItem }) {
 
     const [bookmarked, setBookmarked] = useState(false);
     const [showDetail, setShowDetail] = useState(false);
+
+    // Check if this is current user's own partnership
+    const isOwnPartnership = user?.id === partnerId;
+
+    const handleMessageClick = () => {
+        // Prevent messaging yourself
+        if (isOwnPartnership) {
+            console.log('❌ Cannot message yourself');
+            return;
+        }
+
+        console.log('🔵 Click Message button');
+        console.log('partnerId:', partnerId);
+        console.log('partnerName:', partnerName);
+        console.log('onMessageClick:', onMessageClick);
+        
+        if (onMessageClick && partnerId) {
+            console.log('✅ Calling onMessageClick');
+            onMessageClick(partnerId, partnerName || title);
+        } else {
+            console.log('❌ Missing:', { hasCallback: !!onMessageClick, hasPartnerId: !!partnerId });
+        }
+    };
 
      // const formattedDate = (() => {
     //     try {
@@ -70,14 +97,14 @@ function PartnersItems({ partnersItem }) {
     );
 
     return (
-        <div
-            className="relative partner-card-root select-none"
-            onMouseEnter={() => setShowDetail(true)}
-            onMouseLeave={() => setShowDetail(false)}
-        >
+        <div className="relative partner-card-root select-none">
             {/* Compact card */}
             <div className="w-58 h-83 shadow-lg rounded-xl bg-white p-4 flex flex-col transition ring-1 ring-transparent hover:ring-sky-300">
-                <div className="relative">
+                <div 
+                    className="relative"
+                    onMouseEnter={() => setShowDetail(true)}
+                    onMouseLeave={() => setShowDetail(false)}
+                >
                     <img src={logo} alt={title} className="w-full h-32 object-cover rounded-md" />
                     <button
                         onClick={() => setBookmarked(b => !b)}
@@ -129,13 +156,26 @@ function PartnersItems({ partnersItem }) {
                 </div>
                 <div className="mt-1 flex space-x-1 text-[11px] font-medium">
                     <button className="flex-1 px-3 py-1.5 rounded-full bg-sky-500 hover:bg-sky-600 text-white transition">Send</button>
-                    <button className="flex-1 px-3 py-1.5 rounded-full bg-sky-100 text-sky-600 hover:bg-sky-200 transition">Message</button>
+                    {!isOwnPartnership && (
+                        <button 
+                            onClick={handleMessageClick}
+                            className="flex-1 px-3 py-1.5 rounded-full bg-sky-100 text-sky-600 hover:bg-sky-200 transition"
+                        >
+                            Message
+                        </button>
+                    )}
                 </div>
             </div>
 
             {/* Click detail panel */}
             {showDetail && (
-                <div className="absolute -top-14 right-20  ml-4 z-30 w-80 bg-white rounded-2xl shadow-xl border border-sky-200 p-4 animate-fadeIn" role="dialog" aria-label={title}>
+                <div 
+                    className="absolute -top-14 right-20  ml-4 z-30 w-80 bg-white rounded-2xl shadow-xl border border-sky-200 p-4 animate-fadeIn" 
+                    role="dialog" 
+                    aria-label={title}
+                    onMouseEnter={() => setShowDetail(true)}
+                    onMouseLeave={() => setShowDetail(false)}
+                >
                     <div className="flex gap-4">
                         <div className="w-20 h-20 rounded-full border-2 border-sky-300 flex items-center justify-center overflow-hidden bg-sky-50">
                             <img src={logo} alt={title} className="object-cover w-full h-full" />

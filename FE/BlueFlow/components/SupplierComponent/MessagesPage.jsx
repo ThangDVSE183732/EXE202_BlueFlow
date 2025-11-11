@@ -2,9 +2,19 @@ import React, { useState, useEffect, useCallback } from 'react';
 import MessageContent from './MessageContent';
 import MessagesList from './MessagesList';
 
-const MessagesPage = () => {
+const MessagesPage = ({ initialPartnerId = null, initialPartnerName = null }) => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [partnerList, setPartnerList] = useState([]);
+
+  // Update selected chat khi initialPartnerId thay đổi
+  useEffect(() => {
+    if (initialPartnerId) {
+      setSelectedChat({
+        name: initialPartnerName || 'Partner',
+        partnerId: initialPartnerId
+      });
+    }
+  }, [initialPartnerId, initialPartnerName]);
 
   // Auto-select first chat when partner list is loaded
   useEffect(() => {

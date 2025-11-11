@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import MessageContent from './MessageContent';
 import MessagesList from './MessagesList';
 
-const MessagesPage = ({ initialPartnerId = null, initialPartnerName = null }) => {
+const MessagesPage = ({ initialPartnerId = null, initialPartnerName = null, onUnreadCountChange }) => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [partnerList, setPartnerList] = useState([]);
 
@@ -58,6 +58,7 @@ const MessagesPage = ({ initialPartnerId = null, initialPartnerName = null }) =>
       <MessagesList 
         onSelectChat={handleSelectChat}
         onPartnerListLoaded={handlePartnerListLoaded}
+        onUnreadCountChange={onUnreadCountChange}
       />
     </div>
   );

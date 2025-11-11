@@ -2,10 +2,11 @@
 
 
 
-function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
+function SideBar({ activeItem, onChange, opts, subChange, onSubChange, unreadCount = 0 }) {
 
     const handleClick = (key) => {
         onChange(key);
+        if (key === 'discovery') onSubChange('find');
         if (key === 'projects') onSubChange('pending');
         if (key === 'profile') onSubChange('brand');
     };
@@ -47,8 +48,9 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
             <nav className="flex flex-col gap-3">
                 {opts.slice(1).map((it) => {
                     const selected = activeItem === it.key;
+                    const showBadge = it.key === 'messages' && unreadCount > 0;
                     return (
-                            <div key={it.key}>
+                            <div key={it.key} className="relative">
                                 <button
                                     type="button"
                                     onClick={() => handleClick(it.key)}
@@ -68,6 +70,13 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                         {it.icon}
                                     </span>
                                     <span>{it.label}</span>
+                                    
+                                    {/* Notification Badge with Count */}
+                                    {showBadge && (
+                                        <span className="ml-auto min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full bg-red-500 text-white text-xs font-bold animate-pulse shadow-lg shadow-red-500/50">
+                                            {unreadCount > 99 ? '99+' : unreadCount}
+                                        </span>
+                                    )}
                                 </button>
 
                                  {/* Profile and setting sub-items when selected */}
@@ -93,16 +102,6 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                                 subChange === 'account' ? 'font-semibold text-black' : 'text-gray-400'
                                             ].join(' ')}>Cài đặt tài khoản</span>
                                         </button>
-                                        {/* <button type="button" onClick={() => onSubChange && onSubChange('marketing')} className="flex items-center gap-3 text-left">
-                                            <span className={[
-                                                'h-6 w-1 rounded-full',
-                                                subChange === 'marketing' ? 'bg-sky-500' : 'bg-transparent'
-                                            ].join(' ')} />
-                                            <span className={[
-                                                'text-sm',
-                                                subChange === 'marketing' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Marketing Preferences</span>
-                                        </button> */}
                                     </div>
                                 )}
                             </div>
