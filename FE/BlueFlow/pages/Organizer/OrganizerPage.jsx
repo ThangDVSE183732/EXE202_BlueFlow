@@ -125,7 +125,7 @@ function OrganizerPage() {
     // Fetch partnerships when discovery tab is active
     useEffect(() => {
         const fetchPartnerships = async () => {
-            if (active === 'discovery' && subChange === 'find') {
+            if (active === 'discovery') {
                 setLoadingPartners(true);
                 try {
                     const response = await partnershipService.getAllPartnerships();
@@ -208,7 +208,7 @@ function OrganizerPage() {
         };
 
         fetchPartnerships();
-    }, [active, subChange]);
+    }, [active]);
 
 
 
@@ -229,23 +229,18 @@ function OrganizerPage() {
         }
         return <Dashboard />;
       case "discovery":
-        if(subChange === 'find') {
-            if (loadingPartners) {
-                return <div className="flex justify-center items-center h-64">Đang tải...</div>;
-            }
-            return (
-                <>
-                    <PartnersFilterBar 
-                        data={partnersData} 
-                        onFilter={setFilteredPartnersData}
-                    />
-                    <PartnersList partnersItem={filteredPartnersData} />
-                </>
-            );
-        }else if(subChange === 'saved') {
-            return;
+        if (loadingPartners) {
+            return <div className="flex justify-center items-center h-64">Đang tải...</div>;
         }
-        return ;
+        return (
+            <>
+                <PartnersFilterBar 
+                    data={partnersData} 
+                    onFilter={setFilteredPartnersData}
+                />
+                <PartnersList partnersItem={filteredPartnersData} />
+            </>
+        );
       case "projects":
         return <PaymentHistory />;
       case "messages":
