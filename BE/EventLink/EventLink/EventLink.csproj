@@ -5,9 +5,6 @@
 		<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
 	</PropertyGroup>
 	<ItemGroup>
-		<None Remove="Knowledge\system_docs.txt" />
-	</ItemGroup>
-	<ItemGroup>
 		<Content Include="Knowledge\System_docs.txt">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>

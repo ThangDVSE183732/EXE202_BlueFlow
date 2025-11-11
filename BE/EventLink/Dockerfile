@@ -11,7 +11,7 @@ WORKDIR /src
 # Copy project files (check tên folder chính xác!)
 COPY ["EventLink/EventLink.csproj", "EventLink/"]
 COPY ["EventLink_Repositories/EventLink_Repositories.csproj", "EventLink_Repositories/"]
-COPY ["EventLink_Services/EventLink_Services.csproj", "EventLink_Services/"]
+COPY ["Eventlink_Services/Eventlink_Services.csproj", "Eventlink_Services/"]
 
 # Restore dependencies
 RUN dotnet restore "EventLink/EventLink.csproj"
