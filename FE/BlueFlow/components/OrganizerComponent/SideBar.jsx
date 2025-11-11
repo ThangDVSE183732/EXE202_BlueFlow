@@ -6,7 +6,6 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
 
     const handleClick = (key) => {
         onChange(key);
-        if (key === 'discovery') onSubChange('find');
         if (key === 'projects') onSubChange('pending');
         if (key === 'profile') onSubChange('brand');
     };
@@ -70,33 +69,6 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                     </span>
                                     <span>{it.label}</span>
                                 </button>
-
-                                {/* Discovery sub-items when selected */}
-                                {it.key === 'discovery' && selected && (
-                                    <div className="ml-2 mt-2 flex flex-col gap-2">
-                                        <button type="button" onClick={() => onSubChange && onSubChange('find')} className="flex items-center gap-3 text-left">
-                                            <span className={[
-                                                'h-6 w-1 rounded-full',
-                                                subChange === 'find' ? 'bg-sky-500' : 'bg-transparent'
-                                            ].join(' ')} />
-                                            <span className={[
-                                                'text-sm',
-                                                subChange === 'find' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Tìm đối tác</span>
-                                        </button>
-                                        <button type="button" onClick={() => onSubChange && onSubChange('saved')} className="flex items-center gap-3 text-left">
-                                            <span className={[
-                                                'h-6 w-1 rounded-full',
-                                                subChange === 'saved' ? 'bg-sky-500' : 'bg-transparent'
-                                            ].join(' ')} />
-                                            <span className={[
-                                                'text-sm',
-                                                subChange === 'saved' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Sự kiện đã lưu</span>
-                                        </button>
-                                    </div>
-                                )}
-
 
                                  {/* Profile and setting sub-items when selected */}
                                 {it.key === 'profile' && selected && (

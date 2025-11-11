@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }) => {
     const login = (userData) => {
         console.log('Login called with userData:', userData);
         console.log('User role:', userData?.role);
+        console.log('Full user object:', JSON.stringify(userData, null, 2));
         setUser(userData);
         setIsAuthenticated(true);
         localStorage.setItem('user', JSON.stringify(userData));

@@ -1,5 +1,5 @@
 // Custom hook for Account Settings management
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { accountService } from '../services/accountService';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -9,6 +9,14 @@ export const useAccountSettings = (showToast = null) => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  
+  // Use ref to store showToast callback to avoid dependency issues
+  const showToastRef = useRef(showToast);
+  
+  // Update ref when showToast changes
+  useEffect(() => {
+    showToastRef.current = showToast;
+  }, [showToast]);
 
   // Fetch account data
   const fetchAccountData = useCallback(async () => {
@@ -63,9 +71,9 @@ export const useAccountSettings = (showToast = null) => {
       const errorMessage = err.message || 'Failed to load account data. Please try again.';
       setError(errorMessage);
       
-      // Show error toast
-      if (showToast) {
-        showToast({
+      // Show error toast - use ref to avoid dependency
+      if (showToastRef.current) {
+        showToastRef.current({
           type: 'error',
           title: 'Lỗi tải dữ liệu!',
           message: errorMessage,
@@ -77,7 +85,7 @@ export const useAccountSettings = (showToast = null) => {
     } finally {
       setLoading(false);
     }
-  }, [user, showToast]);
+  }, [user]);
 
   // Save account data
   const saveAccountData = useCallback(async (formData) => {
@@ -175,9 +183,9 @@ export const useAccountSettings = (showToast = null) => {
       
       setSuccess(true);
       
-      // Show success toast
-      if (showToast) {
-        showToast({
+      // Show success toast - use ref to avoid dependency
+      if (showToastRef.current) {
+        showToastRef.current({
           type: 'success',
           title: 'Đã lưu!',
           message: 'Cài đặt tài khoản đã được cập nhật',
@@ -194,9 +202,9 @@ export const useAccountSettings = (showToast = null) => {
       const errorMessage = err.message || 'Failed to save account settings. Please try again.';
       setError(errorMessage);
       
-      // Show error toast
-      if (showToast) {
-        showToast({
+      // Show error toast - use ref to avoid dependency
+      if (showToastRef.current) {
+        showToastRef.current({
           type: 'error',
           title: 'Lỗi lưu cài đặt!',
           message: errorMessage,
@@ -208,7 +216,7 @@ export const useAccountSettings = (showToast = null) => {
     } finally {
       setSaving(false);
     }
-  }, [user, showToast, updateUser]);
+  }, [updateUser]);
 
   // Upload logo
   const uploadLogo = useCallback(async (file) => {

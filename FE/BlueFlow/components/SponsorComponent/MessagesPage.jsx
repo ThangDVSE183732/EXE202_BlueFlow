@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import MessageContent from './MessageContent';
 import MessagesList from './MessagesList';
 
 const MessagesPage = () => {
-  const [selectedChat, setSelectedChat] = useState({
-    name: 'Event Tech',
-    partnerId: '4fc2996d-3e88-45c7-9b09-9585fc5e4435' // Default chat
-  });
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [partnerList, setPartnerList] = useState([]);
+
+  // Auto-select first chat when partner list is loaded
+  useEffect(() => {
+    if (!selectedChat && partnerList.length > 0) {
+      const firstChat = partnerList[0];
+      setSelectedChat({
+        name: firstChat.name,
+        partnerId: firstChat.id
+      });
+    }
+  }, [partnerList, selectedChat]);
 
   const handleSelectChat = (chat) => {
     setSelectedChat({
@@ -15,19 +24,30 @@ const MessagesPage = () => {
     });
   };
 
+  const handlePartnerListLoaded = useCallback((chats) => {
+    setPartnerList(chats);
+  }, []);
+
   return (
     <div className="flex h-screen bg-gray-100 mb-10 border border-gray-300 rounded-xl shadow-lg overflow-hidden">
       {/* Main Content Area */}
       <div className="flex-1">
-        <MessageContent 
-          selectedChat={selectedChat.name} 
-          partnerId={selectedChat.partnerId}
-        />
+        {selectedChat ? (
+          <MessageContent 
+            selectedChat={selectedChat.name} 
+            partnerId={selectedChat.partnerId}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-gray-400">No messages yet</p>
+          </div>
+        )}
       </div>
       
       {/* Messages Sidebar */}
       <MessagesList 
         onSelectChat={handleSelectChat}
+        onPartnerListLoaded={handlePartnerListLoaded}
       />
     </div>
   );

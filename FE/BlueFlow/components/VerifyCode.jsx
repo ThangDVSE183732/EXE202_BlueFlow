@@ -101,11 +101,20 @@ function VerifyCode() {
             directPhone: profileData?.directPhone || ""
           }
       });
+      
+      // Log để debug
+      console.log('Verify OTP Register Response:', response);
+      console.log('User data:', response.data?.user);
+      console.log('User role:', response.data?.user?.role);
       } else {
          response = await authService.verifyOTP({
           email: email,
           otp: formData.code
         });
+        
+        // Log để debug
+        console.log('Verify OTP Login Response:', response);
+        console.log('User data:', response.data?.user);
       }
 
       if (response.success) {
@@ -118,8 +127,12 @@ function VerifyCode() {
 
         // Điều hướng dựa trên từ đâu đến
         if (fromPage === 'login' || fromPage === 'sign-up') {
-          // Đăng nhập thành công - chuyển về trang chính
-          navigate('/organizer');
+          // Đăng nhập/Đăng ký thành công - chuyển về trang dựa trên role
+          const userRole = response.data?.user?.role?.toLowerCase();
+          const dashboardPath = `/${userRole || 'organizer'}`;
+          
+          console.log('User verified successfully. Role:', userRole, 'Navigating to:', dashboardPath);
+          navigate(dashboardPath);
         } else {
           // Reset password flow - chuyển đến set password
           navigate('/set-password', { 
@@ -164,7 +177,7 @@ function VerifyCode() {
               onChange={(value) => handleInputChange('code', value)} />
           </div>
           <p className="text-xs font-medium mb-8 text-left  text-gray-600">Didn't receive the code?
-		<Link rel="noopener noreferrer" to="#" className="text-red-600 text-gray-800"> Resend</Link>
+		<Link rel="noopener noreferrer" to="#" className="text-blue-600 hover:text-blue-800"> Resend</Link>
         </p>
           <button type="submit" className="block mb-2 w-full p-3 text-center rounded-lg font-medium text-gray-50 bg-blue-400">
             Verify

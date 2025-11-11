@@ -5,7 +5,7 @@ import { messageService } from '../../services/messageService';
 import signalRService from '../../services/signalRService';
 import EqualizerLoader from '../EqualizerLoader';
 
-const MessagesList = ({ onSelectChat }) => {
+const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [allChats, setAllChats] = useState([]);
   const [pinnedChats, setPinnedChats] = useState([]);
@@ -55,6 +55,11 @@ const MessagesList = ({ onSelectChat }) => {
             partnerRole: chat.partnerRole
           }));
           setAllChats(formattedChats);
+          
+          // Notify parent component that partner list is loaded
+          if (onPartnerListLoaded && formattedChats.length > 0) {
+            onPartnerListLoaded(formattedChats);
+          }
         } else {
           setAllChats([]);
         }
@@ -68,7 +73,7 @@ const MessagesList = ({ onSelectChat }) => {
     };
 
     fetchPartnerListChat();
-  }, []);
+  }, [onPartnerListLoaded]);
 
   // Setup SignalR for online/offline status (backend không có ReceiveMessage broadcast)
   useEffect(() => {

@@ -39,15 +39,18 @@ export const RoleProtectedRoute = ({ children, allowedRoles }) => {
     }
 
     if (!isAuthenticated) {
+        console.log('User not authenticated, redirecting to login');
         return <Navigate to="/login" replace />;
     }
 
     // So sánh role không phân biệt hoa thường
     if (allowedRoles && !allowedRoles.some(role => role.toUpperCase() === userRole?.toUpperCase())) {
         console.log('Access denied. User role:', userRole, 'Allowed roles:', allowedRoles);
+        console.log('User is authenticated:', isAuthenticated);
         return <Navigate to="/unauthorized" replace />;
     }
 
+    console.log('Access granted. User role:', userRole, 'Allowed roles:', allowedRoles);
     return children;
 };
 
