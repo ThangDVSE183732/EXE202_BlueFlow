@@ -2,6 +2,7 @@
 using EventLink_Repositories.Models;
 using Eventlink_Services.Interface;
 using Eventlink_Services.Response;
+using Microsoft.AspNetCore.Http.HttpResults;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,11 +102,11 @@ namespace Eventlink_Services.Service
                 FoundedYear = brandProfile.FoundedYear,
                 Location = brandProfile.Location,
                 AboutUs = brandProfile.AboutUs,
-                OurMission = brandProfile.OurMission.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
+                OurMission = brandProfile.OurMission?.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
                 Website = brandProfile.Website,
                 Email = brandProfile.Email,
                 PhoneNumber = brandProfile.PhoneNumber,
-                Tags = brandProfile.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
+                Tags = brandProfile.Tags?.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
                 CreatedAt = brandProfile.CreatedAt,
                 UpdatedAt = brandProfile.UpdatedAt
             };
@@ -131,11 +132,11 @@ namespace Eventlink_Services.Service
                 FoundedYear = brandProfile.FoundedYear,
                 Location = brandProfile.Location,
                 AboutUs = brandProfile.AboutUs,
-                OurMission = brandProfile.OurMission.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
+                OurMission = brandProfile.OurMission?.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
                 Website = brandProfile.Website,
                 Email = brandProfile.Email,
                 PhoneNumber = brandProfile.PhoneNumber,
-                Tags = brandProfile.Tags.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
+                Tags = brandProfile.Tags?.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList() ?? new List<string>(),
                 CreatedAt = brandProfile.CreatedAt,
                 UpdatedAt = brandProfile.UpdatedAt
             };
