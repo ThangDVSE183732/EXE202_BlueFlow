@@ -166,8 +166,8 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
   const pinnedChats = filteredAllChats.filter(chat => pinnedChatIds.includes(chat.id));
   const unpinnedChats = filteredAllChats.filter(chat => !pinnedChatIds.includes(chat.id));
 
-  const handleChatClick = (chat) => {
-    // Update chat to mark as read immediately in UI
+  const handleChatClick = async (chat) => {
+    // Update chat to mark as read immediately in UI (optimistic update)
     setAllChats(prevChats => 
       prevChats.map(c => 
         c.id === chat.id 
@@ -180,6 +180,33 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
     if (onSelectChat) {
       onSelectChat(chat);
     }
+    
+    // Refresh chat list after a short delay to sync with server
+    setTimeout(async () => {
+      try {
+        const response = await messageService.getPartnerListChat();
+        if (response.success && response.data) {
+          const formattedChats = response.data.map((chatItem) => ({
+            id: chatItem.partnerId,
+            name: chatItem.partnerName || 'Unknown',
+            message: chatItem.lastMessage?.content || 'No messages yet',
+            time: chatItem.lastMessageTime ? new Date(chatItem.lastMessageTime).toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: false 
+            }) : '',
+            avatar: chatItem.partnerAvatar,
+            hasNotification: (chatItem.unreadCount || 0) > 0,
+            unreadCount: chatItem.unreadCount || 0,
+            partnerRole: chatItem.partnerRole
+          }));
+          setAllChats(formattedChats);
+          console.log('🔄 Chat list refreshed after marking as read');
+        }
+      } catch (err) {
+        console.error('Error refreshing chat list:', err);
+      }
+    }, 1000); // 1 second delay to allow backend to process
   };
 
   const renderChatItem = (chat, showNotification = true) => {

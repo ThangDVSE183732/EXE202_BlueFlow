@@ -87,21 +87,25 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
     fetchPartnerListChat();
   }, [onPartnerListLoaded]);
 
-  // Setup SignalR for online/offline status (backend không có ReceiveMessage broadcast)
+  // Setup SignalR for conversation updates and online/offline status
   useEffect(() => {
     let isSubscribed = true;
 
     const initSignalR = async () => {
       try {
-        // Start connection if not already started
+        // Start connection if not already started (OrganizerPage might have started it already)
         if (!signalRService.isConnectionActive()) {
+          console.log('🚀 MessagesList: Initializing SignalR connection...');
           await signalRService.startConnection();
+        } else {
+          console.log('✅ MessagesList: SignalR already connected');
         }
 
-        // Listen for conversation updates
+        // Register event handlers for conversation updates in chat list
+        console.log('📝 MessagesList: Registering conversationUpdated handler...');
         signalRService.onConversationUpdated((senderId) => {
           if (!isSubscribed) return;
-          console.log('🔄 Conversation updated from:', senderId);
+          console.log('🔄 MessagesList: Conversation updated from:', senderId);
           
           // Refresh the partner list to get latest message
           messageService.getPartnerListChat().then(response => {
@@ -120,8 +124,11 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
                 unreadCount: chat.unreadCount || 0,
                 partnerRole: chat.partnerRole
               }));
+              console.log('✅ Updated chats with unread counts:', formattedChats.map(c => ({ name: c.name, unread: c.unreadCount })));
               setAllChats(formattedChats);
             }
+          }).catch(err => {
+            console.error('❌ Error refreshing partner list:', err);
           });
         });
         
@@ -166,8 +173,8 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
   const pinnedChats = filteredAllChats.filter(chat => pinnedChatIds.includes(chat.id));
   const unpinnedChats = filteredAllChats.filter(chat => !pinnedChatIds.includes(chat.id));
 
-  const handleChatClick = (chat) => {
-    // Update chat to mark as read immediately in UI
+  const handleChatClick = async (chat) => {
+    // Update chat to mark as read immediately in UI (optimistic update)
     setAllChats(prevChats => 
       prevChats.map(c => 
         c.id === chat.id 
@@ -180,6 +187,33 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
     if (onSelectChat) {
       onSelectChat(chat);
     }
+    
+    // Refresh chat list after a short delay to sync with server
+    setTimeout(async () => {
+      try {
+        const response = await messageService.getPartnerListChat();
+        if (response.success && response.data) {
+          const formattedChats = response.data.map((chatItem) => ({
+            id: chatItem.partnerId,
+            name: chatItem.partnerName || 'Unknown',
+            message: chatItem.lastMessage?.content || 'No messages yet',
+            time: chatItem.lastMessageTime ? new Date(chatItem.lastMessageTime).toLocaleTimeString('en-US', { 
+              hour: 'numeric', 
+              minute: '2-digit',
+              hour12: false 
+            }) : '',
+            avatar: chatItem.partnerAvatar,
+            hasNotification: (chatItem.unreadCount || 0) > 0,
+            unreadCount: chatItem.unreadCount || 0,
+            partnerRole: chatItem.partnerRole
+          }));
+          setAllChats(formattedChats);
+          console.log('🔄 Chat list refreshed after marking as read');
+        }
+      } catch (err) {
+        console.error('Error refreshing chat list:', err);
+      }
+    }, 1000); // 1 second delay to allow backend to process
   };
 
   const renderChatItem = (chat, showNotification = true) => {
