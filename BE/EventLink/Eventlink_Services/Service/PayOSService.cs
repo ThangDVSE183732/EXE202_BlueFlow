@@ -20,9 +20,10 @@ namespace Eventlink_Services.Service
         {
             _config = configuration;
 
-            var clientId = _config["PayOSSettings:ClientId"] ?? Environment.GetEnvironmentVariable("PAYOS_CLIENT_ID");
-            var apiKey = _config["PayOSSettings:ApiKey"] ?? Environment.GetEnvironmentVariable("PAYOS_API_KEY");
-            var checksumKey = _config["PayOSSettings:ChecksumKey"] ?? Environment.GetEnvironmentVariable("PAYOS_CHECKSUM_KEY");
+            // ✅ FIX: Sử dụng "PayOSSettings:" thay vì "PayOS:" để match với Program.cs
+            var clientId = _config["PayOS:ClientId"] ?? Environment.GetEnvironmentVariable("PAYOS_CLIENT_ID");
+            var apiKey = _config["PayOS:ApiKey"] ?? Environment.GetEnvironmentVariable("PAYOS_API_KEY");
+            var checksumKey = _config["PayOS:ChecksumKey"] ?? Environment.GetEnvironmentVariable("PAYOS_CHECKSUM_KEY");
 
             if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(apiKey) || string.IsNullOrEmpty(checksumKey))
             {
@@ -37,10 +38,13 @@ namespace Eventlink_Services.Service
                 LogLevel = Microsoft.Extensions.Logging.LogLevel.None
             });
 
-            _defaultReturnUrl = _config["PayOSSettings:ReturnUrl"] ?? Environment.GetEnvironmentVariable("PAYOS_RETURN_URL");
-            _defaultCancelUrl = _config["PayOSSettings:CancelUrl"] ?? Environment.GetEnvironmentVariable("PAYOS_CANCEL_URL");
+            // ✅ FIX: Change "PayOSSettings:" to "PayOS:" to match Program.cs config
+            _defaultReturnUrl = _config["PayOS:ReturnUrl"] ?? Environment.GetEnvironmentVariable("PAYOS_RETURN_URL");
+            _defaultCancelUrl = _config["PayOS:CancelUrl"] ?? Environment.GetEnvironmentVariable("PAYOS_CANCEL_URL");
 
             Console.WriteLine("[PayOS SDK] Service initialized");
+            Console.WriteLine($"[PayOS SDK] Return URL: {_defaultReturnUrl}");
+            Console.WriteLine($"[PayOS SDK] Cancel URL: {_defaultCancelUrl}");
         }
 
         public async Task<dynamic> CreatePaymentLinkAsync(
