@@ -166,24 +166,28 @@ builder.Services.AddMemoryCache();
 // ✅ Background Services - Auto deactivate expired subscriptions
 builder.Services.AddHostedService<SubscriptionExpiryHostedService>();
 
-// CORS Configuration
+var allowedOrigins = new[]
+{
+    "http://localhost:3000",
+    "https://localhost:3000",
+    "http://localhost:5173",
+    "https://localhost:5173",
+    "https://exe-202-blue-flow.vercel.app",
+    "https://eventlink-frontend.vercel.app"
+};
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", builder =>
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        builder
-            .WithOrigins(
-                "http://localhost:3000",
-                "https://localhost:3000",
-                "http://localhost:5173",
-                "https://localhost:5173",
-                "https://exe-202-blue-flow.vercel.app"
-            )
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials(); // Important for SignalR
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials()
+              .SetIsOriginAllowedToAllowWildcardSubdomains(); // ✅ Allow preview deployments
     });
 });
+
 
 // API Documentation
 builder.Services.AddEndpointsApiExplorer();
@@ -224,28 +228,22 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-// Luôn luôn bật Swagger (kể cả Production)
+// ✅ CRITICAL: CORS must be FIRST middleware (before UseSwagger)
+app.UseCors("AllowFrontend");
+
 app.UseSwagger();
 app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "EventLink API v1");
-    options.RoutePrefix = string.Empty; 
+    options.RoutePrefix = string.Empty;
 });
 
-if (app.Environment.IsDevelopment())
-{
-    // ... có thể trống
-}
-//app.UseHttpsRedirection();
-
-// CORS must be before Authentication
-app.UseCors("AllowFrontend");
+// NO: app.UseHttpsRedirection(); (commented out - good for Render)
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapHub<ChatHub>("/chatHub");
-
 app.MapControllers();
 
 app.Run();
