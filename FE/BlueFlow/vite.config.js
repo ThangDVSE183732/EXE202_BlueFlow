@@ -1,3 +1,5 @@
+// File: FE/BlueFlow/vite.config.js
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
@@ -7,13 +9,9 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    rollupOptions: {
-      input: {
-        main: './index.html'
-      }
-    }
+    // XÓA BỎ PHẦN rollupOptions Ở ĐÂY
   },
   server: {
-    historyApiFallback: true,
+    historyApiFallback: true, // Cái này chỉ dùng cho dev, không ảnh hưởng production
   }
 });
