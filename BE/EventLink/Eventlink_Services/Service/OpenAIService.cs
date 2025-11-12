@@ -40,7 +40,7 @@ namespace Eventlink_Services.Service
             {
                 // Get the base directory of the application
                 var basePath = AppDomain.CurrentDomain.BaseDirectory;
-                var knowledgePath = Path.Combine(basePath, "Knowledge", "System_docs.txt");
+                var knowledgePath = Path.Combine(basePath, "Knowledge", "system_docs.txt");
 
                 // Check if file exists
                 if (!File.Exists(knowledgePath))
