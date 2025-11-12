@@ -172,15 +172,16 @@ namespace Eventlink_Services.Service
             return result;
         }
 
-        public async Task UpdateAsync(Guid id, UpdateBrandProfileRequest request)
+        // ✅ FIX: Đã thay đổi từ Task sang Task<bool> để trả về trạng thái
+        public async Task<bool> UpdateAsync(Guid id, UpdateBrandProfileRequest request)
         {
-            // ✅ FIX: Use GetByIdAsync instead of GetByUserIdAsync
-            // id parameter is BrandProfileId, not UserId
+            // id parameter là BrandProfileId, không phải UserId
             var existingProfile = await _brandProfileRepository.GetByIdAsync(id);
 
             if (existingProfile == null)
             {
-                throw new Exception("Brand profile not found");
+                // ✅ FIX: Trả về false thay vì throw Exception
+                return false;
             }
 
             existingProfile.BrandName = request.BrandName;
@@ -196,7 +197,6 @@ namespace Eventlink_Services.Service
             existingProfile.Tags = request.Tags;
             existingProfile.IsPublic = request.IsPublic ?? false;
             existingProfile.HasPartnership = request.HasPartnership ?? false;
-            // ✅ FIX: Remove duplicate CreatedAt assignment
             existingProfile.UpdatedAt = DateTime.UtcNow;
 
             if (request.BrandLogo != null)
@@ -220,6 +220,9 @@ namespace Eventlink_Services.Service
             }
 
             _brandProfileRepository.Update(existingProfile);
+
+            // ✅ FIX: Trả về true khi thành công
+            return true;
         }
 
         /// <summary>

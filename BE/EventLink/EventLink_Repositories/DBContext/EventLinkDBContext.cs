@@ -168,6 +168,10 @@ public partial class EventLinkDBContext : DbContext
             entity.Property(e => e.VenueDetails).HasMaxLength(1000);
             entity.Property(e => e.ViewCount).HasDefaultValue(0);
 
+            entity.Property(e => e.AverageRating)
+                .HasDefaultValue(0.0m)
+                .HasColumnType("decimal(3, 2)");
+
             // Only configure existing navigation properties:
             entity.HasOne(d => d.Organizer).WithMany(p => p.Events)
                 .HasForeignKey(d => d.OrganizerId)
