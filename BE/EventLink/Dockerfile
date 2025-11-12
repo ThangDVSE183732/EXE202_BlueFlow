@@ -1,4 +1,4 @@
-# Production-ready Dockerfile for EventLink
+ï»¿# Production-ready Dockerfile for EventLink
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
 WORKDIR /app
 EXPOSE 8080
@@ -8,7 +8,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
-# Copy project files (check tên folder chính xác!)
+# Copy project files (check tÃªn folder chÃ­nh xÃ¡c!)
 COPY ["EventLink/EventLink.csproj", "EventLink/"]
 COPY ["EventLink_Repositories/EventLink_Repositories.csproj", "EventLink_Repositories/"]
 COPY ["Eventlink_Services/Eventlink_Services.csproj", "Eventlink_Services/"]

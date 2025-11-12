@@ -27,9 +27,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Update="Knowledge\**">
+		<Content Include="Knowledge/system_docs.txt">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-		</None>
+		</Content>
 	</ItemGroup>
 </Project>
