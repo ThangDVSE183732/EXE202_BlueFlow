@@ -86,21 +86,29 @@ namespace EventLink.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutBrandProfile(Guid id, UpdateBrandProfileRequest request)
         {
-            // Service UpdateAsync giờ sẽ trả về true (nếu thành công) hoặc false (nếu not found)
-            var success = await _brandProfileService.UpdateAsync(id, request);
-
-            if (!success)
+            // ✅ FIX: Use GetByIdAsync - 'id' is BrandProfileId, NOT UserId
+            var existingProfile = await _brandProfileService.GetByIdAsync(id);
+            
+            if (existingProfile == null)
             {
-                // Nếu service trả về false, có nghĩa là không tìm thấy BrandProfile
                 return NotFound(new
                 {
                     success = false,
-                    message = "Brand profile not found with the specified ID."
+                    message = "Brand profile not found"
                 });
             }
 
-            // Nếu thành công, trả về 204 NoContent
-            return NoContent();
+            await _brandProfileService.UpdateAsync(id, request);
+
+            // ✅ Return updated data
+            var updatedProfile = await _brandProfileService.GetByIdAsync(id);
+            
+            return Ok(new
+            {
+                success = true,
+                message = "Brand profile updated successfully",
+                data = updatedProfile
+            });
         }
 
         // POST: api/BrandProfiles

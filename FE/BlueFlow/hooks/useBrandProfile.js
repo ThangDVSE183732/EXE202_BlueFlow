@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { brandService } from '../services/brandService';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -7,6 +7,8 @@ export const useBrandProfile = (showToast = null) => {
   const [loading, setLoading] = useState(true);
   const [brandProfileId, setBrandProfileId] = useState(null);
   const [error, setError] = useState(null);
+  const isCreatingRef = useRef(false); // Flag to prevent duplicate creation
+  const hasFetchedRef = useRef(false); // Flag to prevent duplicate fetch
 
   // Dữ liệu mặc định
   const defaultData = {
@@ -160,12 +162,22 @@ export const useBrandProfile = (showToast = null) => {
   // Fetch hoặc tạo brand profile
   useEffect(() => {
     const fetchOrCreateBrandProfile = async () => {
+      console.log('🚀 useBrandProfile: Starting fetch/create process...');
+      console.log('👤 Current user:', user);
+      console.log('🆔 User ID:', user?.id);
+      
       if (!user?.id) {
-    console.log(user?.id);
-        console.log('No user ID, using default data');
+        console.log('⚠️ No user ID found, using default data');
         setLoading(false);
         return;
       }
+
+      // Prevent duplicate calls
+      if (hasFetchedRef.current) {
+        console.log('⏭️ Already fetched/created, skipping...');
+        return;
+      }
+      hasFetchedRef.current = true;
 
       try {
         setLoading(true);
@@ -176,8 +188,10 @@ export const useBrandProfile = (showToast = null) => {
         const response = await brandService.getBrandProfileByUserId(user.id);
 
         console.log('📥 getBrandProfileByUserId response:', response);
+        console.log('📊 Response success:', response.success);
+        console.log('📊 Response data:', response.data);
 
-        // Nếu tìm thấy brand profile
+        // Nếu tìm thấy brand profile (success = true và có data)
         if (response.success && response.data) {
           // Backend trả về {success, message, data}, và service wrap lại
           // Nên phải lấy response.data.data
@@ -194,92 +208,79 @@ export const useBrandProfile = (showToast = null) => {
           return; // ✅ Dừng lại ở đây, không tạo mới
         }
         
-        // Nếu backend trả về lỗi (404, 500, etc.) hoặc không có data
-        console.log('❌ Brand profile not found or error occurred, will create new one');
-        throw new Error(response.message || 'Brand profile not found');
-      } catch (err) {
-        console.log('❌ Brand profile fetch failed, creating new one...', err.message);
-
+        // Nếu không tìm thấy (success = false hoặc không có data), tạo mới
+        console.log('❌ Brand profile not found (success=false or no data), will create new one');
+        console.log('📝 Starting brand profile creation process...');
+        
+        // Check if already creating to prevent duplicate
+        if (isCreatingRef.current) {
+          console.log('⏭️ Already creating brand profile, skipping...');
+          setLoading(false);
+          return;
+        }
+        isCreatingRef.current = true;
+        
         // Tạo brand profile mới
-        try {
-          // Sử dụng defaultData đầy đủ, chỉ override user-specific fields
-          const createDataUI = {
-            ...defaultData,
-            companyName: user?.companyName || defaultData.companyName,
-            companyInfo: {
-              ...defaultData.companyInfo,
-              email: user?.email || defaultData.companyInfo.email
-            }
-          };
-
-          console.log('📝 Creating brand profile with data:', createDataUI);
-          const formData = await mapUIToApiFormData(createDataUI);
-          const createResponse = await brandService.createBrandProfile(formData);
-
-          if (createResponse.success && createResponse.data) {
-            console.log('✅ Brand profile created successfully');
-            console.log('✅ Created Brand Profile ID:', createResponse.data.id);
-            setBrandProfileId(createResponse.data.id); // ✅ SỬA: Dùng brandProfile.id từ response
-            setBrandData(mapApiToUI(createResponse.data));
-            
-            // Show success toast
-            if (showToast) {
-              showToast({
-                type: 'success',
-                title: 'Thành công!',
-                message: 'Đã tạo hồ sơ thương hiệu thành công',
-                duration: 3000
-              });
-            }
-          } else {
-            console.log('⚠️ Create failed, using default data');
-            setError('Failed to create brand profile');
-            
-            // Show error toast
-            if (showToast) {
-              showToast({
-                type: 'error',
-                title: 'Lỗi!',
-                message: 'Không thể tạo hồ sơ thương hiệu',
-                duration: 4000
-              });
-            }
+        // Sử dụng defaultData đầy đủ, chỉ override user-specific fields
+        const createDataUI = {
+          ...defaultData,
+          companyName: user?.companyName || defaultData.companyName,
+          companyInfo: {
+            ...defaultData.companyInfo,
+            email: user?.email || defaultData.companyInfo.email
           }
-        } catch (createError) {
-          console.error('❌ Error creating brand profile:', createError);
+        };
+
+        console.log('📝 Creating brand profile with data:', createDataUI);
+        const formData = await mapUIToApiFormData(createDataUI);
+        const createResponse = await brandService.createBrandProfile(formData);
+
+        console.log('📥 Create brand profile response:', createResponse);
+        
+        // Reset flag after creation attempt
+        isCreatingRef.current = false;
+
+        if (createResponse.success && createResponse.data) {
+          console.log('✅ Brand profile created successfully');
+          console.log('✅ Created Brand Profile ID:', createResponse.data.id);
+          console.log('✅ Created response data:', createResponse.data);
+          setBrandProfileId(createResponse.data.id);
+          setBrandData(mapApiToUI(createResponse.data));
           
-          // Parse error details
-          const parsedError = parseBackendError(createError);
-          console.error('📋 Create error details:', parsedError);
-          
-          // Set error message cho UI
-          if (parsedError.errorMessages.length > 0) {
-            setError(parsedError.errorMessages.join(', '));
-            
-            // Show detailed error toast
-            if (showToast) {
-              showToast({
-                type: 'error',
-                title: 'Lỗi tạo hồ sơ!',
-                message: parsedError.errorMessages[0] || 'Không thể tạo hồ sơ thương hiệu',
-                duration: 5000
-              });
-            }
-          } else {
-            setError('Failed to create brand profile');
-            
-            // Show generic error toast
-            if (showToast) {
-              showToast({
-                type: 'error',
-                title: 'Lỗi!',
-                message: 'Đã xảy ra lỗi khi tạo hồ sơ',
-                duration: 4000
-              });
-            }
+          // Show success toast
+          if (showToast) {
+            showToast({
+              type: 'success',
+              message: 'Đã tạo hồ sơ thương hiệu thành công',
+              duration: 3000
+            });
           }
+        } else {
+          console.log('⚠️ Create failed, response:', createResponse);
+          console.log('⚠️ Using default data');
+          setError('Failed to create brand profile: ' + (createResponse.message || 'Unknown error'));
           
-          // Giữ defaultData trong state
+          // Show error toast
+          if (showToast) {
+            showToast({
+              type: 'error',
+              message: createResponse.message || 'Không thể tạo hồ sơ thương hiệu',
+              duration: 4000
+            });
+          }
+        }
+      } catch (err) {
+        console.error('❌ Error in fetch/create process:', err);
+        setError(err.message || 'Failed to fetch or create brand profile');
+        isCreatingRef.current = false; // Reset flag on error
+        
+        // Show error toast
+        if (showToast) {
+          showToast({
+            type: 'error',
+            message: 'Đã xảy ra lỗi: ' + (err.message || 'Unknown error'),
+            duration: 4000
+          });
         }
       } finally {
         setLoading(false);
@@ -287,6 +288,13 @@ export const useBrandProfile = (showToast = null) => {
     };
 
     fetchOrCreateBrandProfile();
+    
+    // Cleanup function
+    return () => {
+      // Reset flags when component unmounts or user changes
+      hasFetchedRef.current = false;
+      isCreatingRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 

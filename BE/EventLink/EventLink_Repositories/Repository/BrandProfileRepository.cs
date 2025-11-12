@@ -19,8 +19,7 @@ namespace EventLink_Repositories.Repository
         }
         public async Task<BrandProfile> GetByUserIdAsync(Guid userId)
         {
-            return await _context.BrandProfiles.FirstOrDefaultAsync
-                (b => b.UserId == userId) ?? new BrandProfile();
+            return await _context.BrandProfiles.FirstOrDefaultAsync(b => b.UserId == userId);
         }
     }
 }
