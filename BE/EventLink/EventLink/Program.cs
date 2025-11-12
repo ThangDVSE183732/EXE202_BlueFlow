@@ -173,7 +173,8 @@ var allowedOrigins = new[]
     "http://localhost:5173",
     "https://localhost:5173",
     "https://exe-202-blue-flow.vercel.app",
-    "https://eventlink-frontend.vercel.app"
+    "https://eventlink-frontend.vercel.app",
+    "https://exe202-blueflow.onrender.com" // ✅ ĐÃ THÊM URL CỦA RENDER
 };
 
 builder.Services.AddCors(options =>
