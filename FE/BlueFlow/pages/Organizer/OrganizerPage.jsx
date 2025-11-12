@@ -19,6 +19,8 @@ import Chatbot from '../../components/OrganizerComponent/Chatbot';
 import partnershipService from '../../services/partnershipService';
 import toast from 'react-hot-toast';
 import PaymentHistory from '../../components/PaymentHistory';
+import { messageService } from '../../services/messageService';
+import signalRService from '../../services/signalRService';
 
 
 
@@ -85,6 +87,9 @@ function OrganizerPage() {
     const [filteredPartnersData, setFilteredPartnersData] = useState([]);
     const [loadingPartners, setLoadingPartners] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState(null);
+    const [selectedPartnerId, setSelectedPartnerId] = useState(null);
+    const [selectedPartnerName, setSelectedPartnerName] = useState(null);
+    const [unreadCount, setUnreadCount] = useState(0);
 
     // Handler functions
     const handleViewEventDetail = (event) => {
@@ -101,6 +106,14 @@ function OrganizerPage() {
         setActive('messages');
     };
 
+    const handleMessageClick = (partnerId, partnerName) => {
+        console.log('📨 Message clicked for partner:', partnerId, partnerName);
+        setSelectedPartnerId(partnerId);
+        setSelectedPartnerName(partnerName);
+        setActive('messages');
+        setTab('messages');
+    };
+
     // Check if redirected from payment pages
     useEffect(() => {
         if (location.state?.activeTab === 'projects') {
@@ -108,6 +121,61 @@ function OrganizerPage() {
             setTab('projects');
         }
     }, [location]);
+
+    // 🔔 Global polling for unread messages - runs regardless of active tab
+    useEffect(() => {
+        console.log('🚀 Starting global unread count polling...');
+        
+        // Function to fetch and update unread count
+        const updateUnreadCount = async () => {
+            try {
+                const response = await messageService.getPartnerListChat();
+                if (response.success && response.data) {
+                    const total = response.data.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
+                    console.log('📊 Global unread count:', total);
+                    setUnreadCount(total);
+                }
+            } catch (error) {
+                console.error('❌ Error fetching unread count:', error);
+            }
+        };
+
+        // Initial fetch
+        updateUnreadCount();
+
+        // Always use polling as fallback (SignalR might miss some events)
+        console.log('⏰ Starting polling for unread count (every 5 seconds)');
+        const pollInterval = setInterval(updateUnreadCount, 5000);
+
+        // Also try SignalR for real-time updates
+        const initSignalR = async () => {
+            try {
+                if (!signalRService.isConnectionActive()) {
+                    await signalRService.startConnection();
+                }
+                
+                if (signalRService.isConnectionActive()) {
+                    console.log('✅ SignalR connected, listening for conversation updates');
+                    // Listen for conversation updates (immediate refresh)
+                    signalRService.onConversationUpdated(() => {
+                        console.log('🔔 Conversation updated via SignalR, refreshing unread count...');
+                        updateUnreadCount();
+                    });
+                }
+            } catch (err) {
+                console.error('SignalR error (polling still active):', err);
+            }
+        };
+
+        initSignalR();
+
+        // Cleanup on unmount
+        return () => {
+            console.log('🛑 Cleanup: Stopping unread count polling');
+            clearInterval(pollInterval);
+            signalRService.off('conversationUpdated');
+        };
+    }, []);
 
     // Persist to localStorage whenever these change
     useEffect(() => {
@@ -140,6 +208,8 @@ function OrganizerPage() {
                                 const brandProfile = partnership.partner?.brandProfile;
                                 return {
                                     id: partnership.id,
+                                    partnerId: partnership.partnerId,
+                                    partnerName: partnership.partner?.fullName || brandProfile?.brandName || 'Unknown Partner',
                                     partnerType: partnership.partnerType, // Thêm partnerType
                                     location: brandProfile?.location || 'N/A',
                                     forcus: brandProfile?.industry || 'N/A',
@@ -175,6 +245,8 @@ function OrganizerPage() {
                                 // Lấy từ Event data khi partnerType = "Organizer" (logic cũ)
                                 return {
                                     id: partnership.id,
+                                    partnerId: partnership.partnerId,
+                                    partnerName: partnership.partner?.fullName || partnership.event?.title || 'Unknown Partner',
                                     partnerType: partnership.partnerType, // Thêm partnerType
                                     location: partnership.event?.location || 'N/A',
                                     forcus: partnership.event?.eventType || 'N/A',
@@ -196,6 +268,7 @@ function OrganizerPage() {
                                 };
                             }
                         });
+                        console.log('✨ Transformed data:', transformedData);
                         setPartnersData(transformedData);
                     }
                 } catch (error) {
@@ -238,13 +311,19 @@ function OrganizerPage() {
                     data={partnersData} 
                     onFilter={setFilteredPartnersData}
                 />
-                <PartnersList partnersItem={filteredPartnersData} />
+                <PartnersList 
+                    partnersItem={filteredPartnersData}
+                    onMessageClick={handleMessageClick}
+                />
             </>
         );
       case "projects":
         return <PaymentHistory />;
       case "messages":
-        return <MessagesPage />;
+        return <MessagesPage 
+            initialPartnerId={selectedPartnerId}
+            initialPartnerName={selectedPartnerName}
+        />;
       case "ai":
         return <Chatbot />;
     case "profile":
@@ -274,7 +353,7 @@ function OrganizerPage() {
                 )}
 
                 <div className='flex space-x-10'>
-                    <SideBar opts={items} activeItem={active} onChange={setActive} onSubChange={setSubChange} subChange={subChange}/>
+                    <SideBar opts={items} activeItem={active} onChange={setActive} onSubChange={setSubChange} subChange={subChange} unreadCount={unreadCount}/>
                     <div className='flex-1'>
                         {renderContent()}
 

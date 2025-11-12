@@ -47,6 +47,15 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
           
           // Mark conversation as read
           await messageService.markConversationAsRead(partnerId);
+          
+          // Trigger conversationUpdated event to refresh chat list and unread count
+          console.log('✅ Marked conversation as read, triggering refresh...');
+          if (signalRService.isConnectionActive()) {
+            // Manually trigger refresh by emitting event to ourselves
+            signalRService.connection.invoke('OnConversationRead', partnerId).catch(err => {
+              console.log('SignalR OnConversationRead invoke failed (expected if not supported):', err);
+            });
+          }
         }
       } catch (err) {
         console.error('Error loading messages:', err);
