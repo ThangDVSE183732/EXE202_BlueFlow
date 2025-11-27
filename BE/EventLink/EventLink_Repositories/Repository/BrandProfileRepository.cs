@@ -17,6 +17,12 @@ namespace EventLink_Repositories.Repository
         {
             _context = context;
         }
+
+        public async Task<List<BrandProfile>> GetAllBrandProfilesAsync()
+        {
+            return await _context.BrandProfiles.Where(b => b.IsPublic == true).ToListAsync();
+        }
+
         public async Task<BrandProfile> GetByUserIdAsync(Guid userId)
         {
             return await _context.BrandProfiles.FirstOrDefaultAsync(b => b.UserId == userId);
