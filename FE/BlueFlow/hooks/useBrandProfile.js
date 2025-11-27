@@ -232,70 +232,11 @@ export const useBrandProfile = (showToast = null, shouldFetch = true) => {
           return; // ✅ Dừng lại ở đây, không tạo mới
         }
         
-        // Nếu không tìm thấy (success = false hoặc không có data), tạo mới
-        console.log('❌ Brand profile not found (success=false or no data), will create new one');
-        console.log('📝 Starting brand profile creation process...');
-        
-        // Check if already creating to prevent duplicate
-        if (isCreatingRef.current) {
-          console.log('⏭️ Already creating brand profile, skipping...');
-          setLoading(false);
-          return;
-        }
-        isCreatingRef.current = true;
-        
-        // Tạo brand profile mới
-        // Sử dụng defaultData đầy đủ, chỉ override user-specific fields
-        const createDataUI = {
-          ...defaultData,
-          companyName: user?.companyName || defaultData.companyName,
-          companyInfo: {
-            ...defaultData.companyInfo,
-            email: user?.email || defaultData.companyInfo.email
-          }
-        };
-
-        console.log('📝 Creating brand profile with data:', createDataUI);
-        const formData = await mapUIToApiFormData(createDataUI, null, true); // isCreate = true
-        const createResponse = await brandService.createBrandProfile(formData);
-
-        console.log('📥 Create brand profile response:', createResponse);
-        
-        // Reset flag after creation attempt
-        isCreatingRef.current = false;
-
-        if (createResponse.success && createResponse.data) {
-          console.log('✅ Brand profile created successfully');
-          console.log('✅ Created Brand Profile ID:', createResponse.data.id);
-          console.log('✅ Created response data:', createResponse.data);
-          setBrandProfileId(createResponse.data.id);
-          setBrandData(mapApiToUI(createResponse.data));
-          
-          // Show success toast
-          if (showToast) {
-            showToast({
-              type: 'success',
-              message: 'Đã tạo hồ sơ thương hiệu thành công',
-              duration: 3000
-            });
-          }
-
-          // Broadcast so discovery/UI can refresh
-          try { window.dispatchEvent(new CustomEvent('brandProfile:updated', { detail: { userId: user?.id, brandProfileId: createResponse.data.id } })); } catch(err) { void err; }
-        } else {
-          console.log('⚠️ Create failed, response:', createResponse);
-          console.log('⚠️ Using default data');
-          setError('Failed to create brand profile: ' + (createResponse.message || 'Unknown error'));
-          
-          // Show error toast
-          if (showToast) {
-            showToast({
-              type: 'error',
-              message: createResponse.message || 'Không thể tạo hồ sơ thương hiệu',
-              duration: 4000
-            });
-          }
-        }
+        // Brand profile not found for this user. Do NOT auto-create on view.
+        // Keep the UI using defaultData and allow creation only when the user explicitly saves.
+        console.log('ℹ️ Brand profile not found — using default UI data (no auto-create).');
+        setBrandProfileId(null);
+        setBrandData(defaultData);
       } catch (err) {
         console.error('❌ Error in fetch/create process:', err);
         setError(err.message || 'Failed to fetch or create brand profile');
@@ -404,23 +345,43 @@ export const useBrandProfile = (showToast = null, shouldFetch = true) => {
         }
       }
       
-      // If still no ID, throw error
-      const errorDetail = {
-        title: 'Brand Profile Not Found',
-        status: 400,
-        errors: { BrandProfileId: ['Brand profile is not loaded yet. Please wait or refresh the page.'] },
-        errorMessages: ['Brand profile is not loaded yet. Please wait or refresh the page.']
-      };
-      
-      if (showToast) {
-        showToast({
-          type: 'error',
-          message: 'Vui lòng đợi tải hồ sơ hoặc tải lại trang',
-          duration: 4000
-        });
+      // If still no ID, create a brand profile now (user chose Save) instead of erroring.
+      try {
+        if (isCreatingRef.current) {
+          // another create is in progress
+          const errDetail = { title: 'Busy', status: 409, errors: {}, errorMessages: ['Tạo hồ sơ đang diễn ra, vui lòng chờ'] };
+          if (showToast) showToast({ type: 'error', message: 'Tạo hồ sơ đang diễn ra, vui lòng chờ', duration: 3000 });
+          throw errDetail;
+        }
+
+        isCreatingRef.current = true;
+        // Prepare FormData for create (isCreate = true)
+        const formData = await mapUIToApiFormData(updatedData, logoFile, true);
+        const createResponse = await brandService.createBrandProfile(formData);
+        isCreatingRef.current = false;
+
+        if (createResponse.success && createResponse.data) {
+          const actual = createResponse.data;
+          setBrandProfileId(actual.id);
+          setBrandData(mapApiToUI(actual));
+          if (showToast) showToast({ type: 'success', message: 'Đã tạo hồ sơ thương hiệu thành công', duration: 3000 });
+          try { window.dispatchEvent(new CustomEvent('brandProfile:updated', { detail: { userId: user?.id, brandProfileId: actual.id } })); } catch (err) { void err; }
+          return { success: true, data: actual };
+        }
+
+        // create failed
+        const errorDetail = {
+          title: 'Create Failed',
+          status: 400,
+          errors: { Create: [createResponse?.message || 'Create failed'] },
+          errorMessages: [createResponse?.message || 'Create failed']
+        };
+        if (showToast) showToast({ type: 'error', message: createResponse?.message || 'Không thể tạo hồ sơ thương hiệu', duration: 4000 });
+        throw errorDetail;
+      } catch (err) {
+        isCreatingRef.current = false;
+        throw err;
       }
-      
-      throw errorDetail;
     }
 
     try {
