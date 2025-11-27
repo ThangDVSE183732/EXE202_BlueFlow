@@ -160,6 +160,7 @@ builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 
 builder.Services.AddSingleton<CloudinaryService>();
 builder.Services.AddSingleton<OpenAIService>();
+builder.Services.AddSingleton<ClaudeService>();
 
 builder.Services.AddMemoryCache();
 

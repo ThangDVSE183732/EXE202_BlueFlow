@@ -9,6 +9,8 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace EventLink.Controllers
@@ -23,6 +25,7 @@ namespace EventLink.Controllers
         private readonly IEventService _eventService;
         private readonly IBrandProfileService _brandProfileService;
         private readonly IPartnershipService _partnershipService;
+        private readonly ClaudeService _claudeService;
         private readonly ILogger<ChatAIController> _logger;
 
         public ChatAIController(
@@ -31,6 +34,7 @@ namespace EventLink.Controllers
             IEventService eventService,
             IBrandProfileService brandProfileService,
             IPartnershipService partnershipService,
+            ClaudeService claudeService,
             ILogger<ChatAIController> logger)
         {
             _openAIService = openAIService;
@@ -38,7 +42,117 @@ namespace EventLink.Controllers
             _eventService = eventService;
             _brandProfileService = brandProfileService;
             _partnershipService = partnershipService;
+            _claudeService = claudeService;
             _logger = logger;
+        }
+
+        [HttpPost("match-partnerships")]
+        public async Task<IActionResult> MatchPartnerships([FromBody] MatchPartnershipRequest request = null)
+        {
+            try
+            {
+                // Bước 1: Lấy User ID từ JWT claims (user đang đăng nhập)
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                {
+                    return Unauthorized(new { success = false, message = "Không thể xác định user. Vui lòng đăng nhập lại." });
+                }
+
+                // Bước 2: Lấy User Role từ JWT claims (không cần query database)
+                var role = GetCurrentUserRole();
+                if (string.IsNullOrEmpty(role))
+                {
+                    return Unauthorized(new { success = false, message = "Không thể xác định role của user." });
+                }
+
+                if (role != "Organizer" && role != "Sponsor")
+                {
+                    return BadRequest(new { success = false, message = "User này không có vai trò Organizer hoặc Sponsor." });
+                }
+
+                // Lấy thông tin user từ claims (optional - chỉ để hiển thị)
+                var userFullName = User.FindFirst(ClaimTypes.Name)?.Value ?? "User";
+                var userEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? "";
+
+                // Bước 3: Prepare data và gửi cho Claude để phân tích
+                string response;
+                List<Guid> partnershipIds = new List<Guid>();
+
+                if (role == "Organizer")
+                {
+                    // Get Events của Organizer
+                    var events = await _eventService.GetEventsByOrganizerIdAsync(userId.Value);
+                    if (!events.Any())
+                    {
+                        return Ok(new { success = true, message = "Bạn chưa tạo sự kiện nào trong hệ thống. Vui lòng tạo sự kiện trước khi tìm đối tác." });
+                    }
+
+                    // Get TẤT CẢ Sponsor Partnerships với BrandProfiles
+                    var sponsorData = await GetSponsorPartnershipsDataAsync();
+
+                    // Extract partnership IDs để trả về cho FE filter
+                    partnershipIds = ExtractPartnershipIds(sponsorData);
+
+                    // Gửi data cho Claude để phân tích và match
+                    response = await AnalyzeAndMatchWithClaudeAsync(
+                        userRole: "Organizer",
+                        userFullName: userFullName,
+                        userEmail: userEmail,
+                        events: events.ToList(),
+                        sponsorPartnerships: sponsorData,
+                        organizerPartnerships: null,
+                        brandProfile: null
+                    );
+                }
+                else // Sponsor
+                {
+                    // Get Brand Profile của Sponsor
+                    var brandProfile = await _brandProfileService.GetByUserIdAsync(userId.Value);
+                    if (brandProfile == null)
+                    {
+                        return NotFound(new { success = false, message = "Bạn chưa có brand profile trong hệ thống. Vui lòng tạo brand profile trước." });
+                    }
+
+                    // Get TẤT CẢ Organizer Partnerships với Events
+                    var organizerData = await GetOrganizerPartnershipsDataAsync();
+
+                    // Extract partnership IDs để trả về cho FE filter
+                    partnershipIds = ExtractPartnershipIds(organizerData);
+
+                    // Gửi data cho Claude để phân tích và match
+                    response = await AnalyzeAndMatchWithClaudeAsync(
+                        userRole: "Sponsor",
+                        userFullName: userFullName,
+                        userEmail: userEmail,
+                        events: null,
+                        sponsorPartnerships: null,
+                        organizerPartnerships: organizerData,
+                        brandProfile: brandProfile
+                    );
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    role = role,
+                    response = response,
+                    partnershipIds = partnershipIds  // Danh sách partnership IDs để FE có thể filter
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[MatchPartnerships] Exception occurred: {Message}\nStackTrace: {StackTrace}", 
+                    ex.Message, ex.StackTrace);
+                
+                // Return more detailed error information for debugging
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Lỗi khi tìm kiếm partnerships bằng AI. Vui lòng thử lại sau.",
+                    error = ex.Message,
+                    detail = ex.InnerException?.Message
+                });
+            }
         }
 
         [HttpPost("query")]
@@ -449,6 +563,162 @@ CRITICAL:
             );
             return Ok(new { answer = response });
         }
+
+
+        /// <summary>
+        /// Get ALL Sponsor Partnerships (không lấy BrandProfile)
+        /// </summary>
+        private async Task<List<object>> GetSponsorPartnershipsDataAsync()
+        {
+            // Get all partnerships với PartnerType = 'Sponsor' và Status = 'Ongoing'
+            var allPartnerships = await _partnershipService.GetAllPartnershipsAsync();
+            var sponsorPartnerships = allPartnerships
+                .Where(p => p.PartnerType == "Sponsor" && p.Status == "Ongoing")
+                .ToList();
+
+            // Chỉ trả về Partnership data, không lấy BrandProfile
+            var result = sponsorPartnerships.Select(partnership => new
+            {
+                Partnership = new
+                {
+                    partnership.Id,
+                    partnership.PartnerType,
+                    partnership.Status,
+                    partnership.ProposedBudget,
+                    partnership.ServiceDescription,
+                    partnership.DeadlineDate,
+                    partnership.PartnerId
+                }
+            }).Cast<object>().ToList();
+
+            return result;
+        }
+
+        /// <summary>
+        /// Get ALL Organizer Partnerships (không lấy Event)
+        /// </summary>
+        private async Task<List<object>> GetOrganizerPartnershipsDataAsync()
+        {
+            // Get all partnerships với PartnerType = 'Organizer' và Status = 'Ongoing'
+            var allPartnerships = await _partnershipService.GetAllPartnershipsAsync();
+            var organizerPartnerships = allPartnerships
+                .Where(p => p.PartnerType == "Organizer" && p.Status == "Ongoing")
+                .ToList();
+
+            // Chỉ trả về Partnership data, không lấy Event
+            var result = organizerPartnerships.Select(partnership => new
+            {
+                Partnership = new
+                {
+                    partnership.Id,
+                    partnership.PartnerType,
+                    partnership.Status,
+                    partnership.ProposedBudget,
+                    partnership.ServiceDescription,
+                    partnership.DeadlineDate,
+                    partnership.PartnerId
+                }
+            }).Cast<object>().ToList();
+
+            return result;
+        }
+
+        /// <summary>
+        /// Extract Partnership IDs từ partnerships data
+        /// </summary>
+        private List<Guid> ExtractPartnershipIds(List<object> partnerships)
+        {
+            var ids = new List<Guid>();
+            if (partnerships == null || !partnerships.Any())
+                return ids;
+
+            foreach (var partnershipObj in partnerships)
+            {
+                try
+                {
+                    var partnershipProp = partnershipObj.GetType().GetProperty("Partnership");
+                    if (partnershipProp != null)
+                    {
+                        var partnership = partnershipProp.GetValue(partnershipObj);
+                        var idProp = partnership?.GetType().GetProperty("Id");
+                        if (idProp != null)
+                        {
+                            var id = idProp.GetValue(partnership);
+                            if (id is Guid guid)
+                            {
+                                ids.Add(guid);
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // Skip if cannot extract
+                }
+            }
+
+            return ids;
+        }
+
+        /// <summary>
+        /// Gửi data cho Claude để phân tích và match
+        /// </summary>
+        private async Task<string> AnalyzeAndMatchWithClaudeAsync(
+            string userRole,
+            string userFullName,
+            string userEmail,
+            List<Eventlink_Services.Response.EventResponse> events = null,
+            List<object> sponsorPartnerships = null,
+            List<object> organizerPartnerships = null,
+            Eventlink_Services.Response.BrandProfileResponse brandProfile = null)
+        {
+            // Lấy system prompt từ file riêng
+            var systemPrompt = PartnershipMatchingPrompts.SystemPrompt;
+
+            var userPrompt = "";
+
+            if (userRole == "Organizer")
+            {
+                // Lấy user prompt template từ file riêng
+                var eventsJson = JsonConvert.SerializeObject(events, Formatting.Indented);
+                var sponsorPartnershipsJson = JsonConvert.SerializeObject(sponsorPartnerships, Formatting.Indented);
+                
+                userPrompt = PartnershipMatchingPrompts.GetOrganizerUserPromptTemplate(
+                    userFullName,
+                    userEmail,
+                    eventsJson,
+                    sponsorPartnershipsJson,
+                    events.Count
+                );
+            }
+            else // Sponsor
+            {
+                // Lấy user prompt template từ file riêng
+                var missionText = brandProfile.OurMission != null && brandProfile.OurMission.Any()
+                    ? string.Join(" ", brandProfile.OurMission.Take(3))
+                    : "N/A";
+                var tagsText = brandProfile.Tags != null && brandProfile.Tags.Any()
+                    ? string.Join(", ", brandProfile.Tags)
+                    : "N/A";
+                var organizerPartnershipsJson = JsonConvert.SerializeObject(organizerPartnerships, Formatting.Indented);
+
+                userPrompt = PartnershipMatchingPrompts.GetSponsorUserPromptTemplate(
+                    userFullName,
+                    userEmail,
+                    brandProfile.BrandName,
+                    brandProfile.Industry,
+                    brandProfile.CompanySize,
+                    tagsText,
+                    brandProfile.Location,
+                    missionText,
+                    brandProfile.AboutUs ?? "N/A",
+                    organizerPartnershipsJson
+                );
+            }
+
+            // Gọi Claude để phân tích và format
+            return await _claudeService.FormatResponseAsync(systemPrompt, userPrompt);
+        }
     }
 
     public class QuestionRequest
@@ -460,5 +730,10 @@ CRITICAL:
     {
         public string Message { get; set; }
         public List<(string role, string content)> History { get; set; }
+    }
+
+    public class MatchPartnershipRequest
+    {
+        public string Message { get; set; }
     }
 }
