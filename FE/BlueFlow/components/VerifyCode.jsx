@@ -1,7 +1,6 @@
 import FloatingInput from "./FloatingInput";
 import { Link, useLocation } from "react-router-dom";
-import {useToast} from '../hooks/useToast';
-import ToastContainer from './ToastContainer';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useState } from "react";
 import { validateVerifyForm } from "../utils/validation";
@@ -20,7 +19,6 @@ function VerifyCode() {
         }));
     };
 
-     const { toasts, showToast, removeToast } = useToast();
      const navigate = useNavigate();
      const { login } = useAuth();
      const location = useLocation();
@@ -60,20 +58,12 @@ function VerifyCode() {
       const errorCount = Object.keys(validation.errors).length;
       const firstError = Object.values(validation.errors)[0];
 
-      showToast({
-        type: 'error',
-        title: 'Validation Error',
-        message: `${firstError}${errorCount > 1 ? ` (and ${errorCount - 1} more error${errorCount > 2 ? 's' : ''})` : ''}`
-      });
+      toast.error(`${firstError}${errorCount > 1 ? ` (and ${errorCount - 1} more error${errorCount > 2 ? 's' : ''})` : ''}`);
       return;
     }
 
     if (!email) {
-      showToast({
-        type: 'error',
-        title: 'Error',
-        message: 'Email not found. Please start from login page.'
-      });
+      toast.error('Email not found. Please start from login page.');
       console.log('Email not found in state');
       navigate('/login');
       return;
@@ -111,19 +101,24 @@ function VerifyCode() {
             directPhone: profileData?.directPhone || ""
           }
       });
+      
+      // Log để debug
+      console.log('Verify OTP Register Response:', response);
+      console.log('User data:', response.data?.user);
+      console.log('User role:', response.data?.user?.role);
       } else {
          response = await authService.verifyOTP({
           email: email,
           otp: formData.code
         });
+        
+        // Log để debug
+        console.log('Verify OTP Login Response:', response);
+        console.log('User data:', response.data?.user);
       }
 
       if (response.success) {
-        showToast({
-          type: 'success',
-          title: 'Success!',
-          message: response.message || 'OTP verified successfully!'
-        });
+        toast.success(response.message || 'OTP verified successfully!');
 
         // Lưu thông tin user vào context
         if (response.data?.user) {
@@ -132,8 +127,12 @@ function VerifyCode() {
 
         // Điều hướng dựa trên từ đâu đến
         if (fromPage === 'login' || fromPage === 'sign-up') {
-          // Đăng nhập thành công - chuyển về trang chính
-          navigate('/organizer');
+          // Đăng nhập/Đăng ký thành công - chuyển về trang dựa trên role
+          const userRole = response.data?.user?.role?.toLowerCase();
+          const dashboardPath = `/${userRole || 'organizer'}`;
+          
+          console.log('User verified successfully. Role:', userRole, 'Navigating to:', dashboardPath);
+          navigate(dashboardPath);
         } else {
           // Reset password flow - chuyển đến set password
           navigate('/set-password', { 
@@ -144,27 +143,18 @@ function VerifyCode() {
           });
         }
       } else {
-        showToast({
-          type: 'error',
-          title: 'Verification Failed',
-          message: response.message || 'Invalid verification code.'
-        });
+        toast.error(response.message || 'Invalid verification code.');
       }
     } catch (error) {
       console.error('Verify OTP error:', error);
       
-      showToast({
-        type: 'error',
-        title: 'Verification Failed',
-        message: error.message || 'Verification failed. Please try again.'
-      });
+      toast.error(error.message || 'Verification failed. Please try again.');
     } 
   };
 
 
     return (
     <>
-      <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
       <div className="text-left w-full max-w-md px-8 pt-8 pl-12 text-black">
         <Link
           to="/forgot-password"
@@ -187,7 +177,7 @@ function VerifyCode() {
               onChange={(value) => handleInputChange('code', value)} />
           </div>
           <p className="text-xs font-medium mb-8 text-left  text-gray-600">Didn't receive the code?
-		<Link rel="noopener noreferrer" to="#" className="text-red-600 text-gray-800"> Resend</Link>
+		<Link rel="noopener noreferrer" to="#" className="text-blue-600 hover:text-blue-800"> Resend</Link>
         </p>
           <button type="submit" className="block mb-2 w-full p-3 text-center rounded-lg font-medium text-gray-50 bg-blue-400">
             Verify

@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import FloatingInput from "./FloatingInput";
-import {useToast} from '../hooks/useToast';
-import ToastContainer from './ToastContainer';
+import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { useState } from "react";
 import { validateSetPasswordForm } from "../utils/validation";
@@ -20,7 +19,6 @@ const [formData, setFormData] = useState({
         }));
     };
 
-     const { toasts, showToast, removeToast } = useToast();
      const navigate = useNavigate();
 
 
@@ -36,17 +34,12 @@ const [formData, setFormData] = useState({
              const errorCount = Object.keys(validation.errors).length;
              const firstError = Object.values(validation.errors)[0];
             
-            showToast({
-              type: 'error',
-              title: 'Validation Error',
-              message: `${firstError}${errorCount > 1 ? ` (and ${errorCount - 1} more error${errorCount > 2 ? 's' : ''})` : ''}`
-            });
+            toast.error(`${firstError}${errorCount > 1 ? ` (and ${errorCount - 1} more error${errorCount > 2 ? 's' : ''})` : ''}`);
           }
         };
 
       return (
     <>
-      <ToastContainer toasts={toasts} onRemoveToast={removeToast} />
       <div className="text-left w-full max-w-md px-8 pt-8 pl-12 text-black">
         <Link
           to="/verify-code"

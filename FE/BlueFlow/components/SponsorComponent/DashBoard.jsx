@@ -1,7 +1,7 @@
 import Note from "./Note";
 import PieChartBox from "./PieChart";
 import ProfileInteraction from "./ProfileInteraction";
-import StatisticCards from "./statisticCards";
+import StatisticCards from "./StatisticCards";
 
 const cards = [
     { title: "Active Partnerships ", value: "47"},

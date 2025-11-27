@@ -1,21 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { brandService } from '../services/brandService';
 import { useAuth } from '../contexts/AuthContext';
 
-export const useBrandProfile = () => {
+export const useBrandProfile = (showToast = null) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [brandProfileId, setBrandProfileId] = useState(null);
   const [error, setError] = useState(null);
+  const isCreatingRef = useRef(false); // Flag to prevent duplicate creation
+  const hasFetchedRef = useRef(false); // Flag to prevent duplicate fetch
 
   // Dữ liệu mặc định
   const defaultData = {
     companyName: 'TechCorp Solutions',
-    tagline: 'Technology & Innovation Sponsor',
     location: 'Ho Chi Minh City, Vietnam',
-    eventsSponsored: 45,
-    activePartnerships: 12,
-    satisfactionRate: 98,
     aboutUs: 'TechCorp Solutions is a leading technology company specializing in innovative software solutions and digital transformation services. We are passionate about supporting the tech community through strategic event sponsorships and partnerships.',
     mission: [
       'Expertise in digital transformation and software innovation',
@@ -46,18 +44,46 @@ export const useBrandProfile = () => {
   // Map API response to UI format
   const mapApiToUI = (apiData) => {
     console.log('🔄 Mapping API data:', apiData);
+    console.log('🖼️ brandLogo from API:', apiData?.brandLogo);
+    
+    // Handle ourMission - có thể là array hoặc string
+    let missionArray = defaultData.mission;
+    if (apiData?.ourMission) {
+      if (Array.isArray(apiData.ourMission)) {
+        // Nếu là array, lấy trực tiếp
+        missionArray = apiData.ourMission.map(m => m.trim()).filter(m => m);
+      } else if (typeof apiData.ourMission === 'string') {
+        // Nếu là string, split by semicolon
+        missionArray = apiData.ourMission.split(';').map(m => m.trim()).filter(m => m);
+      }
+    }
+
+    // Handle tags - có thể là array của strings hoặc array với 1 string dài
+    let industriesArray = defaultData.industries;
+    if (apiData?.tags) {
+      if (Array.isArray(apiData.tags)) {
+        if (apiData.tags.length === 1 && typeof apiData.tags[0] === 'string' && apiData.tags[0].includes(',')) {
+          // Nếu là array với 1 phần tử chứa chuỗi dài có dấu phẩy, split nó
+          industriesArray = apiData.tags[0].split(',').map(t => t.trim()).filter(t => t);
+        } else {
+          // Nếu là array bình thường
+          industriesArray = apiData.tags.map(t => t.trim()).filter(t => t);
+        }
+      } else if (typeof apiData.tags === 'string') {
+        // Nếu là string, split by comma
+        industriesArray = apiData.tags.split(',').map(t => t.trim()).filter(t => t);
+      }
+    }
     
     return {
+      id: apiData?.id,
       companyName: apiData?.brandName || defaultData.companyName,
-      tagline: defaultData.tagline, // API không có field này
+      brandLogo: apiData?.brandLogo,
+      tagline: apiData?.tags,
       location: apiData?.location || defaultData.location,
-      eventsSponsored: defaultData.eventsSponsored, // API không có
-      activePartnerships: defaultData.activePartnerships, // API không có
-      satisfactionRate: defaultData.satisfactionRate, // API không có
       aboutUs: apiData?.aboutUs || defaultData.aboutUs,
-      mission: (apiData?.ourMission && typeof apiData.ourMission === 'string')
-        ? apiData.ourMission.split(';').map(m => m.trim()).filter(m => m)
-        : defaultData.mission,
+      mission: missionArray,
+      isPublic: apiData?.isPublic || false,
       companyInfo: {
         industry: apiData?.industry || defaultData.companyInfo.industry,
         companySize: apiData?.companySize || defaultData.companyInfo.companySize,
@@ -66,14 +92,12 @@ export const useBrandProfile = () => {
         email: apiData?.email || defaultData.companyInfo.email,
         phone: apiData?.phoneNumber || defaultData.companyInfo.phone
       },
-      industries: (apiData?.tags && typeof apiData.tags === 'string')
-        ? apiData.tags.split(',').map(t => t.trim()).filter(t => t)
-        : defaultData.industries
+      industries: industriesArray
     };
   };
 
   // Map UI format to API request (FormData for file upload support)
-  const mapUIToApiFormData = async (uiData, logoFile = null) => {
+  const mapUIToApiFormData = async (uiData, logoFile = null, isCreate = false) => {
     const formData = new FormData();
     
     console.log('🔍 Mapping UI data to FormData:', uiData);
@@ -104,17 +128,42 @@ export const useBrandProfile = () => {
     formData.append('PhoneNumber', phoneNumber);
     formData.append('Tags', tags);
     
-    // BrandLogo cuối cùng
+    // BrandLogo - logic khác nhau cho CREATE vs UPDATE
     if (logoFile) {
+      // User upload logo mới
       formData.append('BrandLogo', logoFile);
-      console.log('✅ Added BrandLogo:', logoFile.name);
-    } else {
-      // Tạo placeholder nhỏ nếu không có logo
+      console.log('✅ Added new BrandLogo file:', logoFile.name);
+    } else if (isCreate) {
+      // CREATE mới: cần placeholder vì backend require BrandLogo
       const emptyImageBlob = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
         .then(res => res.blob());
       const placeholderFile = new File([emptyImageBlob], 'placeholder.png', { type: 'image/png' });
       formData.append('BrandLogo', placeholderFile);
-      console.log('✅ Added placeholder BrandLogo');
+      console.log('✅ Added placeholder BrandLogo for CREATE');
+    } else if (uiData.brandLogo) {
+      // UPDATE với logo hiện có: download và gửi lại để giữ nguyên
+      try {
+        console.log('📥 Downloading existing logo to preserve it:', uiData.brandLogo);
+        const logoResponse = await fetch(uiData.brandLogo);
+        const logoBlob = await logoResponse.blob();
+        const existingLogoFile = new File([logoBlob], 'existing-logo.png', { type: logoBlob.type || 'image/png' });
+        formData.append('BrandLogo', existingLogoFile);
+        console.log('✅ Re-uploading existing logo to preserve it');
+      } catch (fetchError) {
+        console.warn('⚠️ Failed to fetch existing logo, using placeholder:', fetchError);
+        // Fallback: gửi placeholder
+        const emptyImageBlob = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
+          .then(res => res.blob());
+        const placeholderFile = new File([emptyImageBlob], 'keep-existing.png', { type: 'image/png' });
+        formData.append('BrandLogo', placeholderFile);
+      }
+    } else {
+      // Không có logo hiện có và không upload mới: gửi placeholder
+      const emptyImageBlob = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
+        .then(res => res.blob());
+      const placeholderFile = new File([emptyImageBlob], 'no-logo.png', { type: 'image/png' });
+      formData.append('BrandLogo', placeholderFile);
+      console.log('ℹ️ No existing logo, sending placeholder');
     }
     
     console.log('📋 FormData fields (in order):', {
@@ -138,12 +187,22 @@ export const useBrandProfile = () => {
   // Fetch hoặc tạo brand profile
   useEffect(() => {
     const fetchOrCreateBrandProfile = async () => {
+      console.log('🚀 useBrandProfile: Starting fetch/create process...');
+      console.log('👤 Current user:', user);
+      console.log('🆔 User ID:', user?.id);
+      
       if (!user?.id) {
-    console.log(user?.id);
-        console.log('No user ID, using default data');
+        console.log('⚠️ No user ID found, using default data');
         setLoading(false);
         return;
       }
+
+      // Prevent duplicate calls
+      if (hasFetchedRef.current) {
+        console.log('⏭️ Already fetched/created, skipping...');
+        return;
+      }
+      hasFetchedRef.current = true;
 
       try {
         setLoading(true);
@@ -154,64 +213,99 @@ export const useBrandProfile = () => {
         const response = await brandService.getBrandProfileByUserId(user.id);
 
         console.log('📥 getBrandProfileByUserId response:', response);
+        console.log('📊 Response success:', response.success);
+        console.log('📊 Response data:', response.data);
 
-        // Nếu tìm thấy brand profile
+        // Nếu tìm thấy brand profile (success = true và có data)
         if (response.success && response.data) {
-          console.log('✅ Brand profile found:', response.data);
-          setBrandProfileId(user?.id);
-          console.log("1");
-          setBrandData(mapApiToUI(response.data));
-         console.log("2");
+          // Backend trả về {success, message, data}, và service wrap lại
+          // Nên phải lấy response.data.data
+          const actualData = response.data.data || response.data;
+          console.log('✅ Brand profile found:', actualData);
+          console.log('✅ Brand profile ID:', actualData.id);
+          console.log('✅ Brand Logo URL:', actualData.brandLogo);
+          setBrandProfileId(actualData.id); // Sử dụng ID từ response
+          const mappedData = mapApiToUI(actualData);
+          console.log('✅ Mapped data:', mappedData);
+          console.log('✅ Mapped brandLogo:', mappedData.brandLogo);
+          setBrandData(mappedData);
           setLoading(false);
-        console.log("3");
           return; // ✅ Dừng lại ở đây, không tạo mới
         }
         
-        // Nếu backend trả về lỗi (404, 500, etc.) hoặc không có data
-        console.log('❌ Brand profile not found or error occurred, will create new one');
-        throw new Error(response.message || 'Brand profile not found');
-      } catch (err) {
-        console.log('❌ Brand profile fetch failed, creating new one...', err.message);
-
+        // Nếu không tìm thấy (success = false hoặc không có data), tạo mới
+        console.log('❌ Brand profile not found (success=false or no data), will create new one');
+        console.log('📝 Starting brand profile creation process...');
+        
+        // Check if already creating to prevent duplicate
+        if (isCreatingRef.current) {
+          console.log('⏭️ Already creating brand profile, skipping...');
+          setLoading(false);
+          return;
+        }
+        isCreatingRef.current = true;
+        
         // Tạo brand profile mới
-        try {
-          // Sử dụng defaultData đầy đủ, chỉ override user-specific fields
-          const createDataUI = {
-            ...defaultData,
-            companyName: user?.companyName || defaultData.companyName,
-            companyInfo: {
-              ...defaultData.companyInfo,
-              email: user?.email || defaultData.companyInfo.email
-            }
-          };
-
-          console.log('📝 Creating brand profile with data:', createDataUI);
-          const formData = await mapUIToApiFormData(createDataUI);
-          const createResponse = await brandService.createBrandProfile(formData);
-
-          if (createResponse.success && createResponse.data) {
-            console.log('✅ Brand profile created successfully');
-            setBrandProfileId(user?.id);
-            setBrandData(mapApiToUI(createResponse.data));
-          } else {
-            console.log('⚠️ Create failed, using default data');
-            setError('Failed to create brand profile');
+        // Sử dụng defaultData đầy đủ, chỉ override user-specific fields
+        const createDataUI = {
+          ...defaultData,
+          companyName: user?.companyName || defaultData.companyName,
+          companyInfo: {
+            ...defaultData.companyInfo,
+            email: user?.email || defaultData.companyInfo.email
           }
-        } catch (createError) {
-          console.error('❌ Error creating brand profile:', createError);
+        };
+
+        console.log('📝 Creating brand profile with data:', createDataUI);
+        const formData = await mapUIToApiFormData(createDataUI, null, true); // isCreate = true
+        const createResponse = await brandService.createBrandProfile(formData);
+
+        console.log('📥 Create brand profile response:', createResponse);
+        
+        // Reset flag after creation attempt
+        isCreatingRef.current = false;
+
+        if (createResponse.success && createResponse.data) {
+          console.log('✅ Brand profile created successfully');
+          console.log('✅ Created Brand Profile ID:', createResponse.data.id);
+          console.log('✅ Created response data:', createResponse.data);
+          setBrandProfileId(createResponse.data.id);
+          setBrandData(mapApiToUI(createResponse.data));
           
-          // Parse error details
-          const parsedError = parseBackendError(createError);
-          console.error('📋 Create error details:', parsedError);
-          
-          // Set error message cho UI
-          if (parsedError.errorMessages.length > 0) {
-            setError(parsedError.errorMessages.join(', '));
-          } else {
-            setError('Failed to create brand profile');
+          // Show success toast
+          if (showToast) {
+            showToast({
+              type: 'success',
+              message: 'Đã tạo hồ sơ thương hiệu thành công',
+              duration: 3000
+            });
           }
+        } else {
+          console.log('⚠️ Create failed, response:', createResponse);
+          console.log('⚠️ Using default data');
+          setError('Failed to create brand profile: ' + (createResponse.message || 'Unknown error'));
           
-          // Giữ defaultData trong state
+          // Show error toast
+          if (showToast) {
+            showToast({
+              type: 'error',
+              message: createResponse.message || 'Không thể tạo hồ sơ thương hiệu',
+              duration: 4000
+            });
+          }
+        }
+      } catch (err) {
+        console.error('❌ Error in fetch/create process:', err);
+        setError(err.message || 'Failed to fetch or create brand profile');
+        isCreatingRef.current = false; // Reset flag on error
+        
+        // Show error toast
+        if (showToast) {
+          showToast({
+            type: 'error',
+            message: 'Đã xảy ra lỗi: ' + (err.message || 'Unknown error'),
+            duration: 4000
+          });
         }
       } finally {
         setLoading(false);
@@ -219,6 +313,13 @@ export const useBrandProfile = () => {
     };
 
     fetchOrCreateBrandProfile();
+    
+    // Cleanup function
+    return () => {
+      // Reset flags when component unmounts or user changes
+      hasFetchedRef.current = false;
+      isCreatingRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
@@ -260,15 +361,64 @@ export const useBrandProfile = () => {
 
   // Update brand profile
   const updateBrandProfile = async (updatedData, logoFile = null) => {
-    console.log("UserID: ", user?.id);
+    console.log("🔍 Update brand profile called");
+    console.log("👤 UserID:", user?.id);
+    console.log("🆔 BrandProfileId:", brandProfileId);
+    
     if (!brandProfileId) {
-      console.error('No user ID to update');
+      console.error('❌ No brandProfileId available for update');
+      console.log('⏳ Attempting to fetch brand profile first...');
+      
+      // Try to fetch brand profile if not loaded yet
+      if (user?.id) {
+        try {
+          const response = await brandService.getBrandProfileByUserId(user.id);
+          if (response.success && response.data) {
+            const actualData = response.data.data || response.data;
+            const fetchedId = actualData.id;
+            console.log('✅ Found brandProfileId:', fetchedId);
+            setBrandProfileId(fetchedId);
+            
+            // Now retry update with the fetched ID
+            const formData = await mapUIToApiFormData(updatedData, logoFile);
+            const updateResponse = await brandService.updateBrandProfile(fetchedId, formData);
+            
+            if (updateResponse.success) {
+              console.log('✅ Brand profile updated successfully');
+              setBrandData(mapApiToUI(updateResponse.data));
+              
+              if (showToast) {
+                showToast({
+                  type: 'success',
+                  message: 'Cập nhật hồ sơ thương hiệu thành công',
+                  duration: 3000
+                });
+              }
+              
+              return { success: true };
+            }
+          }
+        } catch (fetchError) {
+          console.error('❌ Failed to fetch brand profile for update:', fetchError);
+        }
+      }
+      
+      // If still no ID, throw error
       const errorDetail = {
-        title: 'No User ID',
+        title: 'Brand Profile Not Found',
         status: 400,
-        errors: { UserId: ['UserId is missing'] },
-        errorMessages: ['UserId is missing']
+        errors: { BrandProfileId: ['Brand profile is not loaded yet. Please wait or refresh the page.'] },
+        errorMessages: ['Brand profile is not loaded yet. Please wait or refresh the page.']
       };
+      
+      if (showToast) {
+        showToast({
+          type: 'error',
+          message: 'Vui lòng đợi tải hồ sơ hoặc tải lại trang',
+          duration: 4000
+        });
+      }
+      
       throw errorDetail;
     }
 
@@ -283,6 +433,17 @@ export const useBrandProfile = () => {
       if (response.success) {
         console.log('✅ Brand profile updated successfully');
         setBrandData(updatedData);
+        
+        // Show success toast
+        if (showToast) {
+          showToast({
+            type: 'success',
+            title: 'Đã lưu!',
+            message: 'Cập nhật hồ sơ thương hiệu thành công',
+            duration: 3000
+          });
+        }
+        
         return { success: true };
       } else {
         console.error('❌ Failed to update:', response.message);
@@ -292,6 +453,17 @@ export const useBrandProfile = () => {
           errors: { Update: [response.message || 'Update failed'] },
           errorMessages: [response.message || 'Update failed']
         };
+        
+        // Show error toast
+        if (showToast) {
+          showToast({
+            type: 'error',
+            title: 'Lỗi cập nhật!',
+            message: response.message || 'Không thể cập nhật hồ sơ',
+            duration: 4000
+          });
+        }
+        
         throw errorDetail;
       }
     } catch (error) {
@@ -300,6 +472,17 @@ export const useBrandProfile = () => {
       // Parse và throw error với format chuẩn
       const parsedError = parseBackendError(error);
       console.error('📋 Error details:', parsedError);
+      
+      // Show detailed error toast
+      if (showToast) {
+        showToast({
+          type: 'error',
+          title: 'Lỗi!',
+          message: parsedError.errorMessages[0] || 'Đã xảy ra lỗi khi cập nhật',
+          duration: 5000
+        });
+      }
+      
       throw parsedError;
     }
   };
@@ -322,6 +505,126 @@ export const useBrandProfile = () => {
     }
   };
 
+  // Toggle brand profile status (Public/Private)
+  const toggleBrandProfileStatus = async () => {
+    if (!brandProfileId) {
+      console.error('No brand profile ID found');
+      if (showToast) {
+        showToast({
+          type: 'error',
+          title: 'Lỗi!',
+          message: 'Không tìm thấy ID hồ sơ thương hiệu',
+          duration: 3000
+        });
+      }
+      return { success: false, message: 'No brand profile ID' };
+    }
+
+    try {
+      const response = await brandService.toggleBrandProfileStatus(brandProfileId);
+
+      if (response.success) {
+        // Update local state
+        setBrandData(prev => ({
+          ...prev,
+          isPublic: !prev.isPublic
+        }));
+
+        if (showToast) {
+          showToast({
+            type: 'success',
+            title: 'Thành công!',
+            message: `Đã chuyển sang ${!brandData.isPublic ? 'Public' : 'Private'}`,
+            duration: 3000
+          });
+        }
+
+        return { success: true, data: response.data };
+      } else {
+        if (showToast) {
+          showToast({
+            type: 'error',
+            title: 'Lỗi!',
+            message: response.message || 'Không thể thay đổi trạng thái',
+            duration: 4000
+          });
+        }
+        return response;
+      }
+    } catch (error) {
+      console.error('Error toggling brand profile status:', error);
+      if (showToast) {
+        showToast({
+          type: 'error',
+          title: 'Lỗi!',
+          message: 'Đã xảy ra lỗi khi thay đổi trạng thái',
+          duration: 4000
+        });
+      }
+      return { success: false, message: error.message };
+    }
+  };
+
+  // Toggle brand profile all status (Public/Private + Partnership)
+  const toggleBrandProfileAllStatus = async () => {
+    if (!brandProfileId) {
+      console.error('No brand profile ID found');
+      if (showToast) {
+        showToast({
+          type: 'error',
+          title: 'Lỗi!',
+          message: 'Không tìm thấy ID hồ sơ thương hiệu',
+          duration: 3000
+        });
+      }
+      return { success: false, message: 'No brand profile ID' };
+    }
+
+    try {
+      const response = await brandService.toggleBrandProfileAllStatus(brandProfileId);
+
+      if (response.success) {
+        // Update local state
+        setBrandData(prev => ({
+          ...prev,
+          isPublic: !prev.isPublic
+        }));
+
+        if (showToast) {
+          showToast({
+            type: 'success',
+            title: 'Thành công!',
+            message: `Đã chuyển sang ${!brandData.isPublic ? 'Public' : 'Private'} và cập nhật partnership`,
+            duration: 3000
+          });
+        }
+
+        return { success: true, data: response.data };
+      } else {
+        if (showToast) {
+          showToast({
+            type: 'error',
+            title: 'Lỗi!',
+            message: response.message || 'Không thể thay đổi trạng thái',
+            duration: 4000
+          });
+        }
+        return response;
+      }
+    } catch (error) {
+      console.error('Error toggling brand profile all status:', error);
+      if (showToast) {
+        showToast({
+          type: 'error',
+          title: 'Lỗi!',
+          message: 'Đã xảy ra lỗi khi thay đổi trạng thái',
+          duration: 4000
+        });
+      }
+      return { success: false, message: error.message };
+    }
+  };
+
   return {
     brandData,
     setBrandData,
@@ -329,6 +632,8 @@ export const useBrandProfile = () => {
     error,
     brandProfileId,
     updateBrandProfile,
-    refreshBrandProfile
+    refreshBrandProfile,
+    toggleBrandProfileStatus,
+    toggleBrandProfileAllStatus
   };
 };

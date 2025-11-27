@@ -11,6 +11,27 @@ namespace EventLink_Repositories.Interface
     {
         Task<Partnership> GetByIdAsync(Guid id);
         Task UpdateAsync(Partnership partnership);
-        Task<List<User>> GetPartnersByEventAsync(Guid eventId);
+        
+        /// <summary>
+        /// Get all partnerships in the system with Event and Partner navigation properties loaded
+        /// </summary>
+        Task<List<Partnership>> GetAllPartnershipsAsync();
+        
+        /// <summary>
+        /// Get all partnerships for an event with Event and Partner navigation properties loaded
+        /// </summary>
+        Task<List<Partnership>> GetPartnershipsByEventAsync(Guid eventId);
+        
+        /// <summary>
+        /// Get all partnerships without an assigned event (EventId is null)
+        /// ✅ NEW: For partnerships not yet assigned to any event
+        /// </summary>
+        Task<List<Partnership>> GetUnassignedPartnershipsAsync();
+
+        /// <summary>
+        /// Get all partnerships for a partner with Event and Partner navigation properties loaded
+        /// ✅ NEW: For getting partnerships by PartnerId
+        /// </summary>
+        Task<List<Partnership>> GetPartnershipsByPartnerAsync(Guid partnerId);
     }
 }

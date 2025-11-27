@@ -22,6 +22,8 @@ namespace EventLink_Repositories.Models
         public string Email { get; set; }
         public string PhoneNumber { get; set; }
         public string Tags { get; set; }
+        public bool? IsPublic { get; set; }
+        public bool? HasPartnership { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public virtual User User { get; set; }

@@ -11,6 +11,7 @@ namespace EventLink_Repositories.Models
         public Guid Id { get; set; } = Guid.NewGuid();
 
         [Required]
+        [ForeignKey(nameof(Event))] // ✅ Proper foreign key configuration
         public Guid EventId { get; set; }
 
         [Required]
@@ -47,8 +48,7 @@ namespace EventLink_Repositories.Models
 
         public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        // Navigation property
-        [ForeignKey("EventId")]
+        // Navigation property - ✅ No [ForeignKey] attribute here
         public virtual Event? Event { get; set; }
     }
 }

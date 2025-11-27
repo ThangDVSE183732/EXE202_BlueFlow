@@ -2,7 +2,7 @@
 
 
 
-function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
+function SideBar({ activeItem, onChange, opts, subChange, onSubChange, unreadCount = 0 }) {
 
     const handleClick = (key) => {
         onChange(key);
@@ -48,8 +48,9 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
             <nav className="flex flex-col gap-3">
                 {opts.slice(1).map((it) => {
                     const selected = activeItem === it.key;
+                    const showBadge = it.key === 'messages' && unreadCount > 0;
                     return (
-                            <div key={it.key}>
+                            <div key={it.key} className="relative">
                                 <button
                                     type="button"
                                     onClick={() => handleClick(it.key)}
@@ -69,61 +70,14 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                         {it.icon}
                                     </span>
                                     <span>{it.label}</span>
+                                    
+                                    {/* Notification Badge with Count */}
+                                    {showBadge && (
+                                        <span className="ml-auto min-w-[20px] h-5 flex items-center justify-center px-1.5 rounded-full bg-red-500 text-white text-xs font-bold animate-pulse shadow-lg shadow-red-500/50">
+                                            {unreadCount > 99 ? '99+' : unreadCount}
+                                        </span>
+                                    )}
                                 </button>
-
-                                {/* Discovery sub-items when selected */}
-                                {it.key === 'discovery' && selected && (
-                                    <div className="ml-2 mt-2 flex flex-col gap-2">
-                                        <button type="button" onClick={() => onSubChange && onSubChange('find')} className="flex items-center gap-3 text-left">
-                                            <span className={[
-                                                'h-6 w-1 rounded-full',
-                                                subChange === 'find' ? 'bg-sky-500' : 'bg-transparent'
-                                            ].join(' ')} />
-                                            <span className={[
-                                                'text-sm',
-                                                subChange === 'find' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Find Partners</span>
-                                        </button>
-                                        <button type="button" onClick={() => onSubChange && onSubChange('saved')} className="flex items-center gap-3 text-left">
-                                            <span className={[
-                                                'h-6 w-1 rounded-full',
-                                                subChange === 'saved' ? 'bg-sky-500' : 'bg-transparent'
-                                            ].join(' ')} />
-                                            <span className={[
-                                                'text-sm',
-                                                subChange === 'saved' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Saved Events</span>
-                                        </button>
-                                    </div>
-                                )}
-
-
-                                {/* Projects sub-items when selected */}
-                                {it.key === 'projects' && selected && (
-                                    <div className="ml-2 mt-2 flex flex-col gap-2">
-                                        <button type="button" onClick={() => onSubChange && onSubChange('pending')} className="flex items-center gap-3 text-left">
-                                            <span className={[
-                                                'h-6 w-1 rounded-full',
-                                                subChange === 'pending' ? 'bg-sky-500' : 'bg-transparent'
-                                            ].join(' ')} />
-                                            <span className={[
-                                                'text-sm',
-                                                subChange === 'pending' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Pending Projects</span>
-                                        </button>
-                                        <button type="button" onClick={() => onSubChange && onSubChange('completed')} className="flex items-center gap-3 text-left">
-                                            <span className={[
-                                                'h-6 w-1 rounded-full',
-                                                subChange === 'completed' ? 'bg-sky-500' : 'bg-transparent'
-                                            ].join(' ')} />
-                                            <span className={[
-                                                'text-sm',
-                                                subChange === 'completed' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Completed Projects</span>
-                                        </button>
-                                    </div>
-                                )}
-
 
                                  {/* Profile and setting sub-items when selected */}
                                 {it.key === 'profile' && selected && (
@@ -136,7 +90,7 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                             <span className={[
                                                 'text-sm',
                                                 subChange === 'brand' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Brand Profile</span>
+                                            ].join(' ')}>Hồ sơ thương hiệu</span>
                                         </button>
                                         <button type="button" onClick={() => onSubChange && onSubChange('account')} className="flex items-center gap-3 text-left">
                                             <span className={[
@@ -146,18 +100,8 @@ function SideBar({ activeItem, onChange, opts, subChange, onSubChange }) {
                                             <span className={[
                                                 'text-sm',
                                                 subChange === 'account' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Account Setting</span>
+                                            ].join(' ')}>Cài đặt tài khoản</span>
                                         </button>
-                                        {/* <button type="button" onClick={() => onSubChange && onSubChange('marketing')} className="flex items-center gap-3 text-left">
-                                            <span className={[
-                                                'h-6 w-1 rounded-full',
-                                                subChange === 'marketing' ? 'bg-sky-500' : 'bg-transparent'
-                                            ].join(' ')} />
-                                            <span className={[
-                                                'text-sm',
-                                                subChange === 'marketing' ? 'font-semibold text-black' : 'text-gray-400'
-                                            ].join(' ')}>Marketing Preferences</span>
-                                        </button> */}
                                     </div>
                                 )}
                             </div>

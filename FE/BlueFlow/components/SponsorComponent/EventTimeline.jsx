@@ -1,95 +1,106 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const EventTimeline = () => {
-  const [isEditMode, setIsEditMode] = useState(false);
+const EventTimeline = ({ 
+  initialRows = null, 
+  isCreateMode = false, 
+  onChange = null, 
+  initialTimeSlots = null,
+  eventId = null,
+  onDone = null
+}) => {
+  const [isEditMode, setIsEditMode] = useState(isCreateMode);
   const [editingEventIndex, setEditingEventIndex] = useState(null);
   const [showEventModal, setShowEventModal] = useState(false);
   const [currentRowId, setCurrentRowId] = useState(null);
   const [newEventData, setNewEventData] = useState({
-    startTime: '9:00 AM',
-    endTime: '10:00 AM',
+    startTime: '8:30 AM',
+    endTime: '9:00 AM',
     description: ''
   });
   
-  // Restructure to support multiple events per row
-  const [rows, setRows] = useState([
+  // Default data for view mode
+  const defaultRows = [
     {
       id: 1,
       title: 'Registration & Welcome Coffee',
       events: [
-        { id: 'e1', time: '9:00 AM', description: 'Check-in', duration: 1 }
+        { id: 'e1', time: '8:30 AM', description: 'Check-in', duration: 1 }
       ]
     },
     {
       id: 2,
       title: 'Opening Keynote',
       events: [
-        { id: 'e2', time: '10:00 AM', description: 'Dr. Smith', duration: 1.5 }
+        { id: 'e2', time: '9:30 AM', description: 'Dr. Smith', duration: 1 }
       ]
     },
     {
       id: 3,
-      title: 'Panel: Blockchain Revolution',
+      title: 'Panel Discussion',
       events: [
-        { id: 'e3', time: '11:30 AM', description: 'Industry experts', duration: 0.5 }
+        { id: 'e3', time: '10:30 AM', description: 'Industry experts', duration: 1 }
       ]
     },
     {
       id: 4,
-      title: 'Networking Lunch',
+      title: 'Coffee Break',
       events: [
-        { id: 'e4', time: '12:00 PM', description: 'Sponsored meal', duration: 2.5 }
+        { id: 'e4', time: '11:30 AM', description: 'Networking', duration: 0.5 }
       ]
     },
     {
       id: 5,
-      title: 'Startup Pitch Competition',
+      title: 'Closing Session',
       events: [
-        { id: 'e5', time: '14:30 PM', description: '10 startups', duration: 1.5 }
-      ]
-    },
-    {
-      id: 6,
-      title: 'Workshop Sessions',
-      events: [
-        { id: 'e6', time: '16:00 PM', description: 'Hands-on', duration: 2 }
-      ]
-    },
-    {
-      id: 7,
-      title: 'Closing Reception',
-      events: [
-        { id: 'e7', time: '18:00 PM', description: 'Networking', duration: 2 }
+        { id: 'e5', time: '12:00 PM', description: 'Wrap up', duration: 0.5 }
       ]
     }
-  ]);
+  ];
+  
+  // Use initialRows if provided (for create mode), otherwise use defaultRows
+  const [rows, setRows] = useState(initialRows || (isCreateMode ? [] : defaultRows));
 
-  const [timeSlots, setTimeSlots] = useState([
+  // Update parent component when rows change (for create mode)
+  useEffect(() => {
+    if (onChange && isCreateMode) {
+      onChange(rows);
+    }
+  }, [rows, onChange, isCreateMode]);
+
+  // Use initialTimeSlots if provided, otherwise use default
+  const defaultTimeSlots = [
+    '8:30\nAM',
     '9:00\nAM',
+    '9:30\nAM',
     '10:00\nAM',
+    '10:30\nAM',
+    '11:00\nAM',
     '11:30\nAM',
-    '12:00\nPM',
-    '14:30\nPM',
-    '16:00\nPM',
-    '18:00\nPM',
-    '20:00\nPM'
-  ]);
+    '12:00\nPM'
+  ];
+  
+  const [timeSlots, setTimeSlots] = useState(initialTimeSlots || defaultTimeSlots);
 
-  // Map each time slot to its grid column index (0-7)
-  const timeSlotPositions = {
-    '9:00 AM': 0,
-    '10:00 AM': 1,
-    '11:30 AM': 2,
-    '12:00 PM': 3,
-    '14:30 PM': 4,
-    '16:00 PM': 5,
-    '18:00 PM': 6,
-    '20:00 PM': 7
-  };
+  // Dynamically generate time slot positions from timeSlots
+  // Convert "8:30\nAM" format to "8:30 AM" and map to index
+  const timeSlotPositions = React.useMemo(() => {
+    const positions = {};
+    timeSlots.forEach((slot, index) => {
+      // Convert "8:30\nAM" to "8:30 AM"
+      const formattedSlot = slot.replace('\n', ' ');
+      positions[formattedSlot] = index;
+    });
+    console.log('🕒 Dynamic timeSlotPositions:', positions);
+    return positions;
+  }, [timeSlots]);
 
   // Get the column index for a given time
   const getTimeSlotIndex = (timeStr) => {
-    return timeSlotPositions[timeStr] !== undefined ? timeSlotPositions[timeStr] : 0;
+    const index = timeSlotPositions[timeStr];
+    if (index === undefined) {
+      console.warn(`⚠️ Time "${timeStr}" not found in timeSlotPositions. Available:`, Object.keys(timeSlotPositions));
+    }
+    return index !== undefined ? index : 0;
   };
 
   // Calculate position in pixels (fixed width per slot)
@@ -107,9 +118,17 @@ const EventTimeline = () => {
     return columnsSpan * slotWidth;
   };
 
-  const handleEditToggle = () => {
-    setIsEditMode(!isEditMode);
-    setEditingEventIndex(null);
+  const handleEditToggle = async () => {
+    if (!isCreateMode) {
+      // If switching from edit mode to view mode (clicking Done)
+      if (isEditMode && eventId && onDone) {
+        console.log('🔵 Timeline Done clicked - calling onDone callback');
+        await onDone(rows);
+      }
+      
+      setIsEditMode(!isEditMode);
+      setEditingEventIndex(null);
+    }
   };
 
   // Add new row (title)
@@ -126,8 +145,8 @@ const EventTimeline = () => {
   const handleAddEvent = (rowId) => {
     setCurrentRowId(rowId);
     setNewEventData({
-      startTime: '9:00 AM',
-      endTime: '10:00 AM',
+      startTime: '8:30 AM',
+      endTime: '9:00 AM',
       description: 'New Event'
     });
     setShowEventModal(true);
@@ -233,26 +252,28 @@ const EventTimeline = () => {
               </button>
             </>
           )}
-          <button
-            onClick={handleEditToggle}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors duration-200"
-          >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-3.5 w-3.5" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
+          {!isCreateMode && (
+            <button
+              onClick={handleEditToggle}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors duration-200"
             >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" 
-              />
-            </svg>
-            {isEditMode ? 'Done' : 'Edit'}
-          </button>
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                className="h-3.5 w-3.5" 
+                fill="none" 
+                viewBox="0 0 24 24" 
+                stroke="currentColor"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" 
+                />
+              </svg>
+              {isEditMode ? 'Done' : 'Edit'}
+            </button>
+          )}
         </div>
       </div>
       
@@ -305,7 +326,21 @@ const EventTimeline = () => {
                     className="text-[10px] text-left text-gray-700 font-medium flex items-center gap-1 flex-shrink-0"
                     style={{ width: '80px' }}
                   >
-                    <span className="whitespace-pre-line">{slot}</span>
+                    {isEditMode ? (
+                      <input
+                        type="text"
+                        value={slot}
+                        onChange={(e) => {
+                          const newSlots = [...timeSlots];
+                          newSlots[index] = e.target.value;
+                          setTimeSlots(newSlots);
+                        }}
+                        className="w-16 text-[10px] font-medium text-gray-700 border-b border-gray-300 focus:border-blue-500 focus:outline-none bg-transparent whitespace-pre-line"
+                        placeholder="HH:MM"
+                      />
+                    ) : (
+                      <span className="whitespace-pre-line">{slot}</span>
+                    )}
                     {isEditMode && (
                       <button
                         onClick={() => handleDeleteTimeSlot(index)}

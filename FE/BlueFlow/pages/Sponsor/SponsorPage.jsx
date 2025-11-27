@@ -3,6 +3,7 @@ import EventManagement from '../../components/SponsorComponent/EventManagement';
 import PageNav from '../../components/PageNav';
 import styles from './Sponsor.module.css';
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import SegmentedControl from '../../components/SponsorComponent/SegmentedControl';
 import SideBar from '../../components/SponsorComponent/SideBar';
 import Dashboard from '../../components/SponsorComponent/DashBoard';
@@ -14,6 +15,11 @@ import MessagesPage from '../../components/SponsorComponent/MessagesPage';
 import BrandProfile from '../../components/SponsorComponent/BrandProfile';
 import EventDetail from '../../components/SponsorComponent/EventDetail';
 import Chatbot from '../../components/SponsorComponent/Chatbot';
+import partnershipService from '../../services/partnershipService';
+import toast from 'react-hot-toast';
+import PaymentHistory from '../../components/PaymentHistory';
+import { messageService } from '../../services/messageService';
+import signalRService from '../../services/signalRService';
 
 
 
@@ -63,12 +69,12 @@ const Icon = {
 };
 
 const items = [
-    { key: 'dashboard', label: 'Dashboard', icon: Icon.dashboard },
-    { key: 'discovery', label: 'Discovery', icon: Icon.search },
-    { key: 'projects', label: 'My Projects', icon: Icon.folder },
-    { key: 'messages', label: 'Messages', icon: Icon.message },
-    { key: 'ai', label: 'AI Assistant', icon: Icon.ai },
-    { key: 'profile', label: 'Profile & Settings', icon: Icon.users },
+    { key: 'dashboard', label: 'Bảng điều khiển', icon: Icon.dashboard },
+    { key: 'discovery', label: 'Khám phá', icon: Icon.search },
+    { key: 'projects', label: 'Lịch sử giao dịch', icon: Icon.folder },
+    { key: 'messages', label: 'Tin nhắn', icon: Icon.message },
+    { key: 'ai', label: 'Trợ lý AI', icon: Icon.ai },
+    { key: 'profile', label: 'Hồ sơ & Cài đặt', icon: Icon.users },
 ];
 
 const partnersItem = [
@@ -144,10 +150,86 @@ const partnersItem = [
 
 
 function SponsorPage() {
+    const location = useLocation();
     const [tab, setTab] = useState(() => localStorage.getItem('sponsor.tab') || 'dashboard');
     const [active, setActive] = useState(() => localStorage.getItem('sponsor.active') || 'dashboard');
     const [subChange, setSubChange] = useState(() => localStorage.getItem('sponsor.discoverySub') || ''); // 'find' | 'saved'
-  
+    const [partnersData, setPartnersData] = useState([]);
+    const [loadingPartners, setLoadingPartners] = useState(false);
+    const [selectedPartnerId, setSelectedPartnerId] = useState(null);
+    const [selectedPartnerName, setSelectedPartnerName] = useState(null);
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    const handleMessageClick = (partnerId, partnerName) => {
+        console.log('📨 Message clicked for partner:', partnerId, partnerName);
+        setSelectedPartnerId(partnerId);
+        setSelectedPartnerName(partnerName);
+        setActive('messages');
+        setTab('messages');
+    };
+
+    // Check if redirected from payment pages
+    useEffect(() => {
+        if (location.state?.activeTab === 'projects') {
+            setActive('projects');
+            setTab('projects');
+        }
+    }, [location]);
+
+    // 🔔 Global polling for unread messages - runs regardless of active tab
+    useEffect(() => {
+        console.log('🚀 Sponsor: Starting global unread count polling...');
+        
+        // Function to fetch and update unread count
+        const updateUnreadCount = async () => {
+            try {
+                const response = await messageService.getPartnerListChat();
+                if (response.success && response.data) {
+                    const total = response.data.reduce((sum, chat) => sum + (chat.unreadCount || 0), 0);
+                    console.log('📊 Sponsor: Global unread count:', total);
+                    setUnreadCount(total);
+                }
+            } catch (error) {
+                console.error('❌ Sponsor: Error fetching unread count:', error);
+            }
+        };
+
+        // Initial fetch
+        updateUnreadCount();
+
+        // Always use polling as fallback (SignalR might miss some events)
+        console.log('⏰ Sponsor: Starting polling for unread count (every 5 seconds)');
+        const pollInterval = setInterval(updateUnreadCount, 5000);
+
+        // Also try SignalR for real-time updates
+        const initSignalR = async () => {
+            try {
+                if (!signalRService.isConnectionActive()) {
+                    await signalRService.startConnection();
+                }
+                
+                if (signalRService.isConnectionActive()) {
+                    console.log('✅ Sponsor: SignalR connected, listening for conversation updates');
+                    // Listen for conversation updates (immediate refresh)
+                    signalRService.onConversationUpdated(() => {
+                        console.log('🔔 Sponsor: Conversation updated via SignalR, refreshing unread count...');
+                        updateUnreadCount();
+                    });
+                }
+            } catch (err) {
+                console.error('Sponsor SignalR error (polling still active):', err);
+            }
+        };
+
+        initSignalR();
+
+        // Cleanup on unmount
+        return () => {
+            console.log('🛑 Sponsor: Cleanup - Stopping unread count polling');
+            clearInterval(pollInterval);
+            signalRService.off('conversationUpdated');
+        };
+    }, []);
 
     // Persist to localStorage whenever these change
     useEffect(() => {
@@ -162,6 +244,98 @@ function SponsorPage() {
         localStorage.setItem('sponsor.discoverySub', subChange);
     }, [subChange]);
 
+    // Fetch partnerships when discovery tab is active
+    useEffect(() => {
+        const fetchPartnerships = async () => {
+            if (active === 'discovery' && subChange === 'find') {
+                setLoadingPartners(true);
+                try {
+                    const response = await partnershipService.getAllPartnerships();
+                    if (response.success && response.data) {
+                        // Transform API data to match PartnersItems format
+                        const transformedData = response.data.map(partnership => {
+                            // Kiểm tra partnerType để lấy data từ đúng nguồn
+                            const isFromSponsor = partnership.partnerType === 'Sponsor';
+                            
+                            if (isFromSponsor) {
+                                // Lấy từ Partner's BrandProfile khi partnerType = "Sponsor"
+                                const brandProfile = partnership.partner?.brandProfile;
+                                return {
+                                    id: partnership.id,
+                                    partnerId: partnership.partnerId, // ID của đối tác để nhắn tin
+                                    partnerName: brandProfile?.brandName || partnership.partner?.fullName || 'Unknown Partner',
+                                    partnerType: partnership.partnerType, // Thêm partnerType
+                                    location: brandProfile?.location || 'N/A',
+                                    forcus: brandProfile?.industry || 'N/A',
+                                    title: brandProfile?.brandName || 'Untitled Brand',
+                                    tags: partnership.preferredContactMethod 
+                                        ? partnership.preferredContactMethod.split(',').map(t => t.trim())
+                                        : [],
+                                    rating: null, // null cho Sponsor
+                                    logo: partnership.partnershipImage || brandProfile?.brandLogo || 'imgs/SaiGon.png',
+                                    summaryPoints: (() => {
+                                        const points = [];
+                                        // Thêm serviceDescription nếu có
+                                        if (partnership.serviceDescription) {
+                                            points.push(partnership.serviceDescription);
+                                        }
+                                        // Thêm initialMessage (split bởi dấu ;) nếu có
+                                        if (partnership.initialMessage) {
+                                            const messages = partnership.initialMessage.split(';').map(s => s.trim()).filter(s => s);
+                                            points.push(...messages);
+                                        }
+                                        return points.length > 0 ? points : ['No information available'];
+                                    })(),
+                                    eventHighlights: [],
+                                    targetAudienceList: [],
+                                    focusAreas: brandProfile?.industry ? [brandProfile.industry] : ['General'],
+                                    averageSponsorship: partnership.proposedBudget 
+                                        ? `${partnership.proposedBudget.toLocaleString()} VND`
+                                        : 'N/A',
+                                    pastEvents: [],
+                                    statuses: [partnership.status || 'Pending', 'Chat now']
+                                };
+                            } else {
+                                // Lấy từ Event data khi partnerType = "Organizer" (logic cũ)
+                                return {
+                                    id: partnership.id,
+                                    partnerId: partnership.partnerId, // ID của đối tác để nhắn tin
+                                    partnerName: partnership.event?.title || partnership.partner?.fullName || 'Unknown Partner',
+                                    partnerType: partnership.partnerType, // Thêm partnerType
+                                    location: partnership.event?.location || 'N/A',
+                                    forcus: partnership.event?.eventType || 'N/A',
+                                    title: partnership.event?.title || 'Untitled Event',
+                                    tags: partnership.event?.tags ? JSON.parse(partnership.event.tags) : [],
+                                    rating: 4.8,
+                                    logo: partnership.partnershipImage || 'imgs/SaiGon.png',
+                                    summaryPoints: [
+                                        partnership.serviceDescription || 'No description available'
+                                    ],
+                                    eventHighlights: partnership.event?.eventHighlights ? JSON.parse(partnership.event.eventHighlights) : [],
+                                    targetAudienceList: partnership.event?.targetAudienceList ? JSON.parse(partnership.event.targetAudienceList) : [],
+                                    focusAreas: partnership.event?.category ? [partnership.event.category] : ['General'],
+                                    averageSponsorship: partnership.proposedBudget 
+                                        ? `${partnership.proposedBudget.toLocaleString()} VND`
+                                        : 'N/A',
+                                    pastEvents: [partnership.event?.title || 'N/A'],
+                                    statuses: [partnership.status || 'Pending', 'Chat now']
+                                };
+                            }
+                        });
+                        setPartnersData(transformedData);
+                    }
+                } catch (error) {
+                    console.error('Error fetching partnerships:', error);
+                    toast.error('Không thể tải danh sách partnerships');
+                } finally {
+                    setLoadingPartners(false);
+                }
+            }
+        };
+
+        fetchPartnerships();
+    }, [active, subChange]);
+
 
 
     const renderContent = () => {
@@ -173,29 +347,31 @@ function SponsorPage() {
         return <Dashboard />;
       case "discovery":
         if(subChange === 'find') {
-            return <PartnersList
-            partnersItem={partnersItem}
-          />;
+            return (
+                <PartnersList
+                    partnersItem={partnersData}
+                    loading={loadingPartners}
+                    onMessageClick={handleMessageClick}
+                />
+            );
         }else if(subChange === 'saved') {
             return;
         }
         return ;
       case "projects":
-        if(subChange === 'pending') {
-            return;
-        }else if(subChange === 'completed') {
-            return;
-        }
-        return ;
+        return <PaymentHistory />;
       case "messages":
-        return <MessagesPage/>;
+        return <MessagesPage 
+            initialPartnerId={selectedPartnerId}
+            initialPartnerName={selectedPartnerName}
+        />;
       case "ai":
-        return <Chatbot/>;
+        return <Chatbot />;
     case "profile":
          if(subChange === 'brand') {
-            return <BrandProfile/>;
+            return <BrandProfile />;
         }else if(subChange === 'account') {
-            return <AccountSetting/>;
+            return <AccountSetting />;
         }else if(subChange === 'marketing') {
             return;
         }
@@ -218,7 +394,7 @@ function SponsorPage() {
                 )}
 
                 <div className='flex space-x-10'>
-                    <SideBar opts={items} activeItem={active} onChange={setActive} onSubChange={setSubChange} subChange={subChange}/>
+                    <SideBar opts={items} activeItem={active} onChange={setActive} onSubChange={setSubChange} subChange={subChange} unreadCount={unreadCount}/>
                     <div className='flex-1'>
                         {renderContent()}
 

@@ -12,19 +12,22 @@ class SignalRService {
       const token = localStorage.getItem('accessToken');
       const baseUrl = 'https://localhost:7029';
       
+      console.log('🔌 Starting SignalR connection to:', `${baseUrl}${hubUrl}`);
+      console.log('🔑 Using token:', token ? 'Present' : 'Missing');
+      
       // Tạo connection với authentication
       this.connection = new signalR.HubConnectionBuilder()
         .withUrl(`${baseUrl}${hubUrl}`, {
-          accessTokenFactory: () => token || '',
-          transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.LongPolling
+          accessTokenFactory: () => {
+            const currentToken = localStorage.getItem('accessToken');
+            console.log('🔐 Token factory called, token:', currentToken ? 'Present' : 'Missing');
+            return currentToken || '';
+          },
+          skipNegotiation: true, // Skip negotiation and use WebSockets directly
+          transport: signalR.HttpTransportType.WebSockets
         })
-        .withAutomaticReconnect({
-          nextRetryDelayInMilliseconds: () => {
-            // Retry sau 0, 2, 10, 30 giây
-            return [0, 2000, 10000, 30000][Math.min(this.connection?.reconnectAttempts || 0, 3)];
-          }
-        })
-        .configureLogging(signalR.LogLevel.Information)
+        .withAutomaticReconnect([0, 2000, 10000, 30000])
+        .configureLogging(signalR.LogLevel.Debug) // Changed to Debug for more details
         .build();
 
       // Event handlers
@@ -46,13 +49,20 @@ class SignalRService {
       // Start connection
       await this.connection.start();
       this.isConnected = true;
-      console.log('SignalR Connected successfully');
+      console.log('✅ SignalR Connected successfully, connectionId:', this.connection.connectionId);
       
       return this.connection;
     } catch (error) {
-      console.error('SignalR Connection Error:', error);
+      console.error('❌ SignalR Connection Error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        statusCode: error.statusCode,
+        innerError: error.innerErrors
+      });
       this.isConnected = false;
-      throw error;
+      
+      // Don't throw - allow app to continue without SignalR
+      return null;
     }
   }
 
@@ -70,20 +80,24 @@ class SignalRService {
   }
 
   // ✅ Backend broadcast ReceiveMessage qua SignalRNotificationService
+  // Backend gửi "ReceiveMessage" nhưng SignalR auto-convert sang "receiveMessage"
   onReceiveMessage(callback) {
     if (this.connection) {
+      // SignalR .NET Core auto-converts PascalCase to camelCase
       this.connection.on('receiveMessage', (message) => {
-        console.log('📨 ReceiveMessage event:', message);
+        console.log('📨 receiveMessage event:', message);
         callback(message);
       });
     }
   }
 
   // ✅ Backend broadcast ConversationUpdated
+  // Backend gửi "ConversationUpdated" nhưng SignalR auto-convert sang "conversationUpdated"
   onConversationUpdated(callback) {
     if (this.connection) {
+      // SignalR .NET Core auto-converts PascalCase to camelCase
       this.connection.on('conversationUpdated', (senderId) => {
-        console.log('🔄 ConversationUpdated event:', senderId);
+        console.log('🔄 conversationUpdated event:', senderId);
         callback(senderId);
       });
     }
@@ -113,7 +127,7 @@ class SignalRService {
   onUserTyping(callback) {
     if (this.connection) {
       this.connection.on('userTyping', (senderId) => {
-        console.log('👀 User typing:', senderId);
+        console.log('👀 userTyping:', senderId);
         callback(senderId);
       });
     }
@@ -123,7 +137,7 @@ class SignalRService {
   onUserStoppedTyping(callback) {
     if (this.connection) {
       this.connection.on('userStoppedTyping', (senderId) => {
-        console.log('✋ User stopped typing:', senderId);
+        console.log('✋ userStoppedTyping:', senderId);
         callback(senderId);
       });
     }
@@ -133,7 +147,7 @@ class SignalRService {
   onUserOnline(callback) {
     if (this.connection) {
       this.connection.on('userOnline', (userId) => {
-        console.log('🟢 User online:', userId);
+        console.log('🟢 userOnline:', userId);
         callback(userId);
       });
     }
@@ -143,7 +157,7 @@ class SignalRService {
   onUserOffline(callback) {
     if (this.connection) {
       this.connection.on('userOffline', (userId) => {
-        console.log('🔴 User offline:', userId);
+        console.log('🔴 userOffline:', userId);
         callback(userId);
       });
     }

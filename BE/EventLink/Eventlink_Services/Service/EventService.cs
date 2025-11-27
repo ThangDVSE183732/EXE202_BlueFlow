@@ -88,7 +88,7 @@ namespace Eventlink_Services.Service
             return events.Select(MapToResponse).ToList();
         }
 
-        public async Task Create(Guid userId, CreateEventRequest request)
+        public async Task<EventResponse> Create(Guid userId, CreateEventRequest request)
         {
             var newEvent = new Event
             {
@@ -147,6 +147,9 @@ namespace Eventlink_Services.Service
             }
 
             await _eventRepository.AddAsync(newEvent);
+            
+            // ✅ Return EventResponse with the new Id
+            return MapToResponse(newEvent);
         }
 
         public async Task Update(Guid id, UpdateEventRequest request)
@@ -233,6 +236,224 @@ namespace Eventlink_Services.Service
             @event.Status = status;
             @event.UpdatedAt = DateTime.UtcNow;
             _eventRepository.Update(@event);
+        }
+
+        #endregion
+
+        #region FormData Methods (File Upload)
+
+        /// <summary>
+        /// Create event with FormData (supports file upload for CoverImage)
+        /// </summary>
+        public async Task<EventResponse> CreateWithFormData(Guid userId, CreateEventFormRequest formRequest)
+        {
+            try
+            {
+                var newEvent = new Event
+                {
+                    Id = Guid.NewGuid(),
+                    OrganizerId = userId,
+                    Title = formRequest.Title,
+                    Description = formRequest.Description,
+                    ShortDescription = formRequest.ShortDescription,
+                    Location = formRequest.Location,
+                    VenueDetails = formRequest.VenueDetails,
+                    EventDate = formRequest.EventDate,
+                    EndDate = formRequest.EndDate,
+                    EventType = formRequest.EventType,
+                    Category = formRequest.Category,
+                    ExpectedAttendees = formRequest.ExpectedAttendees,
+                    TotalBudget = formRequest.TotalBudget,
+                    TargetAudience = formRequest.TargetAudience,
+                    RequiredServices = formRequest.RequiredServices,
+                    SponsorshipNeeds = formRequest.SponsorshipNeeds,
+                    SpecialRequirements = formRequest.SpecialRequirements,
+                    IsPublic = false,
+                    IsFeatured = false,
+                    Status = "Draft",
+                    ViewCount = 0,
+                    InterestedCount = 0,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                // ✅ Upload Cover Image if provided
+                if (formRequest.CoverImage != null)
+                {
+                    _logger.LogInformation("Uploading cover image for event");
+                    var coverImageUrl = await _cloudinaryService.UploadImageAsync(formRequest.CoverImage);
+                    newEvent.CoverImageUrl = coverImageUrl;
+                    _logger.LogInformation("Cover image uploaded: {CoverImageUrl}", coverImageUrl);
+                }
+
+                // ✅ Upload Event Images if provided
+                if (formRequest.EventImageFiles != null && formRequest.EventImageFiles.Any())
+                {
+                    _logger.LogInformation("Uploading {Count} event images", formRequest.EventImageFiles.Count);
+                    var imageUrls = new List<string>();
+                    
+                    foreach (var imageFile in formRequest.EventImageFiles)
+                    {
+                        var imageUrl = await _cloudinaryService.UploadImageAsync(imageFile);
+                        imageUrls.Add(imageUrl);
+                    }
+                    
+                    newEvent.EventImages = JsonSerializer.Serialize(imageUrls);
+                    _logger.LogInformation("Event images uploaded: {Count} files", imageUrls.Count);
+                }
+
+                // ✅ Parse Overview fields from comma-separated strings
+                if (!string.IsNullOrEmpty(formRequest.EventHighlights))
+                {
+                    var highlights = formRequest.EventHighlights
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToList();
+                    newEvent.EventHighlights = JsonSerializer.Serialize(highlights);
+                }
+
+                if (!string.IsNullOrEmpty(formRequest.Tags))
+                {
+                    var tags = formRequest.Tags
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToList();
+                    newEvent.Tags = JsonSerializer.Serialize(tags);
+                }
+
+                if (!string.IsNullOrEmpty(formRequest.TargetAudienceList))
+                {
+                    var targetAudiences = formRequest.TargetAudienceList
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToList();
+                    newEvent.TargetAudienceList = JsonSerializer.Serialize(targetAudiences);
+                }
+
+                await _eventRepository.AddAsync(newEvent);
+                
+                _logger.LogInformation("Event {EventId} created successfully with FormData", newEvent.Id);
+                return MapToResponse(newEvent);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating event with FormData");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Update event with FormData (supports file upload for CoverImage)
+        /// </summary>
+        public async Task UpdateWithFormData(Guid id, UpdateEventFormRequest formRequest)
+        {
+            try
+            {
+                var existingEvent = await _eventRepository.GetEventByIdAsync(id);
+                if (existingEvent == null)
+                    throw new KeyNotFoundException("Event not found");
+
+                // Update basic info
+                existingEvent.Title = formRequest.Title;
+                existingEvent.Description = formRequest.Description;
+                existingEvent.ShortDescription = formRequest.ShortDescription;
+                existingEvent.Location = formRequest.Location;
+                existingEvent.VenueDetails = formRequest.VenueDetails;
+                existingEvent.EventDate = formRequest.EventDate;
+                existingEvent.EndDate = formRequest.EndDate;
+                existingEvent.EventType = formRequest.EventType;
+                existingEvent.Category = formRequest.Category;
+                existingEvent.ExpectedAttendees = formRequest.ExpectedAttendees;
+                existingEvent.TotalBudget = formRequest.TotalBudget;
+                existingEvent.TargetAudience = formRequest.TargetAudience;
+                existingEvent.RequiredServices = formRequest.RequiredServices;
+                existingEvent.SponsorshipNeeds = formRequest.SponsorshipNeeds;
+                existingEvent.SpecialRequirements = formRequest.SpecialRequirements;
+                existingEvent.UpdatedAt = DateTime.UtcNow;
+
+                // ✅ Update Cover Image if new file provided
+                if (formRequest.CoverImage != null)
+                {
+                    _logger.LogInformation("Updating cover image for event {EventId}", id);
+                    
+                    // Delete old image if exists
+                    if (!string.IsNullOrEmpty(existingEvent.CoverImageUrl))
+                    {
+                        try
+                        {
+                            await _cloudinaryService.DeleteImageAsync(existingEvent.CoverImageUrl);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Failed to delete old cover image");
+                        }
+                    }
+                    
+                    // Upload new image
+                    var newCoverImageUrl = await _cloudinaryService.UploadImageAsync(formRequest.CoverImage);
+                    existingEvent.CoverImageUrl = newCoverImageUrl;
+                    _logger.LogInformation("Cover image updated: {CoverImageUrl}", newCoverImageUrl);
+                }
+
+                // ✅ Update Event Images
+                if (formRequest.EventImageFiles != null && formRequest.EventImageFiles.Any())
+                {
+                    _logger.LogInformation("Updating event images for event {EventId}", id);
+                    
+                    // Get existing images to keep
+                    var existingImages = new List<string>();
+                    if (!string.IsNullOrEmpty(formRequest.ExistingImages))
+                    {
+                        existingImages = formRequest.ExistingImages
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                            .ToList();
+                    }
+                    
+                    // Upload new images
+                    var newImageUrls = new List<string>();
+                    foreach (var imageFile in formRequest.EventImageFiles)
+                    {
+                        var imageUrl = await _cloudinaryService.UploadImageAsync(imageFile);
+                        newImageUrls.Add(imageUrl);
+                    }
+                    
+                    // Combine existing + new images
+                    existingImages.AddRange(newImageUrls);
+                    existingEvent.EventImages = JsonSerializer.Serialize(existingImages);
+                    _logger.LogInformation("Event images updated: {Count} total images", existingImages.Count);
+                }
+
+                // ✅ Update Overview fields from comma-separated strings
+                if (!string.IsNullOrEmpty(formRequest.EventHighlights))
+                {
+                    var highlights = formRequest.EventHighlights
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToList();
+                    existingEvent.EventHighlights = JsonSerializer.Serialize(highlights);
+                }
+
+                if (!string.IsNullOrEmpty(formRequest.Tags))
+                {
+                    var tags = formRequest.Tags
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToList();
+                    existingEvent.Tags = JsonSerializer.Serialize(tags);
+                }
+
+                if (!string.IsNullOrEmpty(formRequest.TargetAudienceList))
+                {
+                    var targetAudiences = formRequest.TargetAudienceList
+                        .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                        .ToList();
+                    existingEvent.TargetAudienceList = JsonSerializer.Serialize(targetAudiences);
+                }
+
+                _eventRepository.Update(existingEvent);
+                
+                _logger.LogInformation("Event {EventId} updated successfully with FormData", id);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating event {EventId} with FormData", id);
+                throw;
+            }
         }
 
         #endregion
@@ -402,12 +623,97 @@ namespace Eventlink_Services.Service
             }
         }
 
+        /// <summary>
+        /// Update event visibility (isPublic property only)
+        /// </summary>
+        public async Task UpdateEventVisibilityAsync(Guid eventId, bool isPublic)
+        {
+            try
+            {
+                var @event = await _eventRepository.GetEventByIdAsync(eventId);
+                if (@event == null)
+                    throw new KeyNotFoundException("Event not found");
+
+                // Only update isPublic property
+                @event.IsPublic = isPublic;
+                @event.UpdatedAt = DateTime.UtcNow;
+
+                _eventRepository.Update(@event);
+                
+                _logger.LogInformation("Event {EventId} visibility updated to {IsPublic}", eventId, isPublic);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating visibility for event {EventId}", eventId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Update event featured status (isFeatured property only)
+        /// </summary>
+        public async Task UpdateEventFeaturedAsync(Guid eventId, bool isFeatured)
+        {
+            try
+            {
+                var @event = await _eventRepository.GetEventByIdAsync(eventId);
+                if (@event == null)
+                    throw new KeyNotFoundException("Event not found");
+
+                // Only update isFeatured property
+                @event.IsFeatured = isFeatured;
+                @event.UpdatedAt = DateTime.UtcNow;
+
+                _eventRepository.Update(@event);
+                
+                _logger.LogInformation("Event {EventId} featured status updated to {IsFeatured}", eventId, isFeatured);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating featured status for event {EventId}", eventId);
+                throw;
+            }
+        }
+
         #endregion
 
         #region Helper Methods
 
         private EventResponse MapToResponse(Event @event)
         {
+            // Parse EventHighlights
+            List<string>? eventHighlights = null;
+            if (!string.IsNullOrEmpty(@event.EventHighlights))
+            {
+                try
+                {
+                    eventHighlights = JsonSerializer.Deserialize<List<string>>(@event.EventHighlights);
+                }
+                catch { }
+            }
+
+            // Parse Tags
+            List<string>? tags = null;
+            if (!string.IsNullOrEmpty(@event.Tags))
+            {
+                try
+                {
+                    tags = JsonSerializer.Deserialize<List<string>>(@event.Tags);
+                }
+                catch { }
+            }
+
+            // Parse TargetAudienceList
+            List<string>? targetAudienceList = null;
+            if (!string.IsNullOrEmpty(@event.TargetAudienceList))
+            {
+                try
+                {
+                    targetAudienceList = JsonSerializer.Deserialize<List<string>>(@event.TargetAudienceList);
+                }
+                catch { }
+            }
+
             return new EventResponse
             {
                 Id = @event.Id,
@@ -435,7 +741,16 @@ namespace Eventlink_Services.Service
                 ViewCount = @event.ViewCount,
                 InterestedCount = @event.InterestedCount,
                 CreatedAt = @event.CreatedAt,
-                UpdatedAt = @event.UpdatedAt
+                UpdatedAt = @event.UpdatedAt,
+                
+                // ✅ NEW FIELDS
+                AverageRating = @event.AverageRating,
+                ReviewCount = @event.ReviewCount,
+                TotalSponsorship = null, // ⚠️ This needs to be calculated separately
+                RemainingBudget = null,  // ⚠️ This needs to be calculated separately
+                EventHighlights = eventHighlights,
+                Tags = tags,
+                TargetAudienceList = targetAudienceList
             };
         }
 

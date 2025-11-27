@@ -23,6 +23,12 @@ namespace Eventlink_Services.Request
             public string Email { get; set; }
             public string PhoneNumber { get; set; }
             public string Tags { get; set; }
+            
+            // ✅ Visibility control (default: false - private)
+            public bool? IsPublic { get; set; } = false;
+            
+            // ✅ NEW: Partnership status (default: false - no partnership yet)
+            public bool? HasPartnership { get; set; } = false;
         }
 
         public class UpdateBrandProfileRequest
@@ -39,6 +45,12 @@ namespace Eventlink_Services.Request
             public string Email { get; set; }
             public string PhoneNumber { get; set; }
             public string Tags { get; set; }
+            
+            // ✅ Visibility control
+            public bool? IsPublic { get; set; }
+            
+            // ✅ NEW: Partnership status
+            public bool? HasPartnership { get; set; }
         }
     }
 }

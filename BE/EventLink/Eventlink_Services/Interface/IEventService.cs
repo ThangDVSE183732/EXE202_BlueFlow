@@ -19,8 +19,15 @@ namespace Eventlink_Services.Interface
         Task<List<EventResponse>> GetEventsByLocationAsync(string location);
         Task<List<EventResponse>> GetEventsByTypeAsync(string eventType);
         Task<List<EventResponse>> SearchEvents(string name, string location, DateTime? startDate, DateTime? endDate, string eventType);
-        Task Create(Guid userId, CreateEventRequest request);
+        
+        // ✅ JSON methods (keep for backward compatibility)
+        Task<EventResponse> Create(Guid userId, CreateEventRequest request);
         Task Update(Guid id, UpdateEventRequest request);
+        
+        // ✅ NEW: FormData methods with file upload
+        Task<EventResponse> CreateWithFormData(Guid userId, CreateEventFormRequest formRequest);
+        Task UpdateWithFormData(Guid id, UpdateEventFormRequest formRequest);
+        
         void Remove(Event @event);
         Task UpdateStatus(Guid id, string status);
 
@@ -40,40 +47,16 @@ namespace Eventlink_Services.Interface
         /// </summary>
         Task UpdateEventBudgetAsync(Guid eventId);
 
-        // ❌ REMOVED: CreateEventWithDetailsAsync (duplicate, use separate APIs)
-        // ❌ REMOVED: UpdateEventWithDetailsAsync (duplicate, use separate APIs)
+        /// <summary>
+        /// Update event visibility (isPublic property only)
+        /// </summary>
+        Task UpdateEventVisibilityAsync(Guid eventId, bool isPublic);
+
+        /// <summary>
+        /// Update event featured status (isFeatured property only)
+        /// </summary>
+        Task UpdateEventFeaturedAsync(Guid eventId, bool isFeatured);
     }
 
-    public interface IEventActivityService
-    {
-        /// <summary>
-        /// Get all activities for an event
-        /// </summary>
-        Task<List<EventActivityDto>> GetActivitiesByEventIdAsync(Guid eventId);
-
-        /// <summary>
-        /// Get single activity
-        /// </summary>
-        Task<EventActivityDto> GetActivityByIdAsync(Guid activityId);
-
-        /// <summary>
-        /// Create new activity (Organizer only)
-        /// </summary>
-        Task<EventActivityDto> CreateActivityAsync(Guid eventId, Guid organizerId, EventActivityRequest request);
-
-        /// <summary>
-        /// Update activity (Organizer only)
-        /// </summary>
-        Task<EventActivityDto> UpdateActivityAsync(Guid activityId, Guid organizerId, EventActivityRequest request);
-
-        /// <summary>
-        /// Delete activity (Organizer only)
-        /// </summary>
-        Task<bool> DeleteActivityAsync(Guid activityId, Guid organizerId);
-
-        /// <summary>
-        /// Bulk update activities for an event
-        /// </summary>
-        Task<List<EventActivityDto>> BulkUpdateActivitiesAsync(Guid eventId, Guid organizerId, List<EventActivityRequest> activities);
-    }
+    
 }

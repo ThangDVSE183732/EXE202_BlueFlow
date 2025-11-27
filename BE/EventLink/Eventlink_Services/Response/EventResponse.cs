@@ -59,5 +59,16 @@ namespace Eventlink_Services.Response
         public DateTime? CreatedAt { get; set; }
 
         public DateTime? UpdatedAt { get; set; }
+
+        // ✅ NEW FIELDS
+        public decimal? AverageRating { get; set; }
+        public int? ReviewCount { get; set; }
+        public decimal? TotalSponsorship { get; set; }
+        public decimal? RemainingBudget { get; set; }
+        
+        // ✅ Overview fields (JSON arrays from database)
+        public List<string>? EventHighlights { get; set; }
+        public List<string>? Tags { get; set; }
+        public List<string>? TargetAudienceList { get; set; }
     }
 }

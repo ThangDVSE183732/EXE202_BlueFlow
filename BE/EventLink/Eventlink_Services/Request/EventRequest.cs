@@ -8,7 +8,7 @@ namespace Eventlink_Services.Request
     public class EventRequest
     {
         /// <summary>
-        /// Create Event Request - UPDATED with Overview fields
+        /// Create Event Request - JSON (ORIGINAL)
         /// </summary>
         public class CreateEventRequest
         {
@@ -41,7 +41,7 @@ namespace Eventlink_Services.Request
             [Range(1, 100000, ErrorMessage = "Expected attendees must be at least 1")]
             public int? ExpectedAttendees { get; set; }
 
-            [Required(ErrorMessage = "Category is required")]
+            // ✅ Category is optional now
             public string Category { get; set; }
 
             [Required(ErrorMessage = "Event type is required")]
@@ -83,7 +83,7 @@ namespace Eventlink_Services.Request
         }
 
         /// <summary>
-        /// Update Event Request - UPDATED with Overview fields
+        /// Update Event Request - JSON (ORIGINAL)
         /// </summary>
         public class UpdateEventRequest
         {
@@ -116,7 +116,7 @@ namespace Eventlink_Services.Request
             [Range(1, 100000, ErrorMessage = "Expected attendees must be at least 1")]
             public int? ExpectedAttendees { get; set; }
 
-            [Required(ErrorMessage = "Category is required")]
+            // ✅ Category is optional now
             public string Category { get; set; }
 
             [Required(ErrorMessage = "Event type is required")]
@@ -153,6 +153,154 @@ namespace Eventlink_Services.Request
 
             [Range(0, int.MaxValue, ErrorMessage = "Interested count must be non-negative")]
             public int? InterestedCount { get; set; }
+        }
+
+        /// <summary>
+        /// ✅ NEW: Create Event Request - FormData (FOR FILE UPLOAD)
+        /// </summary>
+        public class CreateEventFormRequest
+        {
+            [Required(ErrorMessage = "Title is required")]
+            [StringLength(200, ErrorMessage = "Title cannot exceed 200 characters")]
+            public string Title { get; set; }
+
+            [Required(ErrorMessage = "Description is required")]
+            public string Description { get; set; }
+
+            [StringLength(500, ErrorMessage = "Short description cannot exceed 500 characters")]
+            public string? ShortDescription { get; set; }
+
+            [Required(ErrorMessage = "Event date is required")]
+            public DateTime? EventDate { get; set; }
+
+            [Required(ErrorMessage = "End date is required")]
+            public DateTime? EndDate { get; set; }
+
+            [Required(ErrorMessage = "Location is required")]
+            [StringLength(200, ErrorMessage = "Location cannot exceed 200 characters")]
+            public string Location { get; set; }
+
+            [StringLength(500, ErrorMessage = "Venue details cannot exceed 500 characters")]
+            public string? VenueDetails { get; set; }
+
+            [Range(0, double.MaxValue, ErrorMessage = "Total budget must be a positive number")]
+            public decimal? TotalBudget { get; set; }
+
+            [Range(1, 100000, ErrorMessage = "Expected attendees must be at least 1")]
+            public int? ExpectedAttendees { get; set; }
+
+            public string? Category { get; set; }
+
+            [Required(ErrorMessage = "Event type is required")]
+            public string EventType { get; set; }
+
+            public string? TargetAudience { get; set; }
+            public string? RequiredServices { get; set; }
+            public string? SponsorshipNeeds { get; set; }
+            public string? SpecialRequirements { get; set; }
+
+            // ✅ FormData - serialize as comma-separated string from frontend
+            /// <summary>
+            /// Comma-separated event highlights
+            /// Example: "50+ Expert Speakers,Interactive Workshops,Startup Showcase"
+            /// </summary>
+            public string? EventHighlights { get; set; }
+
+            /// <summary>
+            /// Comma-separated tags
+            /// Example: "AI,ML,Blockchain,Innovation"
+            /// </summary>
+            public string? Tags { get; set; }
+
+            /// <summary>
+            /// Comma-separated target audience list
+            /// Example: "Tech executives,Entrepreneurs,Investors"
+            /// </summary>
+            public string? TargetAudienceList { get; set; }
+
+            // ✅ File upload for cover image
+            public IFormFile? CoverImage { get; set; }
+
+            // ✅ Multiple image uploads
+            public List<IFormFile>? EventImageFiles { get; set; }
+        }
+
+        /// <summary>
+        /// ✅ NEW: Update Event Request - FormData (FOR FILE UPLOAD)
+        /// </summary>
+        public class UpdateEventFormRequest
+        {
+            [Required(ErrorMessage = "Title is required")]
+            [StringLength(200, ErrorMessage = "Title cannot exceed 200 characters")]
+            public string Title { get; set; }
+
+            [Required(ErrorMessage = "Description is required")]
+            public string Description { get; set; }
+
+            [StringLength(500, ErrorMessage = "Short description cannot exceed 500 characters")]
+            public string? ShortDescription { get; set; }
+
+            [Required(ErrorMessage = "Event date is required")]
+            public DateTime? EventDate { get; set; }
+
+            [Required(ErrorMessage = "End date is required")]
+            public DateTime? EndDate { get; set; }
+
+            [Required(ErrorMessage = "Location is required")]
+            [StringLength(200, ErrorMessage = "Location cannot exceed 200 characters")]
+            public string Location { get; set; }
+
+            [StringLength(500, ErrorMessage = "Venue details cannot exceed 500 characters")]
+            public string? VenueDetails { get; set; }
+
+            [Range(0, double.MaxValue, ErrorMessage = "Total budget must be a positive number")]
+            public decimal? TotalBudget { get; set; }
+
+            [Range(1, 100000, ErrorMessage = "Expected attendees must be at least 1")]
+            public int? ExpectedAttendees { get; set; }
+
+            public string? Category { get; set; }
+
+            [Required(ErrorMessage = "Event type is required")]
+            public string EventType { get; set; }
+
+            public string? TargetAudience { get; set; }
+            public string? RequiredServices { get; set; }
+            public string? SponsorshipNeeds { get; set; }
+            public string? SpecialRequirements { get; set; }
+
+            // ✅ FormData - serialize as comma-separated string
+            public string? EventHighlights { get; set; }
+            public string? Tags { get; set; }
+            public string? TargetAudienceList { get; set; }
+
+            // ✅ File upload for cover image (optional - only if changing)
+            public IFormFile? CoverImage { get; set; }
+
+            /// <summary>
+            /// Comma-separated existing image URLs to keep
+            /// Example: "https://...,https://..."
+            /// </summary>
+            public string? ExistingImages { get; set; }
+
+            // ✅ New image uploads
+            public List<IFormFile>? EventImageFiles { get; set; }
+        }
+
+        /// <summary>
+        /// Request DTO for updating event status (IsPublic and IsFeatured)
+        /// </summary>
+        public class UpdateEventStatusRequest
+        {
+            /// <summary>
+            /// Set event visibility (null = no change)
+            /// </summary>
+            public bool? IsPublic { get; set; }
+
+            /// <summary>
+            /// Set featured status (null = no change)
+            /// </summary>
+            public bool? IsFeatured { get; set; }
         }
     }
 }

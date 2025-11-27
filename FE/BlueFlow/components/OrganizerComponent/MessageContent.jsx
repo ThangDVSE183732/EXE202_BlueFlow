@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 import { Send, Paperclip, Search, MoreHorizontal } from 'lucide-react';
 import { messageService } from '../../services/messageService';
 import signalRService from '../../services/signalRService';
+import EqualizerLoader from '../EqualizerLoader';
 
 const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
   const [newMessage, setNewMessage] = useState('');
@@ -42,10 +44,23 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
             isRead: msg.isRead
           }));
           setMessages(formattedMessages);
+          
+          // Mark conversation as read
+          await messageService.markConversationAsRead(partnerId);
+          
+          // Trigger conversationUpdated event to refresh chat list and unread count
+          console.log('✅ Marked conversation as read, triggering refresh...');
+          if (signalRService.isConnectionActive()) {
+            // Manually trigger refresh by emitting event to ourselves
+            signalRService.connection.invoke('OnConversationRead', partnerId).catch(err => {
+              console.log('SignalR OnConversationRead invoke failed (expected if not supported):', err);
+            });
+          }
         }
       } catch (err) {
         console.error('Error loading messages:', err);
         setError('Failed to load messages');
+        toast.error('Không thể tải tin nhắn. Vui lòng thử lại.');
       } finally {
         setLoading(false);
       }
@@ -193,6 +208,8 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
       } catch (err) {
         console.error('Error sending message:', err);
         setError('Failed to send message');
+        toast.error('Không thể gửi tin nhắn. Vui lòng thử lại.');
+        
         // Remove optimistic message on error
         setMessages(prev => prev.filter(msg => msg.id !== optimisticMessageId));
       }
@@ -221,12 +238,12 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
       {/* Chat Header */}
       <div className="border-b border-gray-200 px-6 py-4 flex-shrink-0">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+          <div className="flex items-center space-x-3 min-w-0 flex-1">
+            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
               <span className="text-white font-semibold text-sm">ET</span>
             </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900">{selectedChat}</h2>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-lg font-semibold text-gray-900 truncate w-42" title={selectedChat}>{selectedChat}</h2>
             </div>
           </div>
           <div className="flex items-center space-x-4">
@@ -243,7 +260,7 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-gray-500">Loading messages...</div>
+            <EqualizerLoader message="Đang tải tin nhắn..." />
           </div>
         ) : error ? (
           <div className="flex items-center justify-center h-full">

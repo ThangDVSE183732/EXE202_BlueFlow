@@ -26,6 +26,7 @@ public partial class UserProfile
     public string JobTitle { get; set; }
     public string DirectEmail { get; set; }
     public string DirectPhone { get; set; }
+    
     public DateTime? CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
 

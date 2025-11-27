@@ -200,8 +200,9 @@ public partial class EventLinkDBContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
 
+            // ✅ Properly configure relationship with Event.EventActivities collection
             entity.HasOne(d => d.Event)
-                .WithMany()
+                .WithMany(p => p.EventActivities)  // ✅ Point to EventActivities collection
                 .HasForeignKey(d => d.EventId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_EventActivities_Events");
@@ -483,6 +484,10 @@ public partial class EventLinkDBContext : DbContext
 
             entity.HasIndex(e => e.Email, "UQ__Users__A9D10534DFD2CA4D").IsUnique();
 
+            // ✅ NEW: Premium indexes
+            entity.HasIndex(e => e.IsPremium, "IX_Users_IsPremium");
+            entity.HasIndex(e => e.PremiumExpiryDate, "IX_Users_PremiumExpiryDate");
+
             entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             entity.Property(e => e.AvatarUrl).HasMaxLength(500);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
@@ -502,6 +507,10 @@ public partial class EventLinkDBContext : DbContext
                 .IsRequired()
                 .HasMaxLength(20);
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+
+            // ✅ NEW: Premium fields configuration
+            entity.Property(e => e.IsPremium).HasDefaultValue(false);
+            entity.Property(e => e.PremiumExpiryDate);
         });
 
         modelBuilder.Entity<UserActivity>(entity =>

@@ -17,5 +17,16 @@ namespace Eventlink_Services.Interface
         Task AddAsync(Guid userId, CreateBrandProfileRequest request);
         Task UpdateAsync(Guid id, UpdateBrandProfileRequest request);
         Task DeleteAsync(Guid id);
+        
+        /// <summary>
+        /// Toggle BrandProfile visibility status (IsPublic) by BrandProfile ID
+        /// </summary>
+        Task<BrandProfile> ToggleBrandProfileStatusByIdAsync(Guid brandProfileId);
+        
+        /// <summary>
+        /// Toggle both IsPublic and HasPartnership status by BrandProfile ID
+        /// ✅ NEW: Toggle both visibility and partnership status at once
+        /// </summary>
+        Task<BrandProfile> ToggleBrandProfileAllStatusAsync(Guid brandProfileId);
     }
 }

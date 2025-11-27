@@ -76,7 +76,7 @@ export default function PartnerFilters({ data, onFilter }) {
   // Regions & services derived from data
   const allRegions = useMemo(() => {
     const set = new Set();
-    data.forEach(d => d.region && set.add(d.region));
+    data.forEach(d => d.location && set.add(d.location)); // Đổi từ d.region thành d.location
     return Array.from(set).sort();
   }, [data]);
 
@@ -89,10 +89,18 @@ export default function PartnerFilters({ data, onFilter }) {
   // Apply filters - BỎ onFilter khỏi dependency
   useEffect(() => {
     const res = data.filter(item => {
-      if (supplierType !== 'All' && item.type !== supplierType) return false;
-      if (service !== 'All' && item.service !== service) return false;
-      if (region !== 'All' && item.region !== region) return false;
-      if (minRating > 0 && (item.rating || 0) < minRating) return false;
+      // Filter by partnerType (Supplier/Sponsor/Organizer)
+      if (supplierType !== 'All' && item.partnerType !== supplierType) return false;
+      
+      // Filter by service (chưa có trong data, bỏ qua tạm thời)
+      // if (service !== 'All' && item.service !== service) return false;
+      
+      // Filter by region/location
+      if (region !== 'All' && item.location !== region) return false;
+      
+      // Filter by rating (null rating sẽ bị filter nếu minRating > 0)
+      if (minRating > 0 && (item.rating === null || item.rating < minRating)) return false;
+      
       return true;
     });
 
@@ -102,7 +110,7 @@ export default function PartnerFilters({ data, onFilter }) {
       lastResultRef.current = res;
       onFilter(res);
     }
-  }, [data, supplierType, service, region, minRating]); // BỎ onFilter
+  }, [data, supplierType, service, region, minRating, onFilter]);
 
   return (
     <div className="flex  flex-wrap items-start gap-3 mb-6">
@@ -121,7 +129,7 @@ export default function PartnerFilters({ data, onFilter }) {
         {open === 'supplier' && (
           <PopoverCard innerRef={rootRefs.supplier}>
             <ul className="space-y-1 text-sm">
-              {['Supplier', 'Sponsor', 'All'].map(opt => (
+              {['Supplier', 'Sponsor', 'Organizer', 'All'].map(opt => (
                 <li key={opt}>
                   <button
                     onClick={() => { setSupplierType(opt); setOpen(null); }}

@@ -11,7 +11,7 @@ namespace Eventlink_Services.Response
     {
         public Guid Id { get; set; }
         public string CompanyName { get; set; }
-        public string CompanyLogoUrl { get; set; }
+        public string? CompanyLogoUrl { get; set; }
         public string Industry { get; set; }
         public string CompanySize { get; set; }
         public int? FoundedYear { get; set; }
@@ -27,8 +27,8 @@ namespace Eventlink_Services.Response
         public string JobTitle { get; set; }
         public string DirectEmail { get; set; }
         public string DirectPhone { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        public DateTime? CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
         public string Role { get; set; }
     }
 }
