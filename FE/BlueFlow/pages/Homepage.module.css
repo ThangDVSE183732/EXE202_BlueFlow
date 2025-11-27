@@ -4,6 +4,33 @@
   overflow-y: auto;
   background-size: cover;
   background-position: center;
-  background-color: lightblue;
+  background: linear-gradient(180deg, #ffffff 0%, #e0f2fe 20%, #bae6fd 60%, #7dd3fc 100%);
   font-family: 'Space Grotesk', sans-serif;
+  position: relative;
+}
+
+/* Water ripple effect on sections */
+.homepage > div[class*="bg-sky"] {
+  position: relative;
+  overflow: hidden;
+}
+
+.homepage > div[class*="bg-sky"]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  animation: shimmer-water 3s infinite;
+}
+
+@keyframes shimmer-water {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
 }

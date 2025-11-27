@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { FunnelIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { FunnelIcon, MagnifyingGlassIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { chatbotService } from '../../services/chatbotService';
 
 function useOutside(ref, onClose, enabled) {
   useEffect(() => {
@@ -51,6 +52,8 @@ const Stars = ({ value }) => {
 
 export default function PartnerFilters({ data, onFilter }) {
   const [open, setOpen] = useState(null);
+  const [isAiMatching, setIsAiMatching] = useState(false);
+  const [aiMatchIds, setAiMatchIds] = useState([]);
 
   const [supplierType, setSupplierType] = useState('All');                // Supplier | Sponsor | All
   const [service, setService] = useState('All');                          // Equipment | Decoration | Media | Financial sponsor | All
@@ -86,9 +89,56 @@ export default function PartnerFilters({ data, onFilter }) {
 
   const lastResultRef = useRef([]);
 
+  // Handle AI Match
+  const handleAiMatch = async () => {
+    // Nếu đã có AI match, reset để xem tất cả
+    if (aiMatchIds.length > 0) {
+      setAiMatchIds([]);
+      return;
+    }
+
+    setIsAiMatching(true);
+    try {
+      const result = await chatbotService.matchPartnerships();
+      
+      if (!result.success) {
+        alert(result.message || 'Không thể tìm kiếm bằng AI. Vui lòng thử lại.');
+        return;
+      }
+      
+      // Handle case where user has no events/profile
+      if (result.message && !result.partnershipIds) {
+        alert(result.message);
+        return;
+      }
+      
+      if (result.partnershipIds && result.partnershipIds.length > 0) {
+        // Convert IDs to strings for comparison
+        const ids = result.partnershipIds.map(id => String(id));
+        setAiMatchIds(ids);
+      } else {
+        alert('Không tìm thấy partnerships phù hợp.');
+      }
+    } catch (error) {
+      console.error('AI Match failed:', error);
+      
+      // Display detailed error message
+      const errorMessage = error.message || error.response?.data?.message || 'Không thể tìm kiếm bằng AI. Vui lòng thử lại.';
+      alert(errorMessage);
+    } finally {
+      setIsAiMatching(false);
+    }
+  };
+
   // Apply filters - BỎ onFilter khỏi dependency
   useEffect(() => {
     const res = data.filter(item => {
+      // Filter by AI matched partnerships (nếu có)
+      if (aiMatchIds.length > 0) {
+        const itemId = String(item.id);
+        if (!aiMatchIds.includes(itemId)) return false;
+      }
+      
       // Filter by partnerType (Supplier/Sponsor/Organizer)
       if (supplierType !== 'All' && item.partnerType !== supplierType) return false;
       
@@ -110,7 +160,7 @@ export default function PartnerFilters({ data, onFilter }) {
       lastResultRef.current = res;
       onFilter(res);
     }
-  }, [data, supplierType, service, region, minRating, onFilter]);
+  }, [data, supplierType, service, region, minRating, aiMatchIds, onFilter]);
 
   return (
     <div className="flex  flex-wrap items-start gap-3 mb-6">
@@ -118,6 +168,24 @@ export default function PartnerFilters({ data, onFilter }) {
         <FunnelIcon className="w-5 h-5 text-sky-500" />
         <span className="text-sm font-medium text-sky-600">Filter</span>
       </div>
+
+      {/* AI Match Button */}
+      <button
+        onClick={handleAiMatch}
+        disabled={isAiMatching}
+        className={`relative px-4 h-10 rounded-xl border text-sm font-medium flex items-center gap-2
+          ${aiMatchIds.length > 0 
+            ? 'border-purple-500 bg-purple-50 text-purple-600' 
+            : 'border-purple-300 hover:border-purple-400 text-gray-700 bg-white'}
+          transition ${isAiMatching ? 'opacity-50 cursor-not-allowed' : ''}`}
+      >
+        <SparklesIcon className="w-4 h-4" />
+        {isAiMatching 
+          ? 'Đang tìm...' 
+          : aiMatchIds.length > 0 
+            ? `AI Match (${aiMatchIds.length})` 
+            : 'AI Match'}
+      </button>
 
       {/* Supplier */}
       <div className="relative" ref={rootRefs.supplier}>

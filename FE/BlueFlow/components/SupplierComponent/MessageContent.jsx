@@ -4,8 +4,10 @@ import { Send, Paperclip, Search, MoreHorizontal } from 'lucide-react';
 import { messageService } from '../../services/messageService';
 import signalRService from '../../services/signalRService';
 import EqualizerLoader from '../EqualizerLoader';
+import { useAuth } from '../../contexts/AuthContext';
 
 const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
+  const { user } = useAuth();
   const [newMessage, setNewMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -91,9 +93,36 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
           // Add new message to the list if it's from the current partner
           if (message.senderId === partnerId || message.receiverId === partnerId) {
             setMessages(prev => {
-              // Avoid duplicates
-              if (prev.some(msg => msg.id === message.id)) {
-                return prev;
+              // Avoid duplicates - check by content and timestamp (within 5 seconds)
+              const isDuplicate = prev.some(msg => {
+                const timeDiff = Math.abs(new Date(message.sentAt) - new Date(msg.timestamp));
+                return msg.content === message.content && 
+                       msg.isOwn === (message.senderId !== partnerId) &&
+                       timeDiff < 5000; // Within 5 seconds
+              });
+              
+              if (isDuplicate) {
+                // Replace optimistic message with real one from backend
+                return prev.map(msg => {
+                  const timeDiff = Math.abs(new Date(message.sentAt) - new Date(msg.timestamp));
+                  if (msg.content === message.content && 
+                      msg.isOwn === (message.senderId !== partnerId) &&
+                      timeDiff < 5000) {
+                    return {
+                      id: message.id,
+                      sender: message.senderId === partnerId ? selectedChat : 'You',
+                      content: message.content,
+                      timestamp: new Date(message.sentAt).toLocaleTimeString('en-US', { 
+                        hour: 'numeric', 
+                        minute: '2-digit',
+                        hour12: true 
+                      }),
+                      isOwn: message.senderId !== partnerId,
+                      isRead: message.isRead || false
+                    };
+                  }
+                  return msg;
+                });
               }
               
               return [...prev, {
@@ -116,8 +145,13 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
         signalRService.onUserTyping((senderId) => {
           if (!isSubscribed) return;
           
-          // Check if the typing user is our chat partner
-          if (senderId === partnerId) {
+          console.log('👀 Typing event - senderId:', senderId, 'partnerId:', partnerId, 'currentUserId:', user?.id);
+          
+          // ONLY show typing if:
+          // 1. Sender is our chat partner (senderId === partnerId)
+          // 2. Sender is NOT ourselves (senderId !== currentUserId)
+          if (senderId === partnerId && senderId !== user?.id) {
+            console.log('✅ Partner is typing, showing indicator');
             setIsPartnerTyping(true);
             
             // Clear existing timeout
@@ -129,6 +163,8 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
             typingTimeoutRef.current = setTimeout(() => {
               setIsPartnerTyping(false);
             }, 3000);
+          } else {
+            console.log('❌ Ignoring typing event - not from partner or from self');
           }
         });
 
@@ -136,7 +172,11 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
         signalRService.onUserStoppedTyping((senderId) => {
           if (!isSubscribed) return;
           
-          if (senderId === partnerId) {
+          console.log('✋ Stop typing event - senderId:', senderId, 'partnerId:', partnerId);
+          
+          // Only hide typing if it's from partner and not self
+          if (senderId === partnerId && senderId !== user?.id) {
+            console.log('✅ Partner stopped typing, hiding indicator');
             setIsPartnerTyping(false);
             if (typingTimeoutRef.current) {
               clearTimeout(typingTimeoutRef.current);
@@ -163,7 +203,7 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
         clearTimeout(typingTimeoutRef.current);
       }
     };
-  }, [partnerId, selectedChat]);
+  }, [partnerId, selectedChat, user?.id]);
 
   const handleSendMessage = async () => {
     if (newMessage.trim()) {
