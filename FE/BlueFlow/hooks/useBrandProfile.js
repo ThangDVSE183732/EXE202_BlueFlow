@@ -97,7 +97,7 @@ export const useBrandProfile = (showToast = null) => {
   };
 
   // Map UI format to API request (FormData for file upload support)
-  const mapUIToApiFormData = async (uiData, logoFile = null) => {
+  const mapUIToApiFormData = async (uiData, logoFile = null, isCreate = false) => {
     const formData = new FormData();
     
     console.log('🔍 Mapping UI data to FormData:', uiData);
@@ -128,17 +128,42 @@ export const useBrandProfile = (showToast = null) => {
     formData.append('PhoneNumber', phoneNumber);
     formData.append('Tags', tags);
     
-    // BrandLogo cuối cùng
+    // BrandLogo - logic khác nhau cho CREATE vs UPDATE
     if (logoFile) {
+      // User upload logo mới
       formData.append('BrandLogo', logoFile);
-      console.log('✅ Added BrandLogo:', logoFile.name);
-    } else {
-      // Tạo placeholder nhỏ nếu không có logo
+      console.log('✅ Added new BrandLogo file:', logoFile.name);
+    } else if (isCreate) {
+      // CREATE mới: cần placeholder vì backend require BrandLogo
       const emptyImageBlob = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
         .then(res => res.blob());
       const placeholderFile = new File([emptyImageBlob], 'placeholder.png', { type: 'image/png' });
       formData.append('BrandLogo', placeholderFile);
-      console.log('✅ Added placeholder BrandLogo');
+      console.log('✅ Added placeholder BrandLogo for CREATE');
+    } else if (uiData.brandLogo) {
+      // UPDATE với logo hiện có: download và gửi lại để giữ nguyên
+      try {
+        console.log('📥 Downloading existing logo to preserve it:', uiData.brandLogo);
+        const logoResponse = await fetch(uiData.brandLogo);
+        const logoBlob = await logoResponse.blob();
+        const existingLogoFile = new File([logoBlob], 'existing-logo.png', { type: logoBlob.type || 'image/png' });
+        formData.append('BrandLogo', existingLogoFile);
+        console.log('✅ Re-uploading existing logo to preserve it');
+      } catch (fetchError) {
+        console.warn('⚠️ Failed to fetch existing logo, using placeholder:', fetchError);
+        // Fallback: gửi placeholder
+        const emptyImageBlob = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
+          .then(res => res.blob());
+        const placeholderFile = new File([emptyImageBlob], 'keep-existing.png', { type: 'image/png' });
+        formData.append('BrandLogo', placeholderFile);
+      }
+    } else {
+      // Không có logo hiện có và không upload mới: gửi placeholder
+      const emptyImageBlob = await fetch('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==')
+        .then(res => res.blob());
+      const placeholderFile = new File([emptyImageBlob], 'no-logo.png', { type: 'image/png' });
+      formData.append('BrandLogo', placeholderFile);
+      console.log('ℹ️ No existing logo, sending placeholder');
     }
     
     console.log('📋 FormData fields (in order):', {
@@ -232,7 +257,7 @@ export const useBrandProfile = (showToast = null) => {
         };
 
         console.log('📝 Creating brand profile with data:', createDataUI);
-        const formData = await mapUIToApiFormData(createDataUI);
+        const formData = await mapUIToApiFormData(createDataUI, null, true); // isCreate = true
         const createResponse = await brandService.createBrandProfile(formData);
 
         console.log('📥 Create brand profile response:', createResponse);
@@ -336,15 +361,64 @@ export const useBrandProfile = (showToast = null) => {
 
   // Update brand profile
   const updateBrandProfile = async (updatedData, logoFile = null) => {
-    console.log("UserID: ", user?.id);
+    console.log("🔍 Update brand profile called");
+    console.log("👤 UserID:", user?.id);
+    console.log("🆔 BrandProfileId:", brandProfileId);
+    
     if (!brandProfileId) {
-      console.error('No user ID to update');
+      console.error('❌ No brandProfileId available for update');
+      console.log('⏳ Attempting to fetch brand profile first...');
+      
+      // Try to fetch brand profile if not loaded yet
+      if (user?.id) {
+        try {
+          const response = await brandService.getBrandProfileByUserId(user.id);
+          if (response.success && response.data) {
+            const actualData = response.data.data || response.data;
+            const fetchedId = actualData.id;
+            console.log('✅ Found brandProfileId:', fetchedId);
+            setBrandProfileId(fetchedId);
+            
+            // Now retry update with the fetched ID
+            const formData = await mapUIToApiFormData(updatedData, logoFile);
+            const updateResponse = await brandService.updateBrandProfile(fetchedId, formData);
+            
+            if (updateResponse.success) {
+              console.log('✅ Brand profile updated successfully');
+              setBrandData(mapApiToUI(updateResponse.data));
+              
+              if (showToast) {
+                showToast({
+                  type: 'success',
+                  message: 'Cập nhật hồ sơ thương hiệu thành công',
+                  duration: 3000
+                });
+              }
+              
+              return { success: true };
+            }
+          }
+        } catch (fetchError) {
+          console.error('❌ Failed to fetch brand profile for update:', fetchError);
+        }
+      }
+      
+      // If still no ID, throw error
       const errorDetail = {
-        title: 'No User ID',
+        title: 'Brand Profile Not Found',
         status: 400,
-        errors: { UserId: ['UserId is missing'] },
-        errorMessages: ['UserId is missing']
+        errors: { BrandProfileId: ['Brand profile is not loaded yet. Please wait or refresh the page.'] },
+        errorMessages: ['Brand profile is not loaded yet. Please wait or refresh the page.']
       };
+      
+      if (showToast) {
+        showToast({
+          type: 'error',
+          message: 'Vui lòng đợi tải hồ sơ hoặc tải lại trang',
+          duration: 4000
+        });
+      }
+      
       throw errorDetail;
     }
 

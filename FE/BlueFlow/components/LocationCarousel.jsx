@@ -1,5 +1,5 @@
 import LocationItem from "./LocationItem";
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 const locations = [
   [
@@ -59,52 +59,105 @@ function LocationCarousel() {
   const [groupIdx, setGroupIdx] = useState(0);
   const [animating, setAnimating] = useState(false);
   const [direction, setDirection] = useState("right");
+  const autoPlayRef = useRef(null);
+  const isPausedRef = useRef(false);
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
+    if (animating) return;
     setDirection("left");
     setAnimating(true);
     setTimeout(() => {
-      setGroupIdx((idx) => (idx === 0 ? locations.length - 1 : idx - 1)); //Nếu ở nhóm đầu thì lùi về nhóm cuối
+      setGroupIdx((idx) => (idx === 0 ? locations.length - 1 : idx - 1));
       setAnimating(false);
-    }, 300); // Giả sử animation kéo dài 500ms
-  };
-  const handleNext = () => {
+    }, 500);
+  }, [animating]);
+
+  const handleNext = useCallback(() => {
+    if (animating) return;
     setDirection("right");
     setAnimating(true);
     setTimeout(() => {
-      setGroupIdx((idx) => (idx === locations.length - 1 ? 0 : idx + 1)); //Nếu ở nhóm cuối thì lùi về nhóm đầu
+      setGroupIdx((idx) => (idx === locations.length - 1 ? 0 : idx + 1));
       setAnimating(false);
-    }, 300); // Giả sử animation kéo dài 500ms
-  };
-  const handleDotClick = (i) => {
+    }, 500);
+  }, [animating]);
+
+  const handleDotClick = useCallback((i) => {
+    if (animating || i === groupIdx) return;
     setDirection(i > groupIdx ? "right" : "left");
     setAnimating(true);
     setTimeout(() => {
       setGroupIdx(i);
       setAnimating(false);
-    }, 300);
-  };
+    }, 500);
+  }, [animating, groupIdx]);
+
+  // Auto-play functionality
+  useEffect(() => {
+    if (autoPlayRef.current) {
+      clearInterval(autoPlayRef.current);
+    }
+    
+    // Chỉ chạy auto-play khi không đang animate và không bị pause
+    if (!animating) {
+      autoPlayRef.current = setInterval(() => {
+        if (!isPausedRef.current) {
+          setDirection("right");
+          setAnimating(true);
+          setTimeout(() => {
+            setGroupIdx((idx) => (idx === locations.length - 1 ? 0 : idx + 1));
+            setAnimating(false);
+          }, 500);
+        }
+      }, 2500); // Tự động chuyển sau 2.5 giây
+    }
+
+    return () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+      }
+    };
+  }, [groupIdx, animating]); // Re-run khi groupIdx hoặc animating thay đổi
+
+  // Pause auto-play khi user hover vào carousel
+  const handleMouseEnter = useCallback(() => {
+    isPausedRef.current = true;
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    isPausedRef.current = false;
+  }, []);
+
+  // Memoize current group locations
+  const currentLocations = useMemo(() => locations[groupIdx], [groupIdx]);
 
   return (
-    <div className="mx-26">
-            <h1 className="mb-12 text-2xl text-white bg-blue-400 w-fit rounded-lg p-1 mx-auto">Featured location</h1>
+    <div 
+      className="mx-26"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <h1 className="mb-12 text-2xl text-white bg-blue-400 w-fit rounded-lg p-1 mx-auto">Featured location</h1>
 
       <div
-        className={`grid grid-cols-3  gap-8 transition-transform duration-300
+        className={`grid grid-cols-3 gap-8 mb-4 transition-opacity duration-500 ease-in-out
                 ${
-                  animating
-                    ? direction === "right"
-                      ? "translate-x-16 opacity-50"
-                      : "-translate-x-16 opacity-50"
-                    : "translate-x-0 opacity-100"
+                  animating ? "opacity-40" : "opacity-100"
                 }`}
       >
-        {locations[groupIdx].map((location, idx) => (
-          <LocationItem key={idx} location={location} />
+        {currentLocations.map((location, idx) => (
+          <div
+            key={`${groupIdx}-${idx}`}
+            style={{
+              transitionDelay: !animating ? `${idx * 80}ms` : '0ms'
+            }}
+          >
+            <LocationItem location={location} />
+          </div>
         ))}
       </div>
 
-            <div className="flex justify-center items-center mt-40">
+      <div className="flex justify-center items-center">
         <button onClick={handlePrev} className="mr-4" disabled={animating}>&lt;</button>
         <div className="flex space-x-2">
           {locations.map((_,i) =>(

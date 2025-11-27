@@ -1,38 +1,38 @@
 import ServicesItem from "./ServicesItem";
-import {useState } from "react";
+import {useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 
 
 const servicesGroup = [
   [
-    {title: "Wedding", subtitle: "decoration", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-wh"},
-    {title: "Music", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
-    {title: "Workshop", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
-    {title: "Boutique", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
+    {title: "Tiệc Cưới", subtitle: "Trang trí & Tổ chức", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-wh"},
+    {title: "Sự Kiện Âm Nhạc", subtitle: "Concert & Live Show", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
+    {title: "Hội Thảo", subtitle: "Workshop & Training", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
+    {title: "Sự Kiện Thời Trang", subtitle: "Fashion Show & Launch", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
   ],
   [
-    {title: "Wedding", subtitle: "decoration", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-sky-200"},
-    {title: "Music", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-rose-200"},
-    {title: "Workshop", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-purple-200"},
-    {title: "Boutique", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-pink-200"},
+    {title: "Hội Nghị", subtitle: "Conference & Summit", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-sky-200"},
+    {title: "Lễ Khai Trương", subtitle: "Grand Opening Event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-rose-200"},
+    {title: "Triển Lãm", subtitle: "Exhibition & Trade Show", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-purple-200"},
+    {title: "Sinh Nhật", subtitle: "Birthday Celebration", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-pink-200"},
   ],
   [
-    {title: "Wedding", subtitle: "decoration", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-wh"},
-    {title: "Music", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
-    {title: "Workshop", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
-    {title: "Boutique", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
+    {title: "Team Building", subtitle: "Corporate Events", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-wh"},
+    {title: "Gala Dinner", subtitle: "Awards & Recognition", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
+    {title: "Product Launch", subtitle: "Sản Phẩm Mới", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
+    {title: "Festival", subtitle: "Lễ Hội & Văn Hóa", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
   ],
   [
-    {title: "Wedding", subtitle: "decoration", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-sky-200"},
-    {title: "Music", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-rose-200"},
-    {title: "Workshop", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-purple-200"},
-    {title: "Boutique", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-pink-200"},
+    {title: "Tiệc Cưới", subtitle: "Trang trí & Tổ chức", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-sky-200"},
+    {title: "Sự Kiện Âm Nhạc", subtitle: "Concert & Live Show", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-rose-200"},
+    {title: "Hội Thảo", subtitle: "Workshop & Training", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-purple-200"},
+    {title: "Sự Kiện Thời Trang", subtitle: "Fashion Show & Launch", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-pink-200"},
   ],
   [
-    {title: "Wedding", subtitle: "decoration", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-sky-200"},
-    {title: "Music", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-rose-200"},
-    {title: "Workshop", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-purple-200"},
-    {title: "Boutique", subtitle: "event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-pink-200"},
+    {title: "Hội Nghị", subtitle: "Conference & Summit", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-sky-200"},
+    {title: "Lễ Khai Trương", subtitle: "Grand Opening Event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-rose-200"},
+    {title: "Triển Lãm", subtitle: "Exhibition & Trade Show", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-purple-200"},
+    {title: "Sinh Nhật", subtitle: "Birthday Celebration", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-pink-200"},
   ]
 
 ];
@@ -43,41 +43,105 @@ function ServiceCarousel() {
   const[groupIdx, setGroupIdx] = useState(0);
   const[animating, setAnimating] = useState(false);
   const[direction, setDirection] = useState("right"); // 'next' or 'prev'
+  const autoPlayRef = useRef(null);
+  const isPausedRef = useRef(false);
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
+    if (animating) return;
     setDirection("left");
     setAnimating(true);
     setTimeout(() => {
-          setGroupIdx((idx) => (idx === 0 ? servicesGroup.length - 1 : idx - 1));//Nếu ở nhóm đầu thì lùi về nhóm cuối
+          setGroupIdx((idx) => (idx === 0 ? servicesGroup.length - 1 : idx - 1));
           setAnimating(false);
-    }, 300); // Giả sử animation kéo dài 500ms
-  }
-  const handleNext = () => {
-        setDirection("right");
+    }, 500);
+  }, [animating]);
+
+  const handleNext = useCallback(() => {
+    if (animating) return;
+    setDirection("right");
     setAnimating(true);
     setTimeout(() => {
-          setGroupIdx((idx) => (idx === servicesGroup.length - 1 ? 0 : idx + 1));//Nếu ở nhóm cuối thì lùi về nhóm đầu
+          setGroupIdx((idx) => (idx === servicesGroup.length - 1 ? 0 : idx + 1));
           setAnimating(false);
-    }, 300); // Giả sử animation kéo dài 500ms
-  }
-  const handleDotClick = (i) => {
-        setDirection( i > groupIdx ? "right" : "left");
-        setAnimating(true); 
-        setTimeout(() => {
-              setGroupIdx(i);
-              setAnimating(false);
-        }, 300); 
-  }
+    }, 500);
+  }, [animating]);
+
+  const handleDotClick = useCallback((i) => {
+    if (animating || i === groupIdx) return;
+    setDirection(i > groupIdx ? "right" : "left");
+    setAnimating(true); 
+    setTimeout(() => {
+          setGroupIdx(i);
+          setAnimating(false);
+    }, 500); 
+  }, [animating, groupIdx]);
+
+  // Auto-play functionality
+  useEffect(() => {
+    if (autoPlayRef.current) {
+      clearInterval(autoPlayRef.current);
+    }
+    
+    // Chỉ chạy auto-play khi không đang animate và không bị pause
+    if (!animating) {
+      autoPlayRef.current = setInterval(() => {
+        if (!isPausedRef.current) {
+          setDirection("right");
+          setAnimating(true);
+          setTimeout(() => {
+            setGroupIdx((idx) => (idx === servicesGroup.length - 1 ? 0 : idx + 1));
+            setAnimating(false);
+          }, 500);
+        }
+      }, 2000); // Tự động chuyển sau 2 giây
+    }
+
+    return () => {
+      if (autoPlayRef.current) {
+        clearInterval(autoPlayRef.current);
+      }
+    };
+  }, [groupIdx, animating]); // Re-run khi groupIdx hoặc animating thay đổi
+
+  // Pause auto-play khi user hover vào carousel
+  const handleMouseEnter = useCallback(() => {
+    isPausedRef.current = true;
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    isPausedRef.current = false;
+  }, []);
+
+  // Memoize current group items
+  const currentItems = useMemo(() => servicesGroup[groupIdx], [groupIdx]);
   return (
-    <div className=" mx-26 mb-16">
+    <div 
+      className=" mx-26 mb-16"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       <h1 className="mb-12 text-2xl text-white bg-blue-400 w-fit rounded-lg p-1">Most chosen service</h1>
-      <div className={`grid grid-cols-2 grid-rows-2 gap-8 mb-10 transition-transform duration-300
-      ${animating ? (direction === "right" ? "translate-x-16 opacity-50" : "-translate-x-16 opacity-50") : "translate-x-0 opacity-100"}`}>
-          {servicesGroup[groupIdx].map((item, idx)=> (
-            <ServicesItem key ={idx} title={item.title} subtitle={item.subtitle} img={item.img} color={item.color} bgColor={item.bgColor}/>
-          ))}      
+      <div className="grid grid-cols-2 grid-rows-2 gap-8 mb-4">
+        {currentItems.map((item, idx)=> (
+          <div
+            key={`${groupIdx}-${idx}`}
+            className={`transition-opacity duration-500 ease-in-out
+              ${animating ? "opacity-40" : "opacity-100"}`}
+            style={{
+              transitionDelay: !animating ? `${idx * 80}ms` : '0ms'
+            }}
+          >
+            <ServicesItem 
+              title={item.title} 
+              subtitle={item.subtitle} 
+              img={item.img} 
+              color={item.color} 
+              bgColor={item.bgColor}
+            />
+          </div>
+        ))}      
       </div>
-      <div className="flex justify-center items-center ">
+      <div className="flex justify-center items-center">
         <button onClick={handlePrev} className="mr-4" disabled={animating}>&lt;</button>
         <div className="flex space-x-2">
           {servicesGroup.map((_,i) =>(
