@@ -4,7 +4,7 @@ import { Edit, Plus, Upload, Check, X } from 'lucide-react';
 import { useBrandProfile } from '../../hooks/useBrandProfile';
 import Loading from '../Loading';
 
-const BrandProfile = () => {
+const BrandProfile = ({ shouldFetch = true }) => {
   // Toast notification helper - memoized để tránh re-render
   const showToast = useCallback((options) => {
     if (options.type === 'success') {
@@ -14,7 +14,7 @@ const BrandProfile = () => {
     }
   }, []);
 
-  const { brandData, setBrandData, loading, error, updateBrandProfile } = useBrandProfile(showToast);
+  const { brandData, loading, error, updateBrandProfile } = useBrandProfile(showToast, shouldFetch);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState(brandData);
   const [logoPreview, setLogoPreview] = useState(null);
@@ -67,9 +67,9 @@ const BrandProfile = () => {
       
       // Hiển thị lỗi chi tiết từ backend
       if (error.errorMessages && error.errorMessages.length > 0) {
-        alert(`Failed to save:\n\n${error.errorMessages.join('\n')}`);
+        alert(`Lưu thất bại:\n\n${error.errorMessages.join('\n')}`);
       } else {
-        alert('Failed to save changes. Please try again.');
+        alert('Lưu không thành công. Vui lòng thử lại.');
       }
     }
   };

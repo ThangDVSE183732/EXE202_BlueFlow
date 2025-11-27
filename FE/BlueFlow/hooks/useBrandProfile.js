@@ -2,13 +2,12 @@ import { useState, useEffect, useRef } from 'react';
 import { brandService } from '../services/brandService';
 import { useAuth } from '../contexts/AuthContext';
 
-export const useBrandProfile = (showToast = null) => {
+export const useBrandProfile = (showToast = null, shouldFetch = true) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [brandProfileId, setBrandProfileId] = useState(null);
   const [error, setError] = useState(null);
   const isCreatingRef = useRef(false); // Flag to prevent duplicate creation
-  const hasFetchedRef = useRef(false); // Flag to prevent duplicate fetch
 
   // Dữ liệu mặc định
   const defaultData = {
@@ -197,12 +196,12 @@ export const useBrandProfile = (showToast = null) => {
         return;
       }
 
-      // Prevent duplicate calls
-      if (hasFetchedRef.current) {
-        console.log('⏭️ Already fetched/created, skipping...');
+      // If caller set shouldFetch=false, skip fetching (fetch on demand)
+      if (!shouldFetch) {
+        console.log('⏭️ shouldFetch is false, skipping fetch');
+        setLoading(false);
         return;
       }
-      hasFetchedRef.current = true;
 
       try {
         setLoading(true);
@@ -280,6 +279,9 @@ export const useBrandProfile = (showToast = null) => {
               duration: 3000
             });
           }
+
+          // Broadcast so discovery/UI can refresh
+          try { window.dispatchEvent(new CustomEvent('brandProfile:updated', { detail: { userId: user?.id, brandProfileId: createResponse.data.id } })); } catch(err) { void err; }
         } else {
           console.log('⚠️ Create failed, response:', createResponse);
           console.log('⚠️ Using default data');
@@ -317,11 +319,10 @@ export const useBrandProfile = (showToast = null) => {
     // Cleanup function
     return () => {
       // Reset flags when component unmounts or user changes
-      hasFetchedRef.current = false;
       isCreatingRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }, [user?.id, shouldFetch]);
 
   // Parse backend validation errors
   const parseBackendError = (error) => {
@@ -443,6 +444,13 @@ export const useBrandProfile = (showToast = null) => {
             duration: 3000
           });
         }
+
+        // Notify other parts of the app (discovery lists) to refresh
+        try {
+          window.dispatchEvent(new CustomEvent('brandProfile:updated', { detail: { userId: user?.id, brandProfileId } }));
+        } catch (err) {
+          void err; // ignore in environments without window
+        }
         
         return { success: true };
       } else {
@@ -530,15 +538,10 @@ export const useBrandProfile = (showToast = null) => {
           isPublic: !prev.isPublic
         }));
 
-        if (showToast) {
-          showToast({
-            type: 'success',
-            title: 'Thành công!',
-            message: `Đã chuyển sang ${!brandData.isPublic ? 'Public' : 'Private'}`,
-            duration: 3000
-          });
-        }
+        // Success returned to caller; UI components should show user-facing notifications
 
+        // Broadcast update so discovery lists refresh
+        try { window.dispatchEvent(new CustomEvent('brandProfile:updated', { detail: { userId: user?.id, brandProfileId } })); } catch(err) { void err; }
         return { success: true, data: response.data };
       } else {
         if (showToast) {
@@ -590,15 +593,10 @@ export const useBrandProfile = (showToast = null) => {
           isPublic: !prev.isPublic
         }));
 
-        if (showToast) {
-          showToast({
-            type: 'success',
-            title: 'Thành công!',
-            message: `Đã chuyển sang ${!brandData.isPublic ? 'Public' : 'Private'} và cập nhật partnership`,
-            duration: 3000
-          });
-        }
+        // Success returned to caller; UI components should show user-facing notifications
 
+        // Broadcast update so discovery lists refresh
+        try { window.dispatchEvent(new CustomEvent('brandProfile:updated', { detail: { userId: user?.id, brandProfileId } })); } catch(err) { void err; }
         return { success: true, data: response.data };
       } else {
         if (showToast) {

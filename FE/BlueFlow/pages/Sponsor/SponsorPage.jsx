@@ -2,7 +2,7 @@ import Footer from '../../components/Footer';
 import EventManagement from '../../components/SponsorComponent/EventManagement';
 import PageNav from '../../components/PageNav';
 import styles from './Sponsor.module.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import SegmentedControl from '../../components/SponsorComponent/SegmentedControl';
 import SideBar from '../../components/SponsorComponent/SideBar';
@@ -77,73 +77,7 @@ const items = [
     { key: 'profile', label: 'Hồ sơ & Cài đặt', icon: Icon.users },
 ];
 
-const partnersItem = [
-    {
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Music in the park: Summer Concert Series",
-    tags : ["Organizer", "Event"],
-    rating: 4.5
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Club Creative",
-    tags : ["Organizer", "Event"],
-    rating: 3.5
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Lumire",
-    tags : ["Organizer", "Event"],
-     rating: 2.5
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Rimberio",
-    tags : ["Organizer", "Event"],
-     rating: 5
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "BlissSprhere",
-    tags : ["Organizer", "Event"],
-     rating: 3
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Momemtum",
-    tags : ["Organizer", "Event"],
-     rating: 1
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Veloria",
-    tags : ["Organizer", "Event"],
-     rating: 4.5
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "Bela Lumiere",
-    tags : ["Organizer", "Event"],
-     rating: 2.5
-},
-{
-    location :"Da Nang",
-    forcus : "Green Tech, Education, Entertainment",
-    title : "B.I.R",
-    tags : ["Organizer", "Event"],
-     rating: 5
-},
-
-
-]
+// sample partners data removed - using API-driven partnersData instead
 
 
 
@@ -245,15 +179,30 @@ function SponsorPage() {
     }, [subChange]);
 
     // Fetch partnerships when discovery tab is active
-    useEffect(() => {
-        const fetchPartnerships = async () => {
-            if (active === 'discovery' && subChange === 'find') {
-                setLoadingPartners(true);
-                try {
-                    const response = await partnershipService.getAllPartnerships();
-                    if (response.success && response.data) {
-                        // Transform API data to match PartnersItems format
-                        const transformedData = response.data.map(partnership => {
+    const fetchPartnerships = useCallback(async () => {
+        if (active === 'discovery' && subChange === 'find') {
+            setLoadingPartners(true);
+            try {
+                const response = await partnershipService.getAllPartnerships();
+                if (response.success && response.data) {
+                    // 1) Lọc raw response: chỉ include Sponsor brandProfile khi public
+                    const filteredRaw = response.data.filter(p => {
+                        if (p.partnerType === 'Sponsor') {
+                            return p.partner?.brandProfile?.isPublic === true;
+                        }
+                        return true; // Organizer/Event luôn hiển thị
+                    });
+
+                    // 2) Dedupe theo partnerId + partnerType
+                    const uniqueMap = new Map();
+                    filteredRaw.forEach(p => {
+                        const key = `${p.partnerId}-${p.partnerType}`;
+                        if (!uniqueMap.has(key)) uniqueMap.set(key, p);
+                    });
+                    const uniqueList = Array.from(uniqueMap.values());
+
+                    // 3) Transform unique list -> UI format
+                    const transformedData = uniqueList.map(partnership => {
                             // Kiểm tra partnerType để lấy data từ đúng nguồn
                             const isFromSponsor = partnership.partnerType === 'Sponsor';
                             
@@ -284,7 +233,7 @@ function SponsorPage() {
                                             const messages = partnership.initialMessage.split(';').map(s => s.trim()).filter(s => s);
                                             points.push(...messages);
                                         }
-                                        return points.length > 0 ? points : ['No information available'];
+                                        return points.length > 0 ? points : ['Chưa có thông tin'];
                                     })(),
                                     eventHighlights: [],
                                     targetAudienceList: [],
@@ -323,18 +272,29 @@ function SponsorPage() {
                             }
                         });
                         setPartnersData(transformedData);
-                    }
-                } catch (error) {
-                    console.error('Error fetching partnerships:', error);
-                    toast.error('Không thể tải danh sách partnerships');
-                } finally {
-                    setLoadingPartners(false);
                 }
+            } catch (error) {
+                console.error('Error fetching partnerships:', error);
+                toast.error('Không thể tải danh sách partnerships');
+            } finally {
+                setLoadingPartners(false);
+            }
+        }
+    }, [active, subChange]);
+
+    useEffect(() => {
+        // initial/active change fetch
+        fetchPartnerships();
+
+        // listen for brand profile updates and refetch if discovery is active
+        const onProfileUpdated = () => {
+            if (active === 'discovery' && subChange === 'find') {
+                fetchPartnerships();
             }
         };
-
-        fetchPartnerships();
-    }, [active, subChange]);
+        window.addEventListener('brandProfile:updated', onProfileUpdated);
+        return () => window.removeEventListener('brandProfile:updated', onProfileUpdated);
+    }, [fetchPartnerships, active, subChange]);
 
 
 
@@ -368,8 +328,8 @@ function SponsorPage() {
       case "ai":
         return <Chatbot />;
     case "profile":
-         if(subChange === 'brand') {
-            return <BrandProfile />;
+            if(subChange === 'brand') {
+                return <BrandProfile shouldFetch={active === 'profile' && subChange === 'brand'} />;
         }else if(subChange === 'account') {
             return <AccountSetting />;
         }else if(subChange === 'marketing') {
