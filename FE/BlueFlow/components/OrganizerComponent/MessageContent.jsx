@@ -233,23 +233,38 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
     }
   };
 
+  // Get initials from name
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
   return (
-    <div className="flex-1 flex flex-col bg-white h-full max-h-screen  overflow-hidden shadow-xl">
+    <div className="flex-1 flex flex-col bg-white h-full overflow-hidden">
       {/* Chat Header */}
-      <div className="border-b border-gray-200 px-6 py-4 flex-shrink-0">
+      <div className="border-b border-gray-200 px-5 py-4 flex-shrink-0 bg-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3 min-w-0 flex-1">
-            <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-semibold text-sm">ET</span>
+            <div className="relative">
+              <div className="w-11 h-11 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <span className="text-white font-semibold text-sm">{getInitials(selectedChat)}</span>
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg font-semibold text-gray-900 truncate w-42" title={selectedChat}>{selectedChat}</h2>
+              <h2 className="text-base font-semibold text-gray-900 truncate text-left" title={selectedChat}>{selectedChat}</h2>
+              <p className="text-xs text-gray-500 text-left">Đang hoạt động</p>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
-          <button className="text-sm py-1 px-2 bg-green-500 text-white rounded-2xl hover:bg-green-600">Agree to collaborate</button>
-
-            <button className="text-gray-400 hover:text-gray-600 p-2">
+          <div className="flex items-center space-x-3">
+            <button className="text-sm py-2 px-4 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors">
+              Đồng ý hợp tác
+            </button>
+            <button className="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition-colors">
               <MoreHorizontal size={20} />
             </button>
           </div>
@@ -257,68 +272,93 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+      <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 bg-white" style={{ scrollbarWidth: 'thin' }}>
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <EqualizerLoader message="Đang tải tin nhắn..." />
           </div>
         ) : error ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-red-500">{error}</div>
+            <div className="text-red-500 bg-red-50 px-4 py-2 rounded-lg">{error}</div>
           </div>
         ) : messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <div className="text-gray-400">No messages yet</div>
+            <div className="text-center">
+              <div className="text-gray-400 text-base mb-1">Chưa có tin nhắn nào</div>
+              <div className="text-gray-400 text-sm">Bắt đầu cuộc trò chuyện bằng cách gửi tin nhắn đầu tiên</div>
+            </div>
           </div>
         ) : (
           messages.map((message) => (
-          <div key={message.id} className="flex flex-col">
-            <div className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}>
-              <div className={`flex items-start space-x-2 max-w-sm ${message.isOwn ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                {!message.isOwn && (
-                  <div className="w-7 h-7 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                    <span className="text-white font-semibold text-xs">ET</span>
-                  </div>
-                )}
-                <div className="flex flex-col">
-                  <div
-                    className={`px-3 py-2 rounded-xl max-w-xs ${
-                      message.isOwn
-                        ? 'bg-blue-500 text-white rounded-br-md'
-                        : 'bg-white text-gray-900 border border-gray-200 rounded-bl-md'
-                    }`}
-                  >
-                    <p className="text-xs leading-relaxed mb-1 text-left">{message.content}</p>
-                    {message.timestamp && (
-                      <p className={`text-[9px] mt-1 text-right ${message.isOwn ? 'text-gray-200' : 'text-gray-400'}`}>
-                        {message.formattedTime}
+            <div key={message.id} className="flex flex-col">
+              <div className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}>
+                <div className={`flex items-end gap-2 max-w-[75%] sm:max-w-[65%] ${message.isOwn ? 'flex-row-reverse' : ''}`}>
+                  {/* Avatar - Only show for partner messages */}
+                  {!message.isOwn && (
+                    <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mb-1">
+                      <span className="text-white font-semibold text-xs">{getInitials(selectedChat)}</span>
+                    </div>
+                  )}
+                  
+                  {/* Message Bubble */}
+                  <div className={`relative ${message.isOwn ? 'order-2' : ''}`}>
+                    <div
+                      className={`px-4 py-2.5 rounded-2xl max-w-full ${
+                        message.isOwn
+                          ? 'bg-blue-500 text-white rounded-tr-sm'
+                          : 'bg-white text-gray-800 border border-gray-200 rounded-tl-sm'
+                      }`}
+                    >
+                      <p className={`text-sm leading-relaxed break-words whitespace-pre-wrap ${
+                        message.isOwn ? 'text-white' : 'text-gray-800'
+                      }`}>
+                        {message.content}
                       </p>
-                    )}
+                      {message.timestamp && (
+                        <p className={`text-[10px] mt-1 text-right ${message.isOwn ? 'text-blue-100' : 'text-gray-400'}`}>
+                          {message.formattedTime || message.timestamp}
+                        </p>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Avatar - Only show for own messages */}
+                  {message.isOwn && (
+                    <div className="w-8 h-8 bg-pink-500 rounded-full flex items-center justify-center flex-shrink-0 mb-1">
+                      <span className="text-white font-semibold text-[10px]">Bạn</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
-          </div>
           ))
         )}
         
         {/* Typing Indicator */}
         {isPartnerTyping && (
-          <div className="flex items-center space-x-2 py-2">
-            <div className="flex space-x-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+          <div className="flex justify-start">
+            <div className="flex items-end gap-2 max-w-[65%]">
+              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mb-1">
+                <span className="text-white font-semibold text-xs">{getInitials(selectedChat)}</span>
+              </div>
+              <div className="relative">
+                <div className="px-4 py-2.5 rounded-2xl rounded-tl-sm bg-white border border-gray-200">
+                  <div className="flex items-center space-x-1.5">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <span className="text-xs text-gray-500">{selectedChat} is typing...</span>
           </div>
         )}
       </div>
 
       {/* Message Input */}
-      <div className="border-t border-gray-200 px-6 py-4 bg-white flex-shrink-0">
-        <div className="flex items-center space-x-3">
-          <button className="text-gray-400 hover:text-gray-600 p-2">
+      <div className="border-t border-gray-200 px-5 py-4 bg-white flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <button className="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0">
             <Paperclip size={20} />
           </button>
           <div className="flex-1 relative">
@@ -327,19 +367,40 @@ const MessageContent = ({ selectedChat = 'Event Tech', partnerId }) => {
               value={newMessage}
               onChange={handleInputChange}
               onKeyPress={handleKeyPress}
-              placeholder="Type a message..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-full text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none bg-gray-50"
+              placeholder="Nhập tin nhắn..."
+              className="w-full px-4 py-2.5 bg-gray-50 border-0 rounded-full text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
             />
           </div>
           <button
             onClick={handleSendMessage}
             disabled={!newMessage.trim()}
-            className="text-blue-500 hover:text-blue-600 disabled:text-gray-400 p-2"
+            className={`p-2.5 rounded-full transition-colors flex-shrink-0 ${
+              newMessage.trim()
+                ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
           >
             <Send size={20} />
           </button>
         </div>
       </div>
+
+      <style>{`
+        /* Custom scrollbar */
+        .overflow-y-auto::-webkit-scrollbar {
+          width: 6px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 3px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}</style>
     </div>
   );
 };

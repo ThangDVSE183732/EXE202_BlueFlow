@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { X, RotateCcw } from 'lucide-react';
+import { Send, Sparkles, User, Bot, Loader2 } from 'lucide-react';
 import { chatbotService } from '../../services/chatbotService';
 import { parseChatbotResponse } from '../../utils/chatbotUtils';
 
@@ -9,7 +9,7 @@ const Chatbot = () => {
     {
       id: 1,
       sender: 'ai',
-      text: "Hello! I'm here to help you with EventLink. How can I assist you today?"
+      text: "Xin chào! Tôi là trợ lý AI của EventLink. Tôi có thể giúp gì cho bạn hôm nay?"
     }
   ]);
   const [inputText, setInputText] = useState('');
@@ -28,19 +28,19 @@ const Chatbot = () => {
   };
 
   useEffect(() => {
-    // Only auto-scroll if user is near bottom
+    // Auto-scroll to bottom when new message arrives
     if (messagesContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
       
-      if (isNearBottom) {
-        scrollToBottom();
+      if (isNearBottom || messages.length <= 2) {
+        setTimeout(() => scrollToBottom(), 100);
       }
     }
-  }, [messages]);
+  }, [messages, isTyping]);
 
   const handleSendMessage = async () => {
-    if (inputText.trim() === '') return;
+    if (inputText.trim() === '' || isTyping) return;
 
     const userInput = inputText.trim();
     
@@ -84,7 +84,7 @@ const Chatbot = () => {
       const errorMessage = {
         id: Date.now() + 1,
         sender: 'ai',
-        text: "Sorry, I encountered an error processing your request. Please try again."
+        text: "Xin lỗi, tôi gặp lỗi khi xử lý yêu cầu của bạn. Vui lòng thử lại sau."
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
@@ -99,85 +99,92 @@ const Chatbot = () => {
     }
   };
 
-
-
   return (
-    <div className="h-screen bg-gray-100 mb-10 border border-gray-300 rounded-xl shadow-lg overflow-hidden">
-      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 w-full h-full flex flex-col">
+    <div className="h-screen bg-gradient-to-br from-gray-50 to-gray-100 mb-10 rounded-2xl shadow-2xl overflow-hidden border border-gray-200">
+      <div className="bg-white w-full h-full flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 shadow-md">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-              </svg>
+            <div className="relative">
+              <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg">
+                <Sparkles className="w-6 h-6 text-white" />
+              </div>
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full"></div>
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Chat AI</h2>
+              <h2 className="text-xl font-bold text-white">Trợ lý AI EventLink</h2>
+              <p className="text-xs text-blue-100">Luôn sẵn sàng hỗ trợ</p>
             </div>
           </div>
-          
         </div>
 
         {/* Messages Area */}
-        <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
-          {messages.map((message) => (
-            <div key={message.id} className="flex flex-col">
-              <div className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex items-start space-x-2 max-w-xl ${message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                  {/* Avatar */}
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 mt-1 ${
-                    message.sender === 'user' 
-                      ? 'bg-gradient-to-br from-purple-500 to-pink-500' 
-                      : 'bg-gradient-to-br from-cyan-500 to-blue-600'
+        <div 
+          ref={messagesContainerRef} 
+          className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4 bg-gradient-to-b from-gray-50 to-white"
+          style={{ scrollbarWidth: 'thin' }}
+        >
+          {messages.map((message, index) => (
+            <div 
+              key={message.id} 
+              className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`}
+              style={{ animationDelay: `${index * 50}ms` }}
+            >
+              <div className={`flex items-end gap-2 max-w-[75%] sm:max-w-[65%] ${message.sender === 'user' ? 'flex-row-reverse' : ''}`}>
+                {/* Avatar - Only show for AI messages */}
+                {message.sender === 'ai' && (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0 shadow-md mb-1">
+                    <Bot className="w-4 h-4 text-white" />
+                  </div>
+                )}
+                
+                {/* Message Bubble */}
+                <div className={`relative group ${message.sender === 'user' ? 'order-2' : ''}`}>
+                  <div className={`px-4 py-3 rounded-2xl shadow-sm ${
+                    message.sender === 'user'
+                      ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-tr-sm'
+                      : 'bg-white text-gray-800 border border-gray-200 rounded-tl-sm shadow-md'
                   }`}>
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      {message.sender === 'user' ? (
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                      ) : (
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      )}
-                    </svg>
-                  </div>
-                  
-                  {/* Message Bubble */}
-                  <div className="flex flex-col">
-                    <div className={`px-4 py-3 rounded-xl ${
-                      message.sender === 'user'
-                        ? 'bg-blue-500 text-white rounded-br-md'
-                        : 'bg-slate-700 text-slate-100 rounded-bl-md'
+                    <p className={`text-sm leading-relaxed break-words whitespace-pre-wrap ${
+                      message.sender === 'user' ? 'text-white' : 'text-gray-800'
                     }`}>
-                      <p className="text-sm leading-relaxed text-left break-words whitespace-pre-wrap">{message.text}</p>
-                    </div>
+                      {message.text}
+                    </p>
                   </div>
+                  {/* Tail */}
+                  {message.sender === 'user' ? (
+                    <div className="absolute right-0 bottom-0 w-0 h-0 border-l-[8px] border-l-transparent border-b-[8px] border-b-blue-600"></div>
+                  ) : (
+                    <div className="absolute left-0 bottom-0 w-0 h-0 border-r-[8px] border-r-transparent border-b-[8px] border-b-white"></div>
+                  )}
                 </div>
+
+                {/* Avatar - Only show for user messages */}
+                {message.sender === 'user' && (
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 shadow-md mb-1">
+                    <User className="w-4 h-4 text-white" />
+                  </div>
+                )}
               </div>
             </div>
           ))}
 
           {/* Typing Indicator */}
           {isTyping && (
-            <div className="flex flex-col">
-              <div className="flex justify-start">
-                <div className="flex items-start space-x-2 max-w-xl">
-                  {/* Avatar */}
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center flex-shrink-0 mt-1">
-                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                    </svg>
-                  </div>
-                  
-                  {/* Typing Bubble */}
-                  <div className="px-4 py-3 rounded-xl bg-slate-700 text-slate-100 rounded-bl-md">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-slate-300 text-sm italic">Typing</span>
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                        <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                      </div>
+            <div className="flex justify-start animate-fade-in">
+              <div className="flex items-end gap-2 max-w-[65%]">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0 shadow-md mb-1">
+                  <Bot className="w-4 h-4 text-white" />
+                </div>
+                <div className="relative">
+                  <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-white border border-gray-200 shadow-md">
+                    <div className="flex items-center space-x-1.5">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                     </div>
                   </div>
+                  <div className="absolute left-0 bottom-0 w-0 h-0 border-r-[8px] border-r-transparent border-b-[8px] border-b-white"></div>
                 </div>
               </div>
             </div>
@@ -187,46 +194,84 @@ const Chatbot = () => {
         </div>
 
         {/* Input Area */}
-        <div className="px-6 py-4 border-t border-slate-700">
-          <div className="flex items-end space-x-3">
+        <div className="px-4 sm:px-6 py-4 bg-white border-t border-gray-200 shadow-lg">
+          <div className="flex items-end gap-3">
             <div className="flex-1 relative">
-              <textarea
-                value={inputText}
-                onChange={(e) => {
-                  setInputText(e.target.value);
-                  // Auto resize
-                  e.target.style.height = 'auto';
-                  e.target.style.height = Math.min(e.target.scrollHeight, 128) + 'px';
-                }}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
-                className="w-full bg-slate-800 text-slate-200 placeholder-slate-500 rounded-xl px-4 py-3 pr-12 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 border border-slate-700 overflow-hidden"
-                rows={1}
-                style={{
-                  height: '48px',
-                  minHeight: '48px',
-                  maxHeight: '128px'
-                }}
-              />
+              <div className="relative bg-gray-50 rounded-2xl border-2 border-gray-200 focus-within:border-blue-500 transition-colors shadow-sm">
+                <textarea
+                  value={inputText}
+                  onChange={(e) => {
+                    setInputText(e.target.value);
+                    // Auto resize
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+                  }}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Nhập tin nhắn của bạn..."
+                  className="w-full bg-transparent text-gray-800 placeholder-gray-400 rounded-2xl px-4 py-3 pr-12 resize-none focus:outline-none overflow-hidden text-sm"
+                  rows={1}
+                  style={{
+                    height: '48px',
+                    minHeight: '48px',
+                    maxHeight: '120px'
+                  }}
+                />
+              </div>
               <button
                 onClick={handleSendMessage}
                 disabled={inputText.trim() === '' || isTyping}
-                className="absolute right-2 bottom-2 p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                className={`absolute right-2 bottom-2 p-2.5 rounded-xl transition-all duration-200 ${
+                  inputText.trim() && !isTyping
+                    ? 'bg-gradient-to-br from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-md hover:shadow-lg transform hover:scale-105'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
+                {isTyping ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5" />
+                )}
               </button>
             </div>
-            
           </div>
           {error && (
-            <div className="mt-2 text-xs text-red-400">
-              {error}
+            <div className="mt-2 text-xs text-red-500 flex items-center gap-1">
+              <span>⚠️</span>
+              <span>{error}</span>
             </div>
           )}
         </div>
       </div>
+
+      <style>{`
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out forwards;
+        }
+        /* Custom scrollbar */
+        .overflow-y-auto::-webkit-scrollbar {
+          width: 6px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 3px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}</style>
     </div>
   );
 };
