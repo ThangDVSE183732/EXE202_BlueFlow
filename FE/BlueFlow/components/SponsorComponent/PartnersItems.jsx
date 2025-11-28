@@ -260,8 +260,7 @@ function PartnersItems({ partnersItem, onMessageClick }) {
                             </div>
                         </div>
                     )}
-                    {/* <div className="mt-4 flex gap-2">
-                        {statuses.map(s => (
+                    {/* <div className="mt-4 flex gap-2">{statuses.map(s => (
                             <button
                                 key={s}
                                 className={

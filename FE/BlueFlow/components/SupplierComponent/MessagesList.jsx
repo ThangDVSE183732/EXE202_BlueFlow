@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { Edit, Search, Pin } from 'lucide-react';
+import { Edit, Search } from 'lucide-react';
 import { messageService } from '../../services/messageService';
 import signalRService from '../../services/signalRService';
 import EqualizerLoader from '../EqualizerLoader';
@@ -8,36 +8,9 @@ import EqualizerLoader from '../EqualizerLoader';
 const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [allChats, setAllChats] = useState([]);
-  const [pinnedChatIds, setPinnedChatIds] = useState(() => {
-    // Load pinned chat IDs from localStorage
-    const saved = localStorage.getItem('pinnedChats_supplier');
-    return saved ? JSON.parse(saved) : [];
-  });
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  // Save pinned chat IDs to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('pinnedChats_supplier', JSON.stringify(pinnedChatIds));
-  }, [pinnedChatIds]);
-
-  // Toggle pin/unpin chat
-  const togglePinChat = (e, chat) => {
-    e.stopPropagation(); // Prevent triggering onSelectChat
-    
-    const isPinned = pinnedChatIds.includes(chat.id);
-    
-    if (isPinned) {
-      // Unpin
-      setPinnedChatIds(pinnedChatIds.filter(id => id !== chat.id));
-      toast.success(`Đã bỏ ghim "${chat.name}"`);
-    } else {
-      // Pin
-      setPinnedChatIds([...pinnedChatIds, chat.id]);
-      toast.success(`Đã ghim "${chat.name}"`);
-    }
-  };
 
   // Load partner list chats from API
   useEffect(() => {
@@ -87,21 +60,25 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
     fetchPartnerListChat();
   }, [onPartnerListLoaded]);
 
-  // Setup SignalR for online/offline status (backend không có ReceiveMessage broadcast)
+  // Setup SignalR for conversation updates and online/offline status
   useEffect(() => {
     let isSubscribed = true;
 
     const initSignalR = async () => {
       try {
-        // Start connection if not already started
+        // Start connection if not already started (OrganizerPage might have started it already)
         if (!signalRService.isConnectionActive()) {
+          console.log('🚀 MessagesList: Initializing SignalR connection...');
           await signalRService.startConnection();
+        } else {
+          console.log('✅ MessagesList: SignalR already connected');
         }
 
-        // Listen for conversation updates
+        // Register event handlers for conversation updates in chat list
+        console.log('📝 MessagesList: Registering conversationUpdated handler...');
         signalRService.onConversationUpdated((senderId) => {
           if (!isSubscribed) return;
-          console.log('🔄 Conversation updated from:', senderId);
+          console.log('🔄 MessagesList: Conversation updated from:', senderId);
           
           // Refresh the partner list to get latest message
           messageService.getPartnerListChat().then(response => {
@@ -120,8 +97,11 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
                 unreadCount: chat.unreadCount || 0,
                 partnerRole: chat.partnerRole
               }));
+              console.log('✅ Updated chats with unread counts:', formattedChats.map(c => ({ name: c.name, unread: c.unreadCount })));
               setAllChats(formattedChats);
             }
+          }).catch(err => {
+            console.error('❌ Error refreshing partner list:', err);
           });
         });
         
@@ -161,10 +141,6 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
   const filteredAllChats = allChats.filter(chat =>
     chat.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  // Separate pinned and unpinned chats
-  const pinnedChats = filteredAllChats.filter(chat => pinnedChatIds.includes(chat.id));
-  const unpinnedChats = filteredAllChats.filter(chat => !pinnedChatIds.includes(chat.id));
 
   const handleChatClick = async (chat) => {
     // Update chat to mark as read immediately in UI (optimistic update)
@@ -209,48 +185,56 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
     }, 1000); // 1 second delay to allow backend to process
   };
 
+  // Get initials from name
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
   const renderChatItem = (chat, showNotification = true) => {
-    const isPinned = pinnedChatIds.includes(chat.id);
-    
     return (
       <div
         key={chat.id}
         onClick={() => handleChatClick(chat)}
-        className="flex items-center space-x-3 p-3 hover:bg-gray-50 cursor-pointer rounded-lg transition-colors"
+        className="flex items-center gap-3 pr-5 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
       >
         <div className="relative flex-shrink-0">
-          <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-sm font-medium text-gray-600">
-              {chat.name.charAt(0)}
+          <div className="w-11 h-11 bg-blue-500 rounded-full flex items-center justify-center">
+            <span className="text-sm font-semibold text-white">
+              {getInitials(chat.name)}
             </span>
           </div>
           {/* Online/Offline indicator */}
-          <div className={`absolute -bottom-1 -right-1 w-3 h-3 border-2 border-white rounded-full ${
+          <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 border-2 border-white rounded-full ${
             onlineUsers.has(chat.id) ? 'bg-green-500' : 'bg-gray-400'
           }`}></div>
           {/* Unread count badge */}
           {showNotification && chat.hasNotification && chat.isRead === false && (
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-              <span className="text-xs text-white font-bold">{chat.unreadCount}</span>
+            <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] bg-red-500 rounded-full flex items-center justify-center px-1">
+              <span className="text-[10px] text-white font-bold">{chat.unreadCount > 99 ? '99+' : chat.unreadCount}</span>
             </div>
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-gray-900 truncate">
+          <div className="flex items-center justify-between mb-0.5">
+            <h4 className={`text-sm font-medium truncate text-left ${
+              chat.hasNotification && !chat.isRead ? 'text-gray-900 font-semibold' : 'text-gray-900'
+            }`}>
               {chat.name}
             </h4>
-            <button
-              onClick={(e) => togglePinChat(e, chat)}
-              className={`p-1 hover:bg-gray-200 rounded transition-colors ${
-                isPinned ? 'text-blue-500' : 'text-gray-400'
-              }`}
-              title={isPinned ? 'Unpin chat' : 'Pin chat'}
-            >
-              <Pin size={14} className={isPinned ? 'fill-current' : ''} />
-            </button>
+            {chat.time && (
+              <span className="text-xs text-gray-400 flex-shrink-0 ml-2">{chat.time}</span>
+            )}
           </div>
-          <p className="text-sm text-left text-gray-500 truncate mt-1">
+          <p className={`text-sm text-left truncate ${
+            chat.hasNotification && !chat.isRead 
+              ? 'text-gray-900 font-medium' 
+              : 'text-gray-500'
+          }`}>
             {chat.message}
           </p>
         </div>
@@ -259,83 +243,41 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
   };
 
   return (
-    <div className="w-70 bg-white border-l border-gray-200 flex flex-col h-full max-h-screen  overflow-hidden">
+    <div className="w-70 bg-white flex flex-col h-full overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-gray-200 flex-shrink-0">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Messages</h2>
-          <div className="flex items-center space-x-2">
-            <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+      <div className="px-5 border-b border-gray-200 flex-shrink-0 bg-white" style={{ paddingTop: '21px', paddingBottom: '21px' }}>
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">Tin nhắn</h2>
+          <div className="flex items-center space-x-1">
+            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
               <Edit size={18} />
             </button>
-            <button className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
+            <button className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
               <Search size={18} />
             </button>
           </div>
         </div>
-
-        {/* Pinned Users - Only show if there are pinned chats */}
-        {pinnedChats.length > 0 && (
-          <div className="flex space-x-3 mb-4">
-            {pinnedChats.slice(0, 4).map((chat) => (
-              <div 
-                key={chat.id} 
-                className="relative cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={(e) => togglePinChat(e, chat)}
-                title={`Click to unpin ${chat.name}`}
-              >
-                <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-gray-600">
-                    {chat.name.charAt(0)}
-                  </span>
-                </div>
-                <div className={`absolute -bottom-1 -right-1 w-4 h-4 border-2 border-white rounded-full ${
-                  onlineUsers.has(chat.id) ? 'bg-green-500' : 'bg-gray-400'
-                }`}></div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Search */}
-      <div className="p-4 flex-shrink-0">
+      <div className="px-5 pt-4 pb-4 flex-shrink-0">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
           <input
             type="text"
-            placeholder="Search messages..."
+            placeholder="Tìm kiếm tin nhắn..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+            className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-0 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
           />
         </div>
       </div>
 
       {/* Messages List */}
-      <div className="flex-1 overflow-y-auto">
-        {/* Pinned Messages - Only show when more than 4 pinned chats */}
-        {pinnedChats.length > 4 && (
-          <div className="px-4 py-2">
-            <div className="flex items-center space-x-2 text-xs text-gray-500 mb-3">
-              <div className="w-4 h-4 rounded bg-gray-200 flex items-center justify-center">
-                <span className="text-xs">📌</span>
-              </div>
-              <span className="font-medium">Pinned Messages ({pinnedChats.length})</span>
-            </div>
-            <div className="space-y-1">
-              {pinnedChats.map(chat => renderChatItem(chat))}
-            </div>
-          </div>
-        )}
-
-        {/* All Chats Section */}
-        <div className="px-4 py-4">
+      <div className="flex-1 overflow-y-auto" style={{ scrollbarWidth: 'thin' }}>
+        <div className="pl-4 pr-5 py-3">
           <div className="flex items-center space-x-2 text-xs text-gray-500 mb-3">
-            <div className="w-4 h-4 rounded bg-gray-200 flex items-center justify-center">
-              <span className="text-xs">💬</span>
-            </div>
-            <span className="font-medium">All Chats</span>
+            <span className="font-medium text-gray-600">Tất cả cuộc trò chuyện</span>
           </div>
           
           {loading ? (
@@ -343,14 +285,36 @@ const MessagesList = ({ onSelectChat, onPartnerListLoaded }) => {
               <EqualizerLoader message="Đang tải danh sách chat..." />
             </div>
           ) : error ? (
-            <div className="text-center text-red-500 py-4">{error}</div>
-          ) : unpinnedChats.length === 0 && pinnedChats.length === 0 ? (
-            <div className="text-center text-gray-400 py-4">No chats found</div>
+            <div className="text-center text-red-500 py-4 bg-red-50 rounded-lg mx-2">{error}</div>
+          ) : filteredAllChats.length === 0 ? (
+            <div className="text-center py-8">
+              <div className="text-gray-400 text-sm mb-1">Chưa có cuộc trò chuyện nào</div>
+              <div className="text-gray-400 text-xs">Bắt đầu trò chuyện với đối tác của bạn</div>
+            </div>
           ) : (
-            unpinnedChats.map(chat => renderChatItem(chat))
+            <div className="space-y-0">
+              {filteredAllChats.map(chat => renderChatItem(chat))}
+            </div>
           )}
         </div>
       </div>
+
+      <style>{`
+        /* Custom scrollbar */
+        .overflow-y-auto::-webkit-scrollbar {
+          width: 6px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 3px;
+        }
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}</style>
     </div>
   );
 };
