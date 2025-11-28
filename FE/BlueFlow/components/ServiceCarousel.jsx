@@ -6,33 +6,33 @@ import {useState, useEffect, useRef, useCallback, useMemo } from "react";
 const servicesGroup = [
   [
     {title: "Tiệc Cưới", subtitle: "Trang trí & Tổ chức", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-wh"},
-    {title: "Sự Kiện Âm Nhạc", subtitle: "Concert & Live Show", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
-    {title: "Hội Thảo", subtitle: "Workshop & Training", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
-    {title: "Sự Kiện Thời Trang", subtitle: "Fashion Show & Launch", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
+    {title: "Sự Kiện Âm Nhạc", subtitle: "Concert & Live Show", img: "/imgs/amNhac.jpg", color: "bg-white", bgColor: "bg-white"},
+    {title: "Hội Thảo", subtitle: "Workshop & Training", img: "/imgs/hoiThao.jpg", color: "bg-white", bgColor: "bg-white"},
+    {title: "Sự Kiện Thời Trang", subtitle: "Fashion Show & Launch", img: "/imgs/thoiTrang.jpg", color: "bg-white", bgColor: "bg-white"},
   ],
   [
-    {title: "Hội Nghị", subtitle: "Conference & Summit", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-sky-200"},
-    {title: "Lễ Khai Trương", subtitle: "Grand Opening Event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-rose-200"},
-    {title: "Triển Lãm", subtitle: "Exhibition & Trade Show", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-purple-200"},
-    {title: "Sinh Nhật", subtitle: "Birthday Celebration", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-pink-200"},
+    {title: "Hội Nghị", subtitle: "Conference & Summit", img: "/imgs/hoiNghi.jpg", color: "bg-white", bgColor: "bg-sky-200"},
+    {title: "Lễ Khai Trương", subtitle: "Grand Opening Event", img: "/imgs/leKhaiTruong.jpg", color: "bg-white", bgColor: "bg-rose-200"},
+    {title: "Triển Lãm", subtitle: "Exhibition & Trade Show", img: "/imgs/trienLam.jpg", color: "bg-white", bgColor: "bg-purple-200"},
+    {title: "Sinh Nhật", subtitle: "Birthday Celebration", img: "/imgs/sinhNhat.jpg", color: "bg-white", bgColor: "bg-pink-200"},
   ],
   [
-    {title: "Team Building", subtitle: "Corporate Events", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-wh"},
-    {title: "Gala Dinner", subtitle: "Awards & Recognition", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
-    {title: "Product Launch", subtitle: "Sản Phẩm Mới", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
-    {title: "Festival", subtitle: "Lễ Hội & Văn Hóa", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-white"},
+    {title: "Team Building", subtitle: "Corporate Events", img: "/imgs/teamBuilding.jpg", color: "bg-white", bgColor: "bg-wh"},
+    {title: "Gala Dinner", subtitle: "Awards & Recognition", img: "/imgs/galaDinner.jpg", color: "bg-white", bgColor: "bg-white"},
+    {title: "Product Launch", subtitle: "Sản Phẩm Mới", img: "/imgs/productLaunch.jpg", color: "bg-white", bgColor: "bg-white"},
+    {title: "Festival", subtitle: "Lễ Hội & Văn Hóa", img: "/imgs/festival.jpg", color: "bg-white", bgColor: "bg-white"},
   ],
   [
     {title: "Tiệc Cưới", subtitle: "Trang trí & Tổ chức", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-sky-200"},
-    {title: "Sự Kiện Âm Nhạc", subtitle: "Concert & Live Show", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-rose-200"},
-    {title: "Hội Thảo", subtitle: "Workshop & Training", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-purple-200"},
-    {title: "Sự Kiện Thời Trang", subtitle: "Fashion Show & Launch", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-pink-200"},
+    {title: "Sự Kiện Âm Nhạc", subtitle: "Concert & Live Show", img: "/imgs/amNhac.jpg", color: "bg-white", bgColor: "bg-rose-200"},
+    {title: "Hội Thảo", subtitle: "Workshop & Training", img: "/imgs/hoiThao.jpg", color: "bg-white", bgColor: "bg-purple-200"},
+    {title: "Sự Kiện Thời Trang", subtitle: "Fashion Show & Launch", img: "/imgs/thoiTrang.jpg", color: "bg-white", bgColor: "bg-pink-200"},
   ],
   [
-    {title: "Hội Nghị", subtitle: "Conference & Summit", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-sky-200"},
-    {title: "Lễ Khai Trương", subtitle: "Grand Opening Event", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-rose-200"},
-    {title: "Triển Lãm", subtitle: "Exhibition & Trade Show", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-purple-200"},
-    {title: "Sinh Nhật", subtitle: "Birthday Celebration", img: "/imgs/wedding.png", color: "bg-white", bgColor: "bg-pink-200"},
+    {title: "Hội Nghị", subtitle: "Conference & Summit", img: "/imgs/hoiNghi.jpg", color: "bg-white", bgColor: "bg-sky-200"},
+    {title: "Lễ Khai Trương", subtitle: "Grand Opening Event", img: "/imgs/leKhaiTruong.jpg", color: "bg-white", bgColor: "bg-rose-200"},
+    {title: "Triển Lãm", subtitle: "Exhibition & Trade Show", img: "/imgs/trienLam.jpg", color: "bg-white", bgColor: "bg-purple-200"},
+    {title: "Sinh Nhật", subtitle: "Birthday Celebration", img: "/imgs/sinhNhat.jpg", color: "bg-white", bgColor: "bg-pink-200"},
   ]
 
 ];

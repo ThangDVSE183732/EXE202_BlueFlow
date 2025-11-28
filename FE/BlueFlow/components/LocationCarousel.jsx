@@ -21,36 +21,36 @@ const locations = [
   ],
   [
     {
-      img: "/imgs/SaiGon.png",
-      name: "Saigon South Marina Club",
-      address: "9A Tran Van Tra, Phu My Hung, Quan 7",
+      img: "/imgs/TheDeckSaigon.jpg",
+      name: "The Deck Saigon",
+      address: "38 Nguyễn Ư Dĩ, An Khánh (Thảo Điền), TP. Thủ Đức (Quận 2)",
     },
     {
-      img: "/imgs/SaiGon.png",
-      name: "Rock Kitchen & Bar",
-      address: "12D1 Nguyen Thi Minh Khai, Quan 1",
+      img: "/imgs/VillaSongSaigon.jpg",
+      name: "Villa Song Saigon",
+      address: "197/2 Nguyễn Văn Hưởng, Thảo Điền, TP. Thủ Đức (Quận 2)",
     },
     {
-      img: "/imgs/SaiGon.png",
-      name: "SWEET SOONG",
-      address: "187 Nguyen Van Huong, Thao Dien, Quan 2",
+      img: "/imgs/GEMCenter.jpg",
+      name: "GEM Center",
+      address: "08 Nguyễn Bỉnh Khiêm, Phường Đa Kao, Quận 1, TP. HCM",
     },
   ],
   [
     {
-      img: "/imgs/SaiGon.png",
-      name: "Saigon South Marina Club",
-      address: "9A Tran Van Tra, Phu My Hung, Quan 7",
+      img: "/imgs/SaigonOperaHouse.jpg",
+      name: "Saigon Opera House",
+      address: "07 Công trường Lam Sơn, Phường Bến Nghé, Quận 1, TP. HCM",
     },
     {
-      img: "/imgs/SaiGon.png",
-      name: "Rock Kitchen & Bar",
-      address: "12D1 Nguyen Thi Minh Khai, Quan 1",
+      img: "/imgs/PasteurStreetBrewing.jpg",
+      name: "Pasteur Street Brewing",
+      address: "144 (144/3) Pasteur, Phường Bến Nghé, Quận 1, TP. HCM",
     },
     {
-      img: "/imgs/SaiGon.png",
-      name: "SWEET SOONG",
-      address: "187 Nguyen Van Huong, Thao Dien, Quan 2",
+      img: "/imgs/SaigonSkydeck.jpg",
+      name: "Saigon Skydeck",
+      address: " Bitexco Financial Tower, Quận 1, TP. HCM",
     },
   ]
 ];
