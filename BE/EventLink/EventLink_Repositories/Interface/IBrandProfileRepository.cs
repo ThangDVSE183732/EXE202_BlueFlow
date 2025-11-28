@@ -10,5 +10,6 @@ namespace EventLink_Repositories.Interface
     public interface IBrandProfileRepository : IGenericRepository<BrandProfile>
     {
         Task<BrandProfile> GetByUserIdAsync(Guid userId);
+        Task<List<BrandProfile>> GetAllBrandProfilesAsync();
     }
 }

@@ -24,6 +24,7 @@ namespace EventLink_Repositories.Repository
                 .Where(s => (string.IsNullOrEmpty(category) || s.ServiceCategory.Contains(category)) &&
                             (!minPrice.HasValue || s.MinPrice >= minPrice.Value) &&
                             (!maxPrice.HasValue || s.MaxPrice <= maxPrice.Value))
+                .Include(Event => Event.Supplier)
                 .ToListAsync();
         }
 
