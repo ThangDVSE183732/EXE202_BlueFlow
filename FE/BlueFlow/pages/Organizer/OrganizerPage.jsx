@@ -2,7 +2,7 @@ import Footer from '../../components/Footer';
 import EventManagement from '../../components/OrganizerComponent/EventManagement';
 import PageNav from '../../components/PageNav';
 import styles from './Organizer.module.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import SegmentedControl from '../../components/OrganizerComponent/SegmentedControl';
 import SideBar from '../../components/OrganizerComponent/SideBar';
@@ -191,15 +191,30 @@ function OrganizerPage() {
     }, [subChange]);
 
     // Fetch partnerships when discovery tab is active
-    useEffect(() => {
-        const fetchPartnerships = async () => {
-            if (active === 'discovery') {
-                setLoadingPartners(true);
-                try {
-                    const response = await partnershipService.getAllPartnerships();
-                    if (response.success && response.data) {
-                        // Transform API data to match PartnersItems format
-                        const transformedData = response.data.map(partnership => {
+    const fetchPartnerships = useCallback(async () => {
+        if (active === 'discovery') {
+            setLoadingPartners(true);
+            try {
+                const response = await partnershipService.getAllPartnerships();
+                if (response.success && response.data) {
+                        // 1) Filter raw response: only show Sponsor brandProfiles when public
+                        const filteredRaw = response.data.filter(p => {
+                            if (p.partnerType === 'Sponsor') {
+                                return p.partner?.brandProfile?.isPublic === true;
+                            }
+                            return true;
+                        });
+
+                        // 2) Deduplicate by partnerId + partnerType
+                        const uniqueMap = new Map();
+                        filteredRaw.forEach(p => {
+                            const key = `${p.partnerId}-${p.partnerType}`;
+                            if (!uniqueMap.has(key)) uniqueMap.set(key, p);
+                        });
+                        const uniqueList = Array.from(uniqueMap.values());
+
+                        // 3) Transform uniqueList into UI format
+                        const transformedData = uniqueList.map(partnership => {
                             // Kiểm tra partnerType để lấy data từ đúng nguồn
                             const isFromSponsor = partnership.partnerType === 'Sponsor';
                             
@@ -230,7 +245,7 @@ function OrganizerPage() {
                                             const messages = partnership.initialMessage.split(';').map(s => s.trim()).filter(s => s);
                                             points.push(...messages);
                                         }
-                                        return points.length > 0 ? points : ['No information available'];
+                                        return points.length > 0 ? points : ['Chưa có thông tin'];
                                     })(),
                                     eventHighlights: [],
                                     targetAudienceList: [],
@@ -270,18 +285,29 @@ function OrganizerPage() {
                         });
                         console.log('✨ Transformed data:', transformedData);
                         setPartnersData(transformedData);
-                    }
-                } catch (error) {
-                    console.error('Error fetching partnerships:', error);
-                    toast.error('Không thể tải danh sách partnerships');
-                } finally {
-                    setLoadingPartners(false);
                 }
+            } catch (error) {
+                console.error('Error fetching partnerships:', error);
+                toast.error('Không thể tải danh sách partnerships');
+            } finally {
+                setLoadingPartners(false);
+            }
+        }
+    }, [active]);
+
+    useEffect(() => {
+        // initial and active changes
+        fetchPartnerships();
+
+        const onProfileUpdated = () => {
+            if (active === 'discovery') {
+                fetchPartnerships();
             }
         };
 
-        fetchPartnerships();
-    }, [active]);
+        window.addEventListener('brandProfile:updated', onProfileUpdated);
+        return () => window.removeEventListener('brandProfile:updated', onProfileUpdated);
+    }, [fetchPartnerships, active]);
 
 
 
@@ -327,8 +353,8 @@ function OrganizerPage() {
       case "ai":
         return <Chatbot />;
     case "profile":
-         if(subChange === 'brand') {
-            return <BrandProfile />;
+            if(subChange === 'brand') {
+                return <BrandProfile shouldFetch={active === 'profile' && subChange === 'brand'} />;
         }else if(subChange === 'account') {
             return <AccountSetting />;
         }else if(subChange === 'marketing') {

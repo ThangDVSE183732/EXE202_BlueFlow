@@ -7,7 +7,7 @@ import { usePartnership } from '../../hooks/usePartnership';
 import partnershipService from '../../services/partnershipService';
 import Loading from '../Loading';
 
-const BrandProfile = () => {
+const BrandProfile = ({ shouldFetch = true }) => {
   const showToast = useCallback((options) => {
     if (options.type === 'success') {
       toast.success(options.message, { duration: options.duration || 3000 });
@@ -16,7 +16,7 @@ const BrandProfile = () => {
     }
   }, []);
 
-  const { brandData, setBrandData, loading, error, brandProfileId, updateBrandProfile, toggleBrandProfileStatus, toggleBrandProfileAllStatus } = useBrandProfile(showToast);
+  const { brandData, setBrandData, loading, error, brandProfileId, updateBrandProfile, toggleBrandProfileStatus, toggleBrandProfileAllStatus } = useBrandProfile(showToast, shouldFetch);
   const { updatePartnershipStatusByPartner } = usePartnership();
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
@@ -68,7 +68,7 @@ const BrandProfile = () => {
     
     // Check if brandProfileId exists
     if (!brandProfileId) {
-      toast.error('Brand profile ID not found. Please try again.');
+      toast.error('Không tìm thấy ID hồ sơ thương hiệu. Vui lòng thử lại.');
       return;
     }
 
@@ -80,20 +80,20 @@ const BrandProfile = () => {
           const toggleResult = await toggleBrandProfileStatus();
           
           if (!toggleResult.success) {
-            toast.error('Failed to change profile status');
+            toast.error('Không thể thay đổi trạng thái hồ sơ');
             return;
           }
 
           const partnershipResult = await updatePartnershipStatusByPartner(user.id);
           
           if (partnershipResult.success) {
-            toast.success('Profile and partnership status updated to Public');
+            toast.success('Hồ sơ và partnership đã chuyển sang công khai');
             // Cập nhật cả brandData và editedData
             const updatedData = { isPublic: true };
             setBrandData(prev => ({ ...prev, ...updatedData }));
             setEditedData(prev => ({ ...prev, ...updatedData }));
           } else {
-            toast.error('Profile updated but failed to update partnership');
+            toast.error('Hồ sơ đã được cập nhật nhưng cập nhật partnership thất bại');
             // Vẫn cập nhật isPublic vì toggleBrandProfileStatus đã thành công
             const updatedData = { isPublic: true };
             setBrandData(prev => ({ ...prev, ...updatedData }));
@@ -130,14 +130,14 @@ const BrandProfile = () => {
               // 2. Toggle all status (brand profile + partnership)
               const toggleResult = await toggleBrandProfileAllStatus();
               
-              if (toggleResult.success) {
-                toast.success('Partnership created and profile set to Public!');
+                if (toggleResult.success) {
+                toast.success('Đã tạo partnership và đặt hồ sơ thành công khai!');
                 // Cập nhật cả brandData và editedData với isPublic và hasPartnership
                 const updatedData = { isPublic: true, hasPartnership: true };
                 setBrandData(prev => ({ ...prev, ...updatedData }));
                 setEditedData(prev => ({ ...prev, ...updatedData }));
-              } else {
-                toast.error('Partnership created but failed to update profile status');
+                } else {
+                toast.error('Đã tạo partnership nhưng không thể cập nhật trạng thái hồ sơ');
                 // Vẫn cập nhật hasPartnership vì partnership đã tạo thành công
                 const updatedData = { hasPartnership: true };
                 setBrandData(prev => ({ ...prev, ...updatedData }));
@@ -146,7 +146,7 @@ const BrandProfile = () => {
             }
           } catch (partnershipError) {
             console.error('Partnership creation error:', partnershipError);
-            toast.error('Failed to create partnership');
+            toast.error('Không thể tạo partnership');
           }
         }
       } 
@@ -157,20 +157,20 @@ const BrandProfile = () => {
           const toggleResult = await toggleBrandProfileStatus();
           
           if (!toggleResult.success) {
-            toast.error('Failed to change profile status');
+            toast.error('Không thể thay đổi trạng thái hồ sơ');
             return;
           }
 
           const partnershipResult = await updatePartnershipStatusByPartner(user.id);
           
           if (partnershipResult.success) {
-            toast.success('Profile and partnership status updated to Private');
+            toast.success('Hồ sơ và partnership đã chuyển sang riêng tư');
             // Cập nhật cả brandData và editedData
             const updatedData = { isPublic: false };
             setBrandData(prev => ({ ...prev, ...updatedData }));
             setEditedData(prev => ({ ...prev, ...updatedData }));
           } else {
-            toast.error('Profile updated but failed to update partnership');
+            toast.error('Hồ sơ đã được cập nhật nhưng cập nhật partnership thất bại');
             // Vẫn cập nhật isPublic vì toggleBrandProfileStatus đã thành công
             const updatedData = { isPublic: false };
             setBrandData(prev => ({ ...prev, ...updatedData }));
@@ -181,19 +181,19 @@ const BrandProfile = () => {
           const toggleResult = await toggleBrandProfileStatus();
           
           if (toggleResult.success) {
-            toast.success('Profile set to Private');
+            toast.success('Hồ sơ đã được đặt thành riêng tư');
             // Cập nhật cả brandData và editedData
             const updatedData = { isPublic: false };
             setBrandData(prev => ({ ...prev, ...updatedData }));
             setEditedData(prev => ({ ...prev, ...updatedData }));
           } else {
-            toast.error('Failed to change profile status');
+            toast.error('Không thể thay đổi trạng thái hồ sơ');
           }
         }
       }
     } catch (error) {
       console.error('Error changing public/private status:', error);
-      toast.error(error.message || 'Failed to update profile status');
+      toast.error(error.message || 'Không thể cập nhật trạng thái hồ sơ');
     }
   };
 
@@ -208,9 +208,9 @@ const BrandProfile = () => {
       
       // Hiển thị lỗi chi tiết từ backend
       if (error.errorMessages && error.errorMessages.length > 0) {
-        alert(`Failed to save:\n\n${error.errorMessages.join('\n')}`);
+        alert(`Lưu thất bại:\n\n${error.errorMessages.join('\n')}`);
       } else {
-        alert('Failed to save changes. Please try again.');
+        alert('Lưu không thành công. Vui lòng thử lại.');
       }
     }
   };

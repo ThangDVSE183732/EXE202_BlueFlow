@@ -545,7 +545,6 @@ CRITICAL:
             return User.FindFirst("Role")?.Value;
         }
 
-        // New endpoint for system questions
         [HttpPost("ask")]
         public async Task<IActionResult> AskQuestion([FromBody] QuestionRequest request)
         {
