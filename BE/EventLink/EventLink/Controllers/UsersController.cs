@@ -51,5 +51,42 @@ namespace EventLink.Controllers
                 count = users.Count
             });
         }
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            try
+            {
+                var users = await _userService.GetAllUsersAsync();
+                
+                var userList = users.Select(u => new
+                {
+                    userId = u.Id,
+                    u.FullName,
+                    u.Email,
+                    u.PhoneNumber,
+                    u.Role,
+                    u.CreatedAt,
+                    u.IsActive
+                }).ToList();
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Users retrieved successfully",
+                    data = userList,
+                    count = userList.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Error retrieving users",
+                    error = ex.Message
+                });
+            }
+        }
     }
 }

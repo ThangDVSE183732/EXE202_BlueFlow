@@ -25,5 +25,7 @@ namespace Eventlink_Services.Response
         public bool EmailVerified { get; set; }
         public DateTime? CreatedAt { get; set; }
         public DateTime? LastLoginAt { get; set; }
+        public bool? IsPremium { get; set; }
+        public DateTime? PremiumExpiryDate { get; set; }
     }
 }

@@ -360,7 +360,9 @@ namespace EventLink_Services.Services.Implementations
                 AvatarUrl = user.AvatarUrl,
                 EmailVerified = user.EmailVerified ?? false, // Handle nullable bool
                 CreatedAt = user.CreatedAt,
-                LastLoginAt = user.LastLoginAt
+                LastLoginAt = user.LastLoginAt,
+                IsPremium = user.IsPremium,
+                PremiumExpiryDate = user.PremiumExpiryDate
             };
         }
 

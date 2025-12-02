@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { FunnelIcon, MagnifyingGlassIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { chatbotService } from '../../services/chatbotService';
+import { useAuth } from '../../contexts/AuthContext';
 
 function useOutside(ref, onClose, enabled) {
   useEffect(() => {
@@ -51,6 +52,7 @@ const Stars = ({ value }) => {
 };
 
 export default function PartnerFilters({ data, onFilter }) {
+  const { isPremium } = useAuth();
   const [open, setOpen] = useState(null);
   const [isAiMatching, setIsAiMatching] = useState(false);
   const [aiMatchIds, setAiMatchIds] = useState([]);
@@ -169,23 +171,25 @@ export default function PartnerFilters({ data, onFilter }) {
         <span className="text-sm font-medium text-sky-600">Filter</span>
       </div>
 
-      {/* AI Match Button */}
-      <button
-        onClick={handleAiMatch}
-        disabled={isAiMatching}
-        className={`relative px-4 h-10 rounded-xl border text-sm font-medium flex items-center gap-2
-          ${aiMatchIds.length > 0 
-            ? 'border-purple-500 bg-purple-50 text-purple-600' 
-            : 'border-purple-300 hover:border-purple-400 text-gray-700 bg-white'}
-          transition ${isAiMatching ? 'opacity-50 cursor-not-allowed' : ''}`}
-      >
-        <SparklesIcon className="w-4 h-4" />
-        {isAiMatching 
-          ? 'Đang tìm...' 
-          : aiMatchIds.length > 0 
-            ? `AI Match (${aiMatchIds.length})` 
-            : 'AI Match'}
-      </button>
+      {/* AI Match Button - Only show for Premium users */}
+      {isPremium && (
+        <button
+          onClick={handleAiMatch}
+          disabled={isAiMatching}
+          className={`relative px-4 h-10 rounded-xl border text-sm font-medium flex items-center gap-2
+            ${aiMatchIds.length > 0 
+              ? 'border-purple-500 bg-purple-50 text-purple-600' 
+              : 'border-purple-300 hover:border-purple-400 text-gray-700 bg-white'}
+            transition ${isAiMatching ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <SparklesIcon className="w-4 h-4" />
+          {isAiMatching 
+            ? 'Đang tìm...' 
+            : aiMatchIds.length > 0 
+              ? `AI Match (${aiMatchIds.length})` 
+              : 'AI Match'}
+        </button>
+      )}
 
       {/* Supplier */}
       <div className="relative" ref={rootRefs.supplier}>

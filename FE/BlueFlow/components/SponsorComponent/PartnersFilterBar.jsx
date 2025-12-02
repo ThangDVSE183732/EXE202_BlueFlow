@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { FunnelIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { FunnelIcon, MagnifyingGlassIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { chatbotService } from '../../services/chatbotService';
+import { useAuth } from '../../contexts/AuthContext';
 
 function useOutside(ref, onClose, enabled) {
   useEffect(() => {
@@ -50,7 +52,10 @@ const Stars = ({ value }) => {
 };
 
 export default function PartnerFilters({ data, onFilter }) {
+  const { isPremium } = useAuth();
   const [open, setOpen] = useState(null);
+  const [isAiMatching, setIsAiMatching] = useState(false);
+  const [aiMatchIds, setAiMatchIds] = useState([]);
 
   const [supplierType, setSupplierType] = useState('All');                // Supplier | Sponsor | All
   const [service, setService] = useState('All');                          // Equipment | Decoration | Media | Financial sponsor | All
@@ -84,11 +89,48 @@ export default function PartnerFilters({ data, onFilter }) {
     ? allRegions.filter(r => r.toLowerCase().includes(regionQuery.toLowerCase()))
     : allRegions;
 
+  // Handle AI Match
+  const handleAiMatch = async () => {
+    // Nếu đã có AI match, reset để xem tất cả
+    if (aiMatchIds.length > 0) {
+      setAiMatchIds([]);
+      return;
+    }
+
+    setIsAiMatching(true);
+    try {
+      const response = await chatbotService.matchPartnerships();
+      
+      if (response.success && response.partnershipIds) {
+        const ids = response.partnershipIds;
+        console.log('AI matched partnership IDs:', ids);
+        
+        // Filter data by matched partnership IDs
+        setAiMatchIds(ids);
+      } else {
+        console.error('AI Match response:', response);
+      }
+    } catch (error) {
+      console.error('AI Match failed:', error);
+    } finally {
+      setIsAiMatching(false);
+    }
+  };
+
   const lastResultRef = useRef([]);
 
   // Apply filters - BỎ onFilter khỏi dependency
   useEffect(() => {
     const res = data.filter(item => {
+      // Extract partnership ID from item
+      const itemId = item.id || item.partnershipId;
+      
+      // Filter by AI matched partnerships (nếu có)
+      if (aiMatchIds.length > 0) {
+        // Chỉ show những partnerships được AI match
+        if (!aiMatchIds.includes(itemId)) return false;
+      }
+
       if (supplierType !== 'All' && item.type !== supplierType) return false;
       if (service !== 'All' && item.service !== service) return false;
       if (region !== 'All' && item.region !== region) return false;
@@ -102,7 +144,7 @@ export default function PartnerFilters({ data, onFilter }) {
       lastResultRef.current = res;
       onFilter(res);
     }
-  }, [data, supplierType, service, region, minRating]); // BỎ onFilter
+  }, [data, supplierType, service, region, minRating, aiMatchIds, onFilter]);
 
   return (
     <div className="flex  flex-wrap items-start gap-3 mb-6">
@@ -110,6 +152,26 @@ export default function PartnerFilters({ data, onFilter }) {
         <FunnelIcon className="w-5 h-5 text-sky-500" />
         <span className="text-sm font-medium text-sky-600">Filter</span>
       </div>
+
+      {/* AI Match Button - Only show for Premium users */}
+      {isPremium && (
+        <button
+          onClick={handleAiMatch}
+          disabled={isAiMatching}
+          className={`relative px-4 h-10 rounded-xl border text-sm font-medium flex items-center gap-2
+            ${aiMatchIds.length > 0 
+              ? 'border-purple-500 bg-purple-50 text-purple-600' 
+              : 'border-purple-300 hover:border-purple-400 text-gray-700 bg-white'}
+            transition ${isAiMatching ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <SparklesIcon className="w-4 h-4" />
+          {isAiMatching 
+            ? 'Đang tìm...' 
+            : aiMatchIds.length > 0 
+              ? `AI Match (${aiMatchIds.length})` 
+              : 'AI Match'}
+        </button>
+      )}
 
       {/* Supplier */}
       <div className="relative" ref={rootRefs.supplier}>

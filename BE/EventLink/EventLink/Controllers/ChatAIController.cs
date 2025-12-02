@@ -565,7 +565,7 @@ CRITICAL:
 
 
         /// <summary>
-        /// Get ALL Sponsor Partnerships (không lấy BrandProfile)
+        /// Get TOP 5 Sponsor Partnerships có budget cao nhất (không lấy BrandProfile)
         /// </summary>
         private async Task<List<object>> GetSponsorPartnershipsDataAsync()
         {
@@ -573,6 +573,8 @@ CRITICAL:
             var allPartnerships = await _partnershipService.GetAllPartnershipsAsync();
             var sponsorPartnerships = allPartnerships
                 .Where(p => p.PartnerType == "Sponsor" && p.Status == "Ongoing")
+                .OrderByDescending(p => p.ProposedBudget ?? 0)
+                .Take(5)
                 .ToList();
 
             // Chỉ trả về Partnership data, không lấy BrandProfile
@@ -594,7 +596,7 @@ CRITICAL:
         }
 
         /// <summary>
-        /// Get ALL Organizer Partnerships (không lấy Event)
+        /// Get TOP 5 Organizer Partnerships có budget cao nhất (không lấy Event)
         /// </summary>
         private async Task<List<object>> GetOrganizerPartnershipsDataAsync()
         {
@@ -602,6 +604,8 @@ CRITICAL:
             var allPartnerships = await _partnershipService.GetAllPartnershipsAsync();
             var organizerPartnerships = allPartnerships
                 .Where(p => p.PartnerType == "Organizer" && p.Status == "Ongoing")
+                .OrderByDescending(p => p.ProposedBudget ?? 0)
+                .Take(5)
                 .ToList();
 
             // Chỉ trả về Partnership data, không lấy Event
