@@ -221,8 +221,9 @@ const RevenueReport = () => {
               <table className="w-full text-[10px]">
                 <thead className="sticky top-0 bg-white border-b border-gray-200">
                   <tr>
-                    <th className="text-left py-1 px-1.5 font-semibold text-gray-600">Date</th>
-                    <th className="text-left py-1 px-1.5 font-semibold text-gray-600">Customer</th>
+                    <th className="text-center py-1 px-1.5 font-semibold text-gray-600">Date</th>
+                    <th className="text-center py-1 px-1.5 font-semibold text-gray-600">Customer</th>
+                    <th className="text-center py-1 px-1.5 font-semibold text-gray-600">Email</th>
                     <th className="text-right py-1 px-1.5 font-semibold text-gray-600">Amount</th>
                     <th className="text-center py-1 px-1.5 font-semibold text-gray-600">Status</th>
                   </tr>
@@ -236,6 +237,12 @@ const RevenueReport = () => {
                         title={transaction.customer}
                       >
                         {transaction.customer}
+                      </td>
+                      <td
+                        className="py-1 px-1.5 text-gray-600 truncate max-w-[150px]"
+                        title={transaction.email}
+                      >
+                        {transaction.email}
                       </td>
                       <td className="py-1 px-1.5 text-gray-900 font-semibold text-right">
                         {formatCurrency(transaction.amount)}

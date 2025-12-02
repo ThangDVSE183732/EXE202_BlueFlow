@@ -36,6 +36,7 @@ namespace Eventlink_Services.Response
         public Guid Id { get; set; }
         public DateTime Date { get; set; }
         public string Customer { get; set; }
+        public string Email { get; set; }
         public decimal Amount { get; set; }
         public string Status { get; set; }
         public string PaymentType { get; set; }

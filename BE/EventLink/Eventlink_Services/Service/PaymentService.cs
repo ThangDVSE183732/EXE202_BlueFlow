@@ -689,6 +689,7 @@ namespace Eventlink_Services.Service
                         Id = p.Id,
                         Date = p.PaymentDate ?? p.CreatedAt ?? DateTime.UtcNow,
                         Customer = p.User?.FullName ?? p.User?.Email ?? "Unknown",
+                        Email = p.User?.Email ?? "N/A",
                         Amount = p.Amount,
                         Status = p.Status,
                         PaymentType = p.PaymentType ?? "Other"
