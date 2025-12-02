@@ -42,10 +42,11 @@ namespace Eventlink_Services.Service
 Nhiệm vụ của bạn:
 1. PHÂN TÍCH data được cung cấp (CHỈ dùng data trong JSON, không tạo thêm)
 2. TÍNH ĐIỂM MATCH cho mỗi partnership dựa trên scoring logic (chỉ dùng data có sẵn)
-3. CHỌN matches tốt nhất (score >= 40) - số lượng tùy thuộc vào data:
-   - Nếu có ít data (< 5 matches >= 40): show tất cả
-   - Nếu có nhiều data (> 10 matches >= 40): show TOP 5-10
-   - Nếu có rất nhiều data (> 20 matches >= 40): show TOP 10-15
+3. CHỌN TOP 5 matches tốt nhất:
+   - CHỈ show TỐI ĐA 5 partnerships phù hợp nhất
+   - Chỉ chọn partnerships có score >= 40
+   - Sắp xếp theo điểm cao nhất (descending)
+   - Nếu có ít hơn 5 matches >= 40: show tất cả những cái đạt yêu cầu
 4. FORMAT response tiếng Việt theo format được chỉ định (chỉ dùng data thực tế)
 
 ## Matching Scoring Logic

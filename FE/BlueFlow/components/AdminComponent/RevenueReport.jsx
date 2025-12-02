@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, Users, ShoppingBag, Activity, Calendar, Download, Filter, ArrowUpRight, MoreVertical, RefreshCw } from 'lucide-react';
 import paymentService from '../../services/paymentService';
+import { authService } from '../../services/userService';
 
 const RevenueReport = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [revenueData, setRevenueData] = useState(null);
+  const [usersData, setUsersData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -22,6 +24,8 @@ const RevenueReport = () => {
     try {
       setLoading(true);
       setError(null);
+      
+      // Fetch revenue data
       const response = await paymentService.getRevenueReport(selectedYear);
       
       if (response.success) {
@@ -38,8 +42,14 @@ const RevenueReport = () => {
       } else {
         setError(response.message || 'Failed to fetch revenue data');
       }
+
+      // Fetch users data
+      const usersResponse = await authService.getAllUsers();
+      if (usersResponse.success) {
+        setUsersData(usersResponse.data);
+      }
     } catch (err) {
-      console.error('Error fetching revenue report:', err);
+      console.error('Error fetching data:', err);
       setError(err.message || 'An error occurred while fetching data');
     } finally {
       setLoading(false);
@@ -322,6 +332,80 @@ const RevenueReport = () => {
                 ))}
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* All Users Table */}
+        <div className="bg-white rounded-md shadow-sm border border-gray-200 p-2 flex flex-col max-h-[200px]">
+          <div className="flex items-center justify-between mb-1.5 flex-shrink-0">
+            <h2 className="text-xs font-bold text-gray-900">All Users</h2>
+            <span className="text-[9px] text-gray-500">
+              {usersData.length} total users
+            </span>
+          </div>
+          <div className="overflow-auto flex-1">
+            <table className="w-full text-[10px]">
+              <thead className="sticky top-0 bg-white border-b border-gray-200">
+                <tr>
+                  <th className="text-left py-1 px-1.5 font-semibold text-gray-600">Full Name</th>
+                  <th className="text-left py-1 px-1.5 font-semibold text-gray-600">Email</th>
+                  <th className="text-center py-1 px-1.5 font-semibold text-gray-600">Phone</th>
+                  <th className="text-center py-1 px-1.5 font-semibold text-gray-600">Role</th>
+                  <th className="text-center py-1 px-1.5 font-semibold text-gray-600">Joined Date</th>
+                  <th className="text-center py-1 px-1.5 font-semibold text-gray-600">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {usersData.map((user) => (
+                  <tr key={user.userId} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                    <td
+                      className="py-1 px-1.5 text-gray-900 font-medium truncate max-w-[150px]"
+                      title={user.fullName}
+                    >
+                      {user.fullName}
+                    </td>
+                    <td
+                      className="py-1 px-1.5 text-gray-600 truncate max-w-[180px]"
+                      title={user.email}
+                    >
+                      {user.email}
+                    </td>
+                    <td className="py-1 px-1.5 text-gray-700 text-center">
+                      {user.phoneNumber || 'N/A'}
+                    </td>
+                    <td className="py-1 px-1.5 text-center">
+                      <span
+                        className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${
+                          user.role === 'Admin'
+                            ? 'bg-red-50 text-red-700'
+                            : user.role === 'Organizer'
+                            ? 'bg-blue-50 text-blue-700'
+                            : user.role === 'Sponsor'
+                            ? 'bg-purple-50 text-purple-700'
+                            : 'bg-green-50 text-green-700'
+                        }`}
+                      >
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="py-1 px-1.5 text-gray-700 text-center">
+                      {formatDate(user.createdAt)}
+                    </td>
+                    <td className="py-1 px-1.5 text-center">
+                      <span
+                        className={`inline-flex items-center px-1 py-0.5 rounded-full text-[9px] font-semibold ${
+                          user.isActive
+                            ? 'bg-green-50 text-green-700'
+                            : 'bg-gray-50 text-gray-700'
+                        }`}
+                      >
+                        {user.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

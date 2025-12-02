@@ -112,5 +112,15 @@ export const authService = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
+  },
+
+  // Lấy tất cả users (Admin only)
+  getAllUsers: async () => {
+    try {
+      const response = await api.get('/Users/all');
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
   }
 };

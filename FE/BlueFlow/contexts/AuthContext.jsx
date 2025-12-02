@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }) => {
     const login = (userData) => {
         console.log('Login called with userData:', userData);
         console.log('User role:', userData?.role);
+        console.log('User isPremium:', userData?.isPremium);
         console.log('Full user object:', JSON.stringify(userData, null, 2));
         setUser(userData);
         setIsAuthenticated(true);
@@ -61,7 +62,8 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         updateUser,
-        userRole: user?.role
+        userRole: user?.role,
+        isPremium: user?.isPremium || false
     };
 
     return (
