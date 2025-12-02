@@ -658,7 +658,11 @@ namespace Eventlink_Services.Service
                 for (int month = 1; month <= 12; month++)
                 {
                     var monthPayments = completedPayments
-                        .Where(p => p.PaymentDate.HasValue && p.PaymentDate.Value.Month == month)
+                        .Where(p =>
+                        {
+                            var paymentDate = p.PaymentDate ?? p.CreatedAt;
+                            return paymentDate.HasValue && paymentDate.Value.Month == month;
+                        })
                         .ToList();
 
                     monthlyData.Add(new MonthlyRevenueData
@@ -687,7 +691,7 @@ namespace Eventlink_Services.Service
                     .Select(p => new RecentTransactionData
                     {
                         Id = p.Id,
-                        Date = p.PaymentDate ?? p.CreatedAt ?? DateTime.UtcNow,
+                        Date = p.CreatedAt ?? DateTime.UtcNow,
                         Customer = p.User?.FullName ?? p.User?.Email ?? "Unknown",
                         Email = p.User?.Email ?? "N/A",
                         Amount = p.Amount,
