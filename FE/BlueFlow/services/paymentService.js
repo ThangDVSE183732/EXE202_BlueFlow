@@ -99,6 +99,18 @@ const paymentService = {
       throw error.response?.data || error.message;
     }
   },
+
+  // GET /api/Payment/revenue-report
+  // Lấy báo cáo doanh thu (Admin only)
+  getRevenueReport: async (year) => {
+    try {
+      const params = year ? { year } : {};
+      const response = await apiClient.get('/Payment/revenue-report', { params });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 export default paymentService;

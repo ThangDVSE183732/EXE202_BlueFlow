@@ -107,5 +107,37 @@ namespace EventLink_Repositories.Repository
                 await _context.SaveChangesAsync();
             }
         }
+
+        public async Task<List<Payment>> GetAllPaymentsAsync()
+        {
+            return await _context.Payments
+                .Include(p => p.User)
+                .Include(p => p.Subscription)
+                    .ThenInclude(s => s.Plan)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<List<Payment>> GetPaymentsByDateRangeAsync(DateTime startDate, DateTime endDate)
+        {
+            return await _context.Payments
+                .Include(p => p.User)
+                .Include(p => p.Subscription)
+                    .ThenInclude(s => s.Plan)
+                .Where(p => p.CreatedAt >= startDate && p.CreatedAt <= endDate)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<List<Payment>> GetCompletedPaymentsAsync()
+        {
+            return await _context.Payments
+                .Include(p => p.User)
+                .Include(p => p.Subscription)
+                    .ThenInclude(s => s.Plan)
+                .Where(p => p.Status == "Completed")
+                .OrderByDescending(p => p.PaymentDate)
+                .ToListAsync();
+        }
     }
 }

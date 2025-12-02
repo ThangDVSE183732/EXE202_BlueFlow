@@ -45,5 +45,10 @@ namespace Eventlink_Services.Interface
         /// Get payment details
         /// </summary>
         Task<PaymentDetailsDto> GetPaymentDetailsAsync(Guid paymentId);
+
+        /// <summary>
+        /// Get revenue report for admin dashboard
+        /// </summary>
+        Task<RevenueReportResponse> GetRevenueReportAsync(int? year = null);
     }
 }

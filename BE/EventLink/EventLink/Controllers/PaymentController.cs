@@ -392,5 +392,31 @@ namespace EventLink.Controllers
                 return StatusCode(500, new { success = false, message = "Internal server error" });
             }
         }
+
+        /// <summary>
+        /// GET: api/Payment/revenue-report
+        /// Get revenue report for admin dashboard
+        /// </summary>
+        [HttpGet("revenue-report")]
+        [Authorize(Roles = "Admin")] // Only admin can access
+        public async Task<IActionResult> GetRevenueReport([FromQuery] int? year)
+        {
+            try
+            {
+                var report = await _paymentService.GetRevenueReportAsync(year);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Revenue report retrieved successfully",
+                    data = report
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving revenue report");
+                return StatusCode(500, new { success = false, message = "Internal server error", error = ex.Message });
+            }
+        }
     }
 }
