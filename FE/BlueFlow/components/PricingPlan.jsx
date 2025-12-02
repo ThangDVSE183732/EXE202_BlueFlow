@@ -68,7 +68,7 @@ const PricingPlan = () => {
     },
     {
       name: 'Hàng Tháng',
-      price: '50.000',
+      price: '40.000',
       currency: '₫',
       period: 'mỗi tháng',
       subPeriod: 'thanh toán hàng tháng',
