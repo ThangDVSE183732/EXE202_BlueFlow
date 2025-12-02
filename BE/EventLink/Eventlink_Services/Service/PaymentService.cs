@@ -623,5 +623,95 @@ namespace Eventlink_Services.Service
                 };
             }
         }
+
+        public async Task<RevenueReportResponse> GetRevenueReportAsync(int? year = null)
+        {
+            try
+            {
+                var targetYear = year ?? DateTime.UtcNow.Year;
+                var startDate = new DateTime(targetYear, 1, 1);
+                var endDate = new DateTime(targetYear, 12, 31, 23, 59, 59);
+
+                // Get all completed payments for the year
+                var payments = await _paymentRepo.GetPaymentsByDateRangeAsync(startDate, endDate);
+                var completedPayments = payments.Where(p => p.Status == "Completed").ToList();
+
+                // Calculate total revenue
+                var totalRevenue = completedPayments.Sum(p => p.Amount);
+                var totalTransactions = completedPayments.Count;
+                var averageOrder = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
+
+                // Calculate growth (compare with previous year)
+                var previousYearStart = new DateTime(targetYear - 1, 1, 1);
+                var previousYearEnd = new DateTime(targetYear - 1, 12, 31, 23, 59, 59);
+                var previousYearPayments = await _paymentRepo.GetPaymentsByDateRangeAsync(previousYearStart, previousYearEnd);
+                var previousYearRevenue = previousYearPayments.Where(p => p.Status == "Completed").Sum(p => p.Amount);
+                
+                decimal growth = 0;
+                if (previousYearRevenue > 0)
+                {
+                    growth = ((totalRevenue - previousYearRevenue) / previousYearRevenue) * 100;
+                }
+
+                // Monthly data
+                var monthlyData = new List<MonthlyRevenueData>();
+                for (int month = 1; month <= 12; month++)
+                {
+                    var monthPayments = completedPayments
+                        .Where(p => p.PaymentDate.HasValue && p.PaymentDate.Value.Month == month)
+                        .ToList();
+
+                    monthlyData.Add(new MonthlyRevenueData
+                    {
+                        Month = new DateTime(targetYear, month, 1).ToString("MMM"),
+                        Revenue = monthPayments.Sum(p => p.Amount),
+                        Transactions = monthPayments.Count
+                    });
+                }
+
+                // Revenue sources by payment type
+                var revenueSources = completedPayments
+                    .GroupBy(p => p.PaymentType ?? "Other Services")
+                    .Select(g => new RevenueSourceData
+                    {
+                        Source = g.Key,
+                        Revenue = g.Sum(p => p.Amount),
+                        Percentage = totalRevenue > 0 ? (g.Sum(p => p.Amount) / totalRevenue) * 100 : 0
+                    })
+                    .OrderByDescending(r => r.Revenue)
+                    .ToList();
+
+                // Recent transactions (all completed transactions in the year)
+                var recentTransactions = completedPayments
+                    .OrderByDescending(p => p.PaymentDate ?? p.CreatedAt)
+                    .Select(p => new RecentTransactionData
+                    {
+                        Id = p.Id,
+                        Date = p.PaymentDate ?? p.CreatedAt ?? DateTime.UtcNow,
+                        Customer = p.User?.FullName ?? p.User?.Email ?? "Unknown",
+                        Email = p.User?.Email ?? "N/A",
+                        Amount = p.Amount,
+                        Status = p.Status,
+                        PaymentType = p.PaymentType ?? "Other"
+                    })
+                    .ToList();
+
+                return new RevenueReportResponse
+                {
+                    TotalRevenue = totalRevenue,
+                    Growth = Math.Round(growth, 1),
+                    TotalTransactions = totalTransactions,
+                    AverageOrder = Math.Round(averageOrder, 0),
+                    MonthlyData = monthlyData,
+                    TopRevenueSources = revenueSources,
+                    RecentTransactions = recentTransactions
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate revenue report");
+                throw;
+            }
+        }
     }
 }

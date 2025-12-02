@@ -13,6 +13,7 @@ import ForgotPassword from "../pages/ForgotPassword";
 import OrganizerPage from "../pages/Organizer/OrganizerPage";
 import SponsorPage from "../pages/Sponsor/SponsorPage";
 import SupplierPage from "../pages/Supplier/SupplierPage";
+import AdminPage from "../pages/Admin/AdminPage";
 import Pricing from "../pages/Pricing";
 import ProgressBar from "../components/ProgressBar";
 import { Toaster } from 'react-hot-toast';
@@ -100,6 +101,15 @@ function App() {
               <RoleProtectedRoute allowedRoles={['SUPPLIER']}>
                 <SupplierPage />
               </RoleProtectedRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin" 
+            element={
+              // <RoleProtectedRoute allowedRoles={['ADMIN']}>
+                <AdminPage />
+              // </RoleProtectedRoute>
             } 
           />
         </Routes>

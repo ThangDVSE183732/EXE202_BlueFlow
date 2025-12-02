@@ -46,5 +46,20 @@ namespace EventLink_Repositories.Interface
         /// Update payment status
         /// </summary>
         Task UpdatePaymentStatusAsync(Guid paymentId, string status, string transactionId = null, string gatewayResponse = null);
+
+        /// <summary>
+        /// Get all payments (for admin revenue report)
+        /// </summary>
+        Task<List<Payment>> GetAllPaymentsAsync();
+
+        /// <summary>
+        /// Get payments by date range
+        /// </summary>
+        Task<List<Payment>> GetPaymentsByDateRangeAsync(DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// Get completed payments for revenue calculation
+        /// </summary>
+        Task<List<Payment>> GetCompletedPaymentsAsync();
     }
 }
